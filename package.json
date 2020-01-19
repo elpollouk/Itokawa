@@ -11,6 +11,11 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@serialport/list": "^8.0.6",
     "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "@types/serialport": "^8.0.0",
+    "serialport": "^8.0.6"
   }
 }
