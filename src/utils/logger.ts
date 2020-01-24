@@ -1,8 +1,9 @@
 export enum LogLevel {
-    DEBUG = 0,
-    INFO = 1,
+    NONE = 0,
+    ERROR = 1,
     WARNING = 2,
-    ERROR = 3
+    INFO = 3,
+    DEBUG = 4,
 }
 
 export class Logger {
@@ -13,7 +14,7 @@ export class Logger {
     }
 
     log(level: LogLevel, message: string) {
-        if (level >= Logger.logLevel)
+        if (Logger.logLevel >= level)
             console.log(`${LogLevel[level]}:${this.system}: ${message}`);
     }
 
