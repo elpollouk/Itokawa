@@ -1,4 +1,8 @@
 import * as SerialPort from "serialport";
+import { Logger } from "./utils/logger";
+import { DeviceEnumerator } from "./deviceEnumerator";
+
+let log = new Logger("Main");
 
 function Open(path: string): Promise<SerialPort> {
     return new Promise((resolve, reject) => {
@@ -25,8 +29,7 @@ function EnsureValidMessage(message: Buffer) {
 
 function ApplyChecksum(message: number[]) {
     let checkSum = 0;
-    for (let i = 0; i < message.length - 1; i++)
-    {
+    for (let i = 0; i < message.length - 1; i++) {
         checkSum ^= message[i];
     }
     message[message.length - 1] = checkSum;
@@ -42,14 +45,12 @@ let handShakeSomplete = false;
 
 function SendNextMessage(port: SerialPort)
 {
-    if (messages.length != 0)
-    {
+    if (messages.length != 0) {
         let message = messages.shift();
         port.write(message);
         return;
     }
-    else if (handShakeSomplete)
-    {
+    else if (handShakeSomplete) {
         return;
     }
 
@@ -61,9 +62,8 @@ function SendNextMessage(port: SerialPort)
 
     let response: number[] = [ 0x35, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ];
     for (let i = 1; i < 6; i++)
-    {
         response[i] = (lastReceivedMessage[i] + 0x39) & 0xFF;
-    }
+
     ApplyChecksum(response);
 
     console.log(`Sending response: ${response}`);
@@ -76,11 +76,30 @@ function SendNextMessage(port: SerialPort)
 
 async function main()
 {
-    console.log("Initialising...");
+    log.info("Initialising...");
     
-    let ports = await SerialPort.list();
+    var enumerator = new DeviceEnumerator();
+    let ports = await enumerator.listDevices();
 
-    console.log(`Opening port ${ports[0].path}...`);
+    if (ports.length == 0) {
+        log.error("No ports found, exiting.");
+        return
+    }
+
+    let path: string = null;
+    for (let port of ports) {
+        if (port.potentialDevices.length != 0) {
+            path = port.path;
+            break;
+        }
+    }
+
+    if (path === null) {
+        log.error("No recognised devices found, exiting.");
+        return;
+    }
+
+    log.info(`Opening port ${path}...`);
     
     let port = await Open(ports[0].path);
     port.on('data', (data) => {
@@ -96,5 +115,5 @@ async function main()
 
 
 main().then(() => {
-    console.log("Done.");
+    log.info("Done.");
 });
