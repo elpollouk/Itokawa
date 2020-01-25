@@ -46,7 +46,7 @@ export class AsyncSerialPort {
     }
 
     read(size: number): Promise<number[]> {
-        if (this._updateReader != _nullUpdate) throw new Error("Read already in progress");
+        if (this._updateReader != _nullUpdate) return Promise.reject(new Error("Read already in progress"));
 
         return new Promise<number[]>((resolve, reject) => {
             this._updateReader = () => {
