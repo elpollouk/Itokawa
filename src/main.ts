@@ -97,7 +97,7 @@ async function main()
 
     log.info("eLink ready for use");
         
-    port.close();
+    await port.close();
 } 
 
 
