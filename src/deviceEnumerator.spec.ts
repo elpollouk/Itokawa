@@ -68,8 +68,8 @@ describe("Device Enumerator", () => {
     });
 
     it("should process multiple ports", async () => {
-        addPort("/dev/ttyS0", "Unknown");
-        addPort("/dev/ttyACM0", "Microchip Technology, Inc.");
+        addPort("/dev/ttyS0", "");
+        addPort("/dev/ttyACM0", "Microchip Technology Inc.");
 
         const enumerator = new DeviceEnumerator();
         let devices = await enumerator.listDevices();

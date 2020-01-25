@@ -119,10 +119,10 @@ describe("AsyncSerialPort", () => {
             expect(lastWrite()).to.eql(Buffer.from([1, 2, 3]));
         });
 
-        it("should reject promise on drain error", async () => {
-            drainSpy.restore();
-            let drainMock = stub(MockBinding.prototype, "drain");
-            drainMock.returns(Promise.reject(new Error("Write Error")));
+        it("should reject promise on write error", async () => {
+            writeSpy.restore();
+            let writeMock = stub(MockBinding.prototype, "write");
+            writeMock.returns(Promise.reject(new Error("Write Error")));
 
             try {
                 let port = await open();
@@ -130,6 +130,23 @@ describe("AsyncSerialPort", () => {
                 let promise = port.write([0, 0]);
 
                 await expect(promise).to.eventually.be.rejectedWith("Write Error");
+            }
+            finally {
+                writeMock.restore();
+            }
+        });
+
+        it("should reject promise on drain error", async () => {
+            drainSpy.restore();
+            let drainMock = stub(MockBinding.prototype, "drain");
+            drainMock.returns(Promise.reject(new Error("Drain Error")));
+
+            try {
+                let port = await open();
+
+                let promise = port.write([0, 0]);
+
+                await expect(promise).to.eventually.be.rejectedWith("Drain Error");
             }
             finally {
                 drainMock.restore();

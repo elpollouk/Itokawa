@@ -32,16 +32,29 @@ export class AsyncSerialPort {
 
             this._updateReader();
         });
+        this._port.on('error', (err) => {
+            // We need to register an explicit error handler as the serialport library will try to
+            // emit error events even if we're registered handlers at the call level. The events
+            // library automatically re-throws errors if no error handler is registered.
+            log.warning(`Serial port error: ${err}`);
+        });
     }
 
     write(data: Buffer | number[]): Promise<void> {
         log.debug(`Writing: ${toHumanHex(data)}`);
+
         return new Promise((resolve, reject) => {
-            this._port.write(data);
-            this._port.drain((err) => {
+            let writeCallback = (err: Error, bytesWritten: number) => {
                 if (err) reject(err);
-                else resolve();
-            });
+                else this._port.drain((err) => {
+                    if (err) reject(err);
+                    else resolve();
+
+                    // TODO - Handle partial writes
+                });
+            }
+            
+            this._port.write(data, writeCallback);
         });
     }
 
