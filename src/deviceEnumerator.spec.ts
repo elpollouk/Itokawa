@@ -4,12 +4,16 @@ import * as sinon from "sinon";
 import { LogLevel, Logger } from "./utils/logger";
 Logger.logLevel = LogLevel.NONE;
 
-import { DeviceEnumerator } from "./deviceEnumerator";
+import { DeviceEnumerator, Device } from "./deviceEnumerator";
 import * as SerialPort from "serialport";
+import { AsyncSerialPort } from "./serialPort/asyncSerialPort";
+
+let MOCK_ASYNC_SERIAL_PORT = {} as AsyncSerialPort;
 
 describe("Device Enumerator", () => {
 
     let stubSerialPort_list: sinon.SinonStub;
+    let stubAsyncSerialPort_open: sinon.SinonStub;
     let mockPorts: SerialPort.PortInfo[];
 
     function addPort(path: string, manufacturer: string) {
@@ -22,13 +26,13 @@ describe("Device Enumerator", () => {
     beforeEach(() => {
         mockPorts = [];
 
-        stubSerialPort_list = sinon.stub(SerialPort, 'list').callsFake(async (): Promise<SerialPort.PortInfo[]> => {
-            return mockPorts;
-        });
+        stubSerialPort_list = sinon.stub(SerialPort, 'list').returns(Promise.resolve(mockPorts));
+        stubAsyncSerialPort_open = sinon.stub(AsyncSerialPort, "open").returns(Promise.resolve(MOCK_ASYNC_SERIAL_PORT));
     });
 
     afterEach(() => {
         stubSerialPort_list.restore();
+        stubAsyncSerialPort_open.restore();
     });
 
     it("should construct", () => {
@@ -77,4 +81,18 @@ describe("Device Enumerator", () => {
         expect(devices[1].potentialDevices).to.contain("Hornby eLink");
     });
 
+    describe("Device", () => {
+        describe("open", () => {
+            it("should correctly open serial port", async () => {
+                let device = new Device("/dev/ttyTest", ["Hornby eLink"]);
+
+                let port = await device.open();
+
+                expect(port).to.equal(MOCK_ASYNC_SERIAL_PORT);
+                expect(stubAsyncSerialPort_open.callCount).to.be.equal(1);
+                expect(stubAsyncSerialPort_open.getCall(0).args[0]).to.equal("/dev/ttyTest");
+                expect(stubAsyncSerialPort_open.getCall(0).args[1]).to.eql({baudRate:115200});
+            });
+        });
+    });
 });
