@@ -16,6 +16,15 @@
             "outFiles": [
                 "${workspaceFolder}/app/**/*.js"
             ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Run Mocha",
+            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+            "args": ["-r", "ts-node/register", "${workspaceRoot}/src/**/*.spec.ts"],
+            "cwd": "${workspaceRoot}",
+            "outFiles": []
         }
     ]
 }
