@@ -2,11 +2,10 @@ import { expect } from "chai";
 import "mocha";
 import * as sinon from "sinon";
 import { LogLevel, Logger } from "./utils/logger";
+Logger.logLevel = LogLevel.NONE;
 
 import { DeviceEnumerator } from "./deviceEnumerator";
 import * as SerialPort from "serialport";
-
-Logger.logLevel = LogLevel.NONE;
 
 describe("Device Enumerator", () => {
 

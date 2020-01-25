@@ -4,7 +4,6 @@
       "module": "commonjs",
       "sourceMap": true,
       "outDir": "dist",
-      "baseUrl": "./src"
     },
     "include": [
         "src/**/*.ts"
