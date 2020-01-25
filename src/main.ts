@@ -62,7 +62,7 @@ async function main()
     let data = await port.read(1);
 
     if (data[0] == 0x01) {
-        data = data.concat(await port.read(2));
+        data = await port.concatRead(data, 2);
         ensureValidMessage(data);
         log.info("Received handshake request");
 
@@ -78,7 +78,7 @@ async function main()
         log.info("Handshake complete");
     }
     else if (data[0] == 0x62) {
-        data = data.concat(await port.read(3));
+        data = await port.concatRead(data, 3);
         ensureValidMessage(data);
         log.info("Received OK response");
     }
@@ -94,6 +94,8 @@ async function main()
     let major = Math.trunc(data[2] / 100);
     let minor = Math.trunc(data[2] - (major * 100));
     log.info(`eLink version ${major}.${minor <= 9 ? "0" : ""}${minor}`);
+
+    log.info("eLink ready for use");
         
     port.close();
 } 

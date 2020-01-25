@@ -62,6 +62,10 @@ export class AsyncSerialPort {
         });
     }
 
+    async concatRead(data: number[], size: number): Promise<number[]> {
+        return data.concat(await this.read(size));
+    }
+
     close() {
         this._port.close();
         this._port = null;
