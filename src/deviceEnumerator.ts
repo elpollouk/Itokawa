@@ -5,7 +5,8 @@ import { AsyncSerialPort } from "./serialPort/asyncSerialPort";
 let log = new Logger("Device");
 
 let deviceMap = {
-    "Microchip Technology, Inc.": ["Hornby eLink"]
+    "Microchip Technology, Inc.": ["Hornby eLink"],
+    "Microchip Technology Inc.": ["Hornby eLink"]
 }
 
 let deviceSettings = {
@@ -37,7 +38,7 @@ export class DeviceEnumerator {
 
         let devices: Device[] = [];
         for (const port of ports) {
-            log.info(`Found ${port.path}, info=${port.manufacturer}`);
+            log.info(`Found ${port.path}, manufacturer=${port.manufacturer}, pnpId=${port.pnpId}`);
             let potentialDevices: string[] = (port.manufacturer in deviceMap) ? deviceMap[port.manufacturer] : [];
 
             devices.push(new Device(
