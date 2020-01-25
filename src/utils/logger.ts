@@ -7,9 +7,9 @@ export enum LogLevel {
 }
 
 export class Logger {
-    public static logLevel = LogLevel.INFO;
+    static logLevel = LogLevel.INFO;
 
-    public constructor(readonly system: string) {
+    constructor(readonly system: string) {
 
     }
 

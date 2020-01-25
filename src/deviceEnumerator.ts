@@ -1,10 +1,17 @@
 import { Logger } from "./utils/logger";
 import * as SerialPort from "serialport";
+import { AsyncSerialPort } from "./serialPort/asyncSerialPort";
 
 let log = new Logger("Device");
 
 let deviceMap = {
     "Microchip Technology, Inc.": ["Hornby eLink"]
+}
+
+let deviceSettings = {
+    "Hornby eLink": {
+        baudRate: 115200
+    }
 }
 
 export class Device {
@@ -18,10 +25,14 @@ export class Device {
                 log.info(`  ${device}`);
         }
     }
+
+    async open(deviceNumber: number = 0): Promise<AsyncSerialPort> {
+        return AsyncSerialPort.open(this.path, deviceSettings[this.potentialDevices[deviceNumber]]);
+    }
 }
 
 export class DeviceEnumerator {
-    public async listDevices(): Promise<Device[]> {
+    async listDevices(): Promise<Device[]> {
         let ports = await SerialPort.list();
 
         let devices: Device[] = [];
