@@ -1,14 +1,17 @@
 export interface ICommandStation extends NodeJS.EventEmitter {
-    // Don't forget to add the following to your command station class
-    // static readonly DEVICE_ID = "...";
-
-    version: string;
+    readonly version: string;
+    readonly deviceId: string;
 
     init(): Promise<void>;
     close(): Promise<void>;
     beginCommandBatch(): Promise<void>;
     commitCommandBatch(): Promise<void>;
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean): Promise<void>;
+}
+
+export interface ICommandStationConstructable {
+    readonly deviceId: string; 
+    new (connectionString: string): ICommandStation;
 }
 
 export class CommandStationError extends Error {

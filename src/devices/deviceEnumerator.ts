@@ -23,18 +23,18 @@ export class DeviceEnumerator {
         let devices: Device[] = [];
         for (const port of ports) {
             log.info(() => `Found ${port.path}, manufacturer=${port.manufacturer}, pnpId=${port.pnpId}`);
-            let potentialDevices: any[] = detectCommandStation(port);
+            let potentialDevices = detectCommandStation(port);
 
             for (const deviceClass of potentialDevices)
             {
                 devices.push({
-                    name: `${deviceClass.DEVICE_ID} on ${port.path}`,
-                    commandStation: deviceClass.DEVICE_ID,
+                    name: `${deviceClass.deviceId} on ${port.path}`,
+                    commandStation: deviceClass.deviceId,
                     path: port.path,
                     manufacturer: port.manufacturer,
                     pnpId: port.pnpId,
                     connect: async () => {
-                        let cs = new deviceClass(port.path) as ICommandStation;
+                        let cs = new deviceClass(port.path);
                         await cs.init();
                         return cs;
                     }

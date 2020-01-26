@@ -10,12 +10,12 @@ export const Config = {
     heartbeatTime: 5
 }
 
-export enum ElinkState {
+export enum ELinkState {
     UNINITIALISED = 0,
     INITIALISING = 1,
-    IDLE = 2,
-    BATCHING = 3,
-    COMMITTING = 4,
+    IDLE = 2,           // We can start bulding a command batch
+    BATCHING = 3,       // Batch building is in progress
+    COMMITTING = 4,     // Command batch is being committed to the eLink
     ERROR = 5,
     SHUTTING_DOWN = 6
 }
@@ -44,7 +44,7 @@ function ensureValidMessage(message: number[], type?:MessageType) {
     }
     if (checkSum != 0) throw new Error("Invalid checksum");
 
-    if (type && message[0] != type) throw new Error(`Unexpected message type, expected ${type}, but got ${message[0]}`);
+    if (type && message[0] != type) throw new CommandStationError(`Unexpected message type, expected ${type}, but got ${message[0]}`);
 }
 
 function applyChecksum(message: number[] | Buffer) {
@@ -56,7 +56,6 @@ function applyChecksum(message: number[] | Buffer) {
 }
 
 function updateHandshakeMessage(data: number[]) {
-    let checksum = 0;
     data[0] = MessageType.HANDSHAKE_EXCHANGE;
     for (let i = 1; i < 6; i++) {
         data[i] = (data[i] + 0x39) & 0xFF;
@@ -65,14 +64,15 @@ function updateHandshakeMessage(data: number[]) {
 }
 
 export class ELink extends EventEmitter implements ICommandStation {
-    static readonly DEVICE_ID = "eLink";
+    static readonly deviceId = "eLink";
+    get deviceId() { return ELink.deviceId; }
 
-    private _state: ElinkState = ElinkState.UNINITIALISED;
+    private _state: ELinkState = ELinkState.UNINITIALISED;
     private _port: AsyncSerialPort = null;
     private _version: string = "";
     private _heartbeatToken: NodeJS.Timeout = null;
 
-    get state(): ElinkState { return this._state; }
+    get state(): ELinkState { return this._state; }
     get version(): string { return this._version; }
 
     constructor(private _portPath: string) {
@@ -80,9 +80,9 @@ export class ELink extends EventEmitter implements ICommandStation {
     }
 
     async init() {
-        this._ensureState(ElinkState.UNINITIALISED);
+        this._ensureState(ELinkState.UNINITIALISED);
 
-        this._setState(ElinkState.INITIALISING);
+        this._setState(ELinkState.INITIALISING);
         log.info(`Opening port ${this._portPath}...`);
         this._port = await AsyncSerialPort.open(this._portPath, {
             baudRate: 115200
@@ -96,22 +96,22 @@ export class ELink extends EventEmitter implements ICommandStation {
 
         this._scheduleHeartbeat();
 
-        this._setState(ElinkState.IDLE);
+        this._setState(ELinkState.IDLE);
         log.info("Initialisation complete");
     }
 
     async close() {
-        this._setState(ElinkState.SHUTTING_DOWN);
+        this._setState(ELinkState.SHUTTING_DOWN);
         this._cancelHeartbeart();
         await this._port.close();
         this._port = null;
-        this._setState(ElinkState.UNINITIALISED);
+        this._setState(ELinkState.UNINITIALISED);
     }
     
     beginCommandBatch(): Promise<void> {
         log.info("Starting command batch");
         this._ensureReady();
-        this._setState(ElinkState.BATCHING);
+        this._setState(ELinkState.BATCHING);
         this._cancelHeartbeart();
 
         return Promise.resolve();
@@ -119,15 +119,15 @@ export class ELink extends EventEmitter implements ICommandStation {
 
     async commitCommandBatch() {
         log.info("Committing commands...")
-        this._ensureState(ElinkState.BATCHING);
+        this._ensureState(ELinkState.BATCHING);
         try {
-            this._setState(ElinkState.COMMITTING);
+            this._setState(ELinkState.COMMITTING);
             await this._sendStatusRequest();
             log.info("Committed commands successfully")
         }
         finally {
             this._scheduleHeartbeat();
-            this._setState(ElinkState.IDLE);
+            this._setState(ELinkState.IDLE);
         }
     }
 
@@ -146,26 +146,26 @@ export class ELink extends EventEmitter implements ICommandStation {
         });
     }
 
-    private _setState(state: ElinkState) {
+    private _setState(state: ELinkState) {
         const prevState = this._state;
         this._state = state;
-        log.debug(`State changing from ${ElinkState[prevState]} to ${ElinkState[state]}`);
+        log.debug(`State changing from ${ELinkState[prevState]} to ${ELinkState[state]}`);
         this.emit("state", this._state, prevState);
     }
 
     private async _addCommand(commandBuilder: () => number[] | Buffer) {
-        this._ensureState(ElinkState.BATCHING);
+        this._ensureState(ELinkState.BATCHING);
         let command = commandBuilder();
         applyChecksum(command);
         await this._port.write(command);
     }
 
-    private _ensureState(currentState: ElinkState) {
+    private _ensureState(currentState: ELinkState) {
         if (this._state != currentState) throw new Error(`eLink in wrong state for requested operation, state=${this._state}`)
     }
 
     private _ensureReady() {
-        this._ensureState(ElinkState.IDLE);
+        this._ensureState(ELinkState.IDLE);
     }
 
     private _scheduleHeartbeat() {
@@ -175,23 +175,23 @@ export class ELink extends EventEmitter implements ICommandStation {
         this._heartbeatToken = setTimeout(() => {
 
             log.info("Requesting hearbeat...");
-            if (this._state != ElinkState.IDLE) {
+            if (this._state != ELinkState.IDLE) {
                 log.error(`eLink in invalid state for heartbeat, state=${this.state}`);
                 return;
             }
-            this._setState(ElinkState.COMMITTING);
+            this._setState(ELinkState.COMMITTING);
 
             this._sendStatusRequest().then(() => {
 
                 this._heartbeatToken = null;
                 this._scheduleHeartbeat();
-                this._setState(ElinkState.IDLE);
+                this._setState(ELinkState.IDLE);
 
             }, (err) => {
 
                 log.error(`Failed sending heartbeat request: ${err}`);
                 if (err.stack) log.error(err.stack);
-                this._setState(ElinkState.ERROR);
+                this._setState(ELinkState.ERROR);
                 this.emit("error", err);
 
             });
@@ -273,7 +273,7 @@ export class ELink extends EventEmitter implements ICommandStation {
 
         const major = Math.trunc(version / 100);
         const minor = Math.trunc(version - (major * 100));
-        this._version = `${ELink.DEVICE_ID} ${major}.${minor <= 9 ? "0" : ""}${minor}`;
+        this._version = `${major}.${minor <= 9 ? "0" : ""}${minor}`;
 
         log.info(() => `Version: ${this.version}`);
     }

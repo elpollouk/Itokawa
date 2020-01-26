@@ -2,14 +2,15 @@ import { EventEmitter } from "events";
 import { ICommandStation } from "./commandStation"
 
 export class MockCommandStation extends EventEmitter implements ICommandStation {
-    static readonly DEVICE_ID = "Mock Command Station";
+    static readonly deviceId = "Mock Command Station";
+    get deviceId() { return MockCommandStation.deviceId; }
 
     constructor(public readonly path: string) {
         super();
     }
 
     get version(): string {
-        return `${MockCommandStation.DEVICE_ID} 1.0`;
+        return `${MockCommandStation.deviceId} 1.0`;
     }
     
     init(): Promise<void> {
