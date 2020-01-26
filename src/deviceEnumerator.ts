@@ -1,16 +1,9 @@
 import { Logger } from "./utils/logger";
 import * as SerialPort from "serialport";
 import { ICommandStation } from "./devices/commandStations/commandStation";
-import { ELink } from "./devices/commandStations/elink";
-import { MockCommandStation } from "./devices/commandStations/commandStation.mock";
+import { detectCommandStation } from "./devices/commandStations/commandStationDirectory";
 
 let log = new Logger("Device");
-
-let deviceMap = {
-    "Microchip Technology, Inc.": [ELink],
-    "Microchip Technology Inc.": [ELink],
-    "__TEST__": [MockCommandStation]
-}
 
 type commandStationConnector = () => Promise<ICommandStation>;
 
@@ -30,7 +23,7 @@ export class DeviceEnumerator {
         let devices: Device[] = [];
         for (const port of ports) {
             log.info(() => `Found ${port.path}, manufacturer=${port.manufacturer}, pnpId=${port.pnpId}`);
-            let potentialDevices: any[] = (port.manufacturer in deviceMap) ? deviceMap[port.manufacturer] : [];
+            let potentialDevices: any[] = detectCommandStation(port);
 
             for (const deviceClass of potentialDevices)
             {
