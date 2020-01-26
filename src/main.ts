@@ -22,15 +22,21 @@ async function main()
     let cs = await device.connect();
     log.display(`Connected to ${cs.version}!`);
 
+    log.display("Starting locos...");
+    await cs.beginCommandBatch();
     await cs.setLocomotiveSpeed(2732, 64);
-    await cs.setLocomotiveSpeed(4305, 64);
-    await cs.commitCommands();
-    await timeoutAsync(30);
+    await cs.setLocomotiveSpeed(4305, 96);
+    await cs.commitCommandBatch();
+
+    await timeoutAsync(120);
+
+    log.display("Stopping locos...");
+    await cs.beginCommandBatch();
     await cs.setLocomotiveSpeed(2732, 0);
     await cs.setLocomotiveSpeed(4305, 0);
-    await cs.commitCommands();
+    await cs.commitCommandBatch();
 
-    log.display("Starting shutdown");
+    log.display("Shutting down....");
     await cs.close();
 } 
 

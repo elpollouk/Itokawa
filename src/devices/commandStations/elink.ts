@@ -14,9 +14,10 @@ export enum ElinkState {
     UNINITIALISED = 0,
     INITIALISING = 1,
     IDLE = 2,
-    BUSY = 3,
-    ERROR = 4,
-    SHUTTING_DOWN = 5
+    BATCHING = 3,
+    COMMITTING = 4,
+    ERROR = 5,
+    SHUTTING_DOWN = 6
 }
 
 enum MessageType {
@@ -31,6 +32,10 @@ enum MessageType {
 enum LocoCommand {
     SET_SPEED = 0x13
 }
+
+const SUPPORTED_VERSIONS = [
+    0x6B // 1.07
+];
 
 function ensureValidMessage(message: number[], type?:MessageType) {
     let checkSum = 0;
@@ -82,6 +87,9 @@ export class ELink extends EventEmitter implements ICommandStation {
         this._port = await AsyncSerialPort.open(this._portPath, {
             baudRate: 115200
         });
+        this._port.on("error", (err) => {
+            this.emit("error", err);
+        });
 
         await this._sendStatusRequest();   
         await this._fetchVersionInfoRequest();
@@ -100,52 +108,56 @@ export class ELink extends EventEmitter implements ICommandStation {
         this._setState(ElinkState.UNINITIALISED);
     }
     
-    async commitCommands() {
+    beginCommandBatch(): Promise<void> {
+        log.info("Starting command batch");
+        this._ensureReady();
+        this._setState(ElinkState.BATCHING);
+        this._cancelHeartbeart();
+
+        return Promise.resolve();
+    };
+
+    async commitCommandBatch() {
+        log.info("Committing commands...")
+        this._ensureState(ElinkState.BATCHING);
         try {
-            log.info("Committing commands...")
-            await this._runRequest(async () => {
-                await this._sendStatusRequest();
-            });
+            this._setState(ElinkState.COMMITTING);
+            await this._sendStatusRequest();
             log.info("Committed commands successfully")
         }
         finally {
             this._scheduleHeartbeat();
+            this._setState(ElinkState.IDLE);
         }
     }
 
     async setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean) {
-        log.info(() => `Setting loco ${locomotiveId} to speed ${speed}, reverse=${reverse}`);
+        log.info(() => `Setting loco ${locomotiveId} to speed ${speed}, reverse=${reverse || false}`);
         if (speed < 0 || speed > 127) throw new CommandStationError(`Invalid speed requested, speed=${speed}`);
 
-        await this._runRequest(async () => {
+        await this._addCommand(() => {
             let request = [ MessageType.LOCO_COMMAND, LocoCommand.SET_SPEED, 0x00, 0x00, 0x00, 0x00 ];
             encodeLongAddress(locomotiveId, request, 2);
             speed &= 0x7F;
             if (!reverse) speed |= 0x80;
             request[4] = speed;
-            applyChecksum(request);
-
-            await this._port.write(request);
+            
+            return request;
         });
     }
 
     private _setState(state: ElinkState) {
         const prevState = this._state;
         this._state = state;
-        log.debug(`State changing from ${prevState} to ${state}`);
+        log.debug(`State changing from ${ElinkState[prevState]} to ${ElinkState[state]}`);
         this.emit("state", this._state, prevState);
     }
 
-    private async _runRequest(requestFunc: () => Promise<void>) {
-        this._ensureReady();
-        this._cancelHeartbeart();
-        this._setState(ElinkState.BUSY);
-        try {
-            await requestFunc();
-        }
-        finally {
-            this._setState(ElinkState.IDLE);
-        }
+    private async _addCommand(commandBuilder: () => number[] | Buffer) {
+        this._ensureState(ElinkState.BATCHING);
+        let command = commandBuilder();
+        applyChecksum(command);
+        await this._port.write(command);
     }
 
     private _ensureState(currentState: ElinkState) {
@@ -167,7 +179,7 @@ export class ELink extends EventEmitter implements ICommandStation {
                 log.error(`eLink in invalid state for heartbeat, state=${this.state}`);
                 return;
             }
-            this._setState(ElinkState.BUSY);
+            this._setState(ElinkState.COMMITTING);
 
             this._sendStatusRequest().then(() => {
 
@@ -256,8 +268,11 @@ export class ELink extends EventEmitter implements ICommandStation {
         const data = await this._port.read(5);
         ensureValidMessage(data);
 
-        const major = Math.trunc(data[2] / 100);
-        const minor = Math.trunc(data[2] - (major * 100));
+        const version = data[2];
+        if (!SUPPORTED_VERSIONS.includes(version)) throw new CommandStationError(`Unsupported eLink version encountered, version=${version}`);
+
+        const major = Math.trunc(version / 100);
+        const minor = Math.trunc(version - (major * 100));
         this._version = `${ELink.DEVICE_ID} ${major}.${minor <= 9 ? "0" : ""}${minor}`;
 
         log.info(() => `Version: ${this.version}`);

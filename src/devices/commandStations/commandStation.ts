@@ -6,7 +6,8 @@ export interface ICommandStation extends NodeJS.EventEmitter {
 
     init(): Promise<void>;
     close(): Promise<void>;
-    commitCommands(): Promise<void>;
+    beginCommandBatch(): Promise<void>;
+    commitCommandBatch(): Promise<void>;
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean): Promise<void>;
 }
 

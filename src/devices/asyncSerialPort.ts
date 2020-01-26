@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import * as SerialPort from "serialport";
 import { Logger } from "../utils/logger";
 import { toHumanHex } from "../utils/hex";
@@ -6,7 +7,7 @@ let log = new Logger("Serial");
 
 function _nullUpdate() {}
 
-export class AsyncSerialPort {
+export class AsyncSerialPort extends EventEmitter {
     static open(path: string, options: SerialPort.OpenOptions): Promise<AsyncSerialPort> {
         log.debug(() => `Opening ${path} with options ${JSON.stringify(options)}`);
         return new Promise<AsyncSerialPort>((resolve, reject) => {
@@ -25,6 +26,8 @@ export class AsyncSerialPort {
     }
 
     private constructor(private _port:SerialPort) {
+        super();
+
         this._port.on('data', (data: Buffer) => {
             log.debug(() => `Received: ${toHumanHex(data)}`);
             for (let i = 0; i < data.length; i++)
@@ -32,11 +35,9 @@ export class AsyncSerialPort {
 
             this._updateReader();
         });
-        this._port.on('error', (err) => {
-            // We need to register an explicit error handler as the serialport library will try to
-            // emit error events even if we're registered handlers at the call level. The events
-            // library automatically re-throws errors if no error handler is registered.
+        this._port.on("error", (err) => {
             log.warning(`Serial port error: ${err}`);
+            this.emit("error", err);
         });
     }
 
