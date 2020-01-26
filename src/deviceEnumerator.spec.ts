@@ -6,8 +6,10 @@ import { Logger } from "./utils/logger";
 import { DeviceEnumerator, Device } from "./deviceEnumerator";
 import * as SerialPort from "serialport";
 import { AsyncSerialPort } from "./devices/asyncSerialPort";
+import { MockCommandStation } from "./devices/commandStations/commandStation.mock";
 
-let MOCK_ASYNC_SERIAL_PORT = {} as AsyncSerialPort;
+const MOCK_ASYNC_SERIAL_PORT = {} as AsyncSerialPort;
+const ELINK_PNPID_WIN = "USB\\VID_04D8&PID_000A\\6&3A757EEC&1&2";
 
 describe("Device Enumerator", () => {
 
@@ -15,10 +17,11 @@ describe("Device Enumerator", () => {
     let stubAsyncSerialPort_open: sinon.SinonStub;
     let mockPorts: SerialPort.PortInfo[];
 
-    function addPort(path: string, manufacturer: string) {
+    function addPort(path: string, manufacturer: string, pnpId?: string) {
         mockPorts.push({
             path: path,
-            manufacturer: manufacturer
+            manufacturer: manufacturer,
+            pnpId: pnpId
         });
     }
 
@@ -46,14 +49,18 @@ describe("Device Enumerator", () => {
     });
 
     it("should detect eLink on COM3", async () => {
-        addPort("COM3", "Microchip Technology, Inc.");
+        addPort("COM3", "Microchip Technology, Inc.", ELINK_PNPID_WIN);
 
         const enumerator = new DeviceEnumerator();
         let devices = await enumerator.listDevices();
         
         expect(devices.length).to.equal(1);
+        expect(devices[0].name).to.equal("eLink on COM3");
+        expect(devices[0].commandStation).to.equal("eLink");
         expect(devices[0].path).to.equal("COM3");
-        expect(devices[0].potentialDevices).to.contain("eLink");
+        expect(devices[0].manufacturer).to.equal("Microchip Technology, Inc.");
+        expect(devices[0].pnpId).to.equal(ELINK_PNPID_WIN);
+        expect(devices[0].connect).to.be.an.instanceOf(Function);
     });
 
     it("should not detect unknown device", async () => {
@@ -62,22 +69,32 @@ describe("Device Enumerator", () => {
         const enumerator = new DeviceEnumerator();
         let devices = await enumerator.listDevices();
         
-        expect(devices.length).to.equal(1);
-        expect(devices[0].path).to.equal("COM2");
-        expect(devices[0].potentialDevices).to.be.empty;
+        expect(devices.length).to.equal(0);
     });
 
     it("should process multiple ports", async () => {
         addPort("/dev/ttyS0", "");
-        addPort("/dev/ttyACM0", "Microchip Technology Inc.");
+        addPort("/dev/ttyACM0", "Microchip Technology Inc.", ELINK_PNPID_WIN);
 
         const enumerator = new DeviceEnumerator();
         let devices = await enumerator.listDevices();
         
-        expect(devices.length).to.equal(2);
-        expect(devices[0].path).to.equal("/dev/ttyS0");
-        expect(devices[0].potentialDevices).to.be.empty;
-        expect(devices[1].path).to.equal("/dev/ttyACM0");
-        expect(devices[1].potentialDevices).to.contain("eLink");
+        expect(devices.length).to.equal(1);
+        expect(devices[0].name).to.equal("eLink on /dev/ttyACM0");
+        expect(devices[0].commandStation).to.equal("eLink");
+        expect(devices[0].path).to.equal("/dev/ttyACM0");
+        expect(devices[0].manufacturer).to.equal("Microchip Technology Inc.");
+        expect(devices[0].pnpId).to.equal(ELINK_PNPID_WIN);
+        expect(devices[0].connect).to.be.an.instanceOf(Function);
+    });
+
+    it("should generate a valid connector function for command stations", async () => {
+        addPort("/dev/ttyS0", "__TEST__");
+
+        const enumerator = new DeviceEnumerator();
+        let devices = await enumerator.listDevices();
+        let cs = await devices[0].connect();
+
+        expect(cs).to.be.an.instanceOf(MockCommandStation);
     });
 });

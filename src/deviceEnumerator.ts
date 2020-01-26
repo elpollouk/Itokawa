@@ -2,12 +2,14 @@ import { Logger } from "./utils/logger";
 import * as SerialPort from "serialport";
 import { ICommandStation } from "./devices/commandStations/commandStation";
 import { ELink } from "./devices/commandStations/elink";
+import { MockCommandStation } from "./devices/commandStations/commandStation.mock";
 
 let log = new Logger("Device");
 
 let deviceMap = {
     "Microchip Technology, Inc.": [ELink],
-    "Microchip Technology Inc.": [ELink]
+    "Microchip Technology Inc.": [ELink],
+    "__TEST__": [MockCommandStation]
 }
 
 type commandStationConnector = () => Promise<ICommandStation>;
