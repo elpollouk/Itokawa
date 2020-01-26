@@ -1,6 +1,6 @@
 import { Logger } from "../../utils/logger";
 import { EventEmitter } from "events";
-import { ICommandStation, CommandStationError } from "./commandStation"
+import { ICommandStation, CommandStationError, ICommandBatch, CommandStationState } from "./commandStation"
 import { AsyncSerialPort } from "../asyncSerialPort";
 import { encodeLongAddress } from "./nmraUtils";
 
@@ -8,16 +8,6 @@ const log = new Logger("eLink");
 
 export const Config = {
     heartbeatTime: 5
-}
-
-export enum ELinkState {
-    UNINITIALISED = 0,
-    INITIALISING = 1,
-    IDLE = 2,           // We can start bulding a command batch
-    BATCHING = 3,       // Batch building is in progress
-    COMMITTING = 4,     // Command batch is being committed to the eLink
-    ERROR = 5,
-    SHUTTING_DOWN = 6
 }
 
 enum MessageType {
@@ -42,7 +32,7 @@ function ensureValidMessage(message: number[], type?:MessageType) {
     for (let i = 0; i < message.length; i++) {
         checkSum ^= message[i];
     }
-    if (checkSum != 0) throw new Error("Invalid checksum");
+    if (checkSum != 0) throw new CommandStationError("Invalid checksum for received message");
 
     if (type && message[0] != type) throw new CommandStationError(`Unexpected message type, expected ${type}, but got ${message[0]}`);
 }
@@ -63,16 +53,16 @@ function updateHandshakeMessage(data: number[]) {
     applyChecksum(data);
 }
 
-export class ELink extends EventEmitter implements ICommandStation {
+export class ELinkCommandStation extends EventEmitter implements ICommandStation {
     static readonly deviceId = "eLink";
-    get deviceId() { return ELink.deviceId; }
+    get deviceId() { return ELinkCommandStation.deviceId; }
 
-    private _state: ELinkState = ELinkState.UNINITIALISED;
+    private _state: CommandStationState = CommandStationState.UNINITIALISED;
     private _port: AsyncSerialPort = null;
     private _version: string = "";
     private _heartbeatToken: NodeJS.Timeout = null;
 
-    get state(): ELinkState { return this._state; }
+    get state(): CommandStationState { return this._state; }
     get version(): string { return this._version; }
 
     constructor(private _portPath: string) {
@@ -80,9 +70,9 @@ export class ELink extends EventEmitter implements ICommandStation {
     }
 
     async init() {
-        this._ensureState(ELinkState.UNINITIALISED);
+        this._ensureState(CommandStationState.UNINITIALISED);
 
-        this._setState(ELinkState.INITIALISING);
+        this._setState(CommandStationState.INITIALISING);
         log.info(`Opening port ${this._portPath}...`);
         this._port = await AsyncSerialPort.open(this._portPath, {
             baudRate: 115200
@@ -92,106 +82,94 @@ export class ELink extends EventEmitter implements ICommandStation {
         });
 
         await this._sendStatusRequest();   
-        await this._fetchVersionInfoRequest();
+        await this._sendVersionInfoRequest();
 
         this._scheduleHeartbeat();
+        this._setIdle();
 
-        this._setState(ELinkState.IDLE);
         log.info("Initialisation complete");
     }
 
     async close() {
-        this._setState(ELinkState.SHUTTING_DOWN);
+        this._setState(CommandStationState.SHUTTING_DOWN);
         this._cancelHeartbeart();
         await this._port.close();
         this._port = null;
-        this._setState(ELinkState.UNINITIALISED);
+        this._setState(CommandStationState.UNINITIALISED);
     }
     
-    beginCommandBatch(): Promise<void> {
+    async beginCommandBatch() {
         log.info("Starting command batch");
-        this._ensureReady();
-        this._setState(ELinkState.BATCHING);
-        this._cancelHeartbeart();
-
-        return Promise.resolve();
+        return new ELinkCommandBatch(this._commitCommandBatch.bind(this));
     };
 
-    async commitCommandBatch() {
-        log.info("Committing commands...")
-        this._ensureState(ELinkState.BATCHING);
+    private async _commitCommandBatch(batch: number[][]) {
+        log.info("Committing command batch...")
+        this._ensureReady();
         try {
-            this._setState(ELinkState.COMMITTING);
+            this._setBusy();
+            this._cancelHeartbeart();
+
+            for (let command of batch) {
+                await this._port.write(command);
+            }
+
             await this._sendStatusRequest();
-            log.info("Committed commands successfully")
+            log.info("Committed command batch successfully")
         }
         finally {
             this._scheduleHeartbeat();
-            this._setState(ELinkState.IDLE);
+            this._setIdle();
         }
     }
 
-    async setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean) {
-        log.info(() => `Setting loco ${locomotiveId} to speed ${speed}, reverse=${reverse || false}`);
-        if (speed < 0 || speed > 127) throw new CommandStationError(`Invalid speed requested, speed=${speed}`);
-
-        await this._addCommand(() => {
-            let request = [ MessageType.LOCO_COMMAND, LocoCommand.SET_SPEED, 0x00, 0x00, 0x00, 0x00 ];
-            encodeLongAddress(locomotiveId, request, 2);
-            speed &= 0x7F;
-            if (!reverse) speed |= 0x80;
-            request[4] = speed;
-            
-            return request;
-        });
-    }
-
-    private _setState(state: ELinkState) {
+    private _setState(state: CommandStationState) {
         const prevState = this._state;
         this._state = state;
-        log.debug(`State changing from ${ELinkState[prevState]} to ${ELinkState[state]}`);
+        log.debug(`State changing from ${CommandStationState[prevState]} to ${CommandStationState[state]}`);
         this.emit("state", this._state, prevState);
     }
 
-    private async _addCommand(commandBuilder: () => number[] | Buffer) {
-        this._ensureState(ELinkState.BATCHING);
-        let command = commandBuilder();
-        applyChecksum(command);
-        await this._port.write(command);
+    private _setBusy() {
+        this._setState(CommandStationState.BUSY);
     }
 
-    private _ensureState(currentState: ELinkState) {
-        if (this._state != currentState) throw new Error(`eLink in wrong state for requested operation, state=${this._state}`)
+    private _setIdle() {
+        this._setState(CommandStationState.IDLE);
+    }
+
+    private _ensureState(currentState: CommandStationState) {
+        if (this._state != currentState) throw new CommandStationError(`eLink in wrong state for requested operation, state=${this._state}`)
     }
 
     private _ensureReady() {
-        this._ensureState(ELinkState.IDLE);
+        this._ensureState(CommandStationState.IDLE);
     }
 
     private _scheduleHeartbeat() {
-        if (this._heartbeatToken) throw new Error("Heartbeat already schedulled");
+        if (this._heartbeatToken) throw new CommandStationError("Heartbeat already schedulled");
 
         log.info(`Scheduling next heartbeat in ${Config.heartbeatTime}s`);
         this._heartbeatToken = setTimeout(() => {
 
             log.info("Requesting hearbeat...");
-            if (this._state != ELinkState.IDLE) {
-                log.error(`eLink in invalid state for heartbeat, state=${this.state}`);
+            if (this.state != CommandStationState.IDLE) {
+                log.error(`eLink in invalid state for heartbeat, state=${CommandStationState[this.state]}`);
                 return;
             }
-            this._setState(ELinkState.COMMITTING);
+            this._setBusy();
 
             this._sendStatusRequest().then(() => {
 
                 this._heartbeatToken = null;
                 this._scheduleHeartbeat();
-                this._setState(ELinkState.IDLE);
+                this._setIdle();
 
             }, (err) => {
 
                 log.error(`Failed sending heartbeat request: ${err}`);
                 if (err.stack) log.error(err.stack);
-                this._setState(ELinkState.ERROR);
+                this._setState(CommandStationState.ERROR);
                 this.emit("error", err);
 
             });
@@ -227,7 +205,7 @@ export class ELink extends EventEmitter implements ICommandStation {
         default:
             const message = `Unrecognised message type, got ${data[0]}`;
             log.error(message);
-            throw new Error(message);
+            throw new CommandStationError(message);
         }
     }
 
@@ -247,7 +225,7 @@ export class ELink extends EventEmitter implements ICommandStation {
             await this._port.write(data);
             data = await this._port.read(3);
             ensureValidMessage(data, MessageType.HANDSHAKE_STATUS);
-            if (data[1] != 0x04) throw new Error("Handshake failed");
+            if (data[1] != 0x04) throw new CommandStationError("Handshake failed");
         }
         log.info("Handshake complete");
     }
@@ -256,12 +234,12 @@ export class ELink extends EventEmitter implements ICommandStation {
         data = await this._port.concatRead(data, 3);
         ensureValidMessage(data);
 
-        if (data[1] != 0x22 || data[2] != 0x40) throw new Error(`Unrecognised INFO_RESPONSE, got ${data}`);
+        if (data[1] != 0x22 || data[2] != 0x40) throw new CommandStationError(`Unrecognised INFO_RESPONSE, got ${data}`);
 
         log.info("Received status OK response");
     }
 
-    private async _fetchVersionInfoRequest() {
+    private async _sendVersionInfoRequest() {
         log.info("Sending info request");
 
         await this._port.write([MessageType.INFO_REQ, 0x21, 0x00]);
@@ -276,5 +254,39 @@ export class ELink extends EventEmitter implements ICommandStation {
         this._version = `${major}.${minor <= 9 ? "0" : ""}${minor}`;
 
         log.info(() => `Version: ${this.version}`);
+    }
+}
+
+export class ELinkCommandBatch implements ICommandBatch {
+    private _commands: number[][] = [];
+
+    constructor(private readonly _commit: (batch: number[][]) => Promise<void>) {
+
+    }
+
+    async commit() {
+        if (!this._commands) throw new CommandStationError("Batch has already been committed");
+        if (this._commands.length === 0) throw new CommandStationError("Attempted to commit empty batch");
+        await this._commit(this._commands);
+        this._commands = null;
+    }
+    
+    setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?: boolean) {
+        log.info(() => `Setting loco ${locomotiveId} to speed ${speed}, reverse=${reverse || false}`);
+        if (speed < 0 || speed > 127) throw new CommandStationError(`Invalid speed requested, speed=${speed}`);
+
+        let command = [ MessageType.LOCO_COMMAND, LocoCommand.SET_SPEED, 0x00, 0x00, 0x00, 0x00 ];
+        encodeLongAddress(locomotiveId, command, 2);
+        speed &= 0x7F;
+        if (!reverse) speed |= 0x80;
+        command[4] = speed;
+            
+        this._addCommand(command);
+    }
+
+    private _addCommand(command: number[]) {
+        if (!this._commands) throw new CommandStationError("Batch has already been committed");
+        applyChecksum(command);
+        this._commands.push(command);
     }
 }

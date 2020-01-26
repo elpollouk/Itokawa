@@ -12,8 +12,8 @@ export class AsyncSerialPort extends EventEmitter {
         log.debug(() => `Opening ${path} with options ${JSON.stringify(options)}`);
         return new Promise<AsyncSerialPort>((resolve, reject) => {
             let port = new SerialPort(path, options, (err) => {
-                if (err == null) resolve(new AsyncSerialPort(port));
-                else reject(err);
+                if (err) reject(err);
+                else resolve(new AsyncSerialPort(port));
             });
         });
     }

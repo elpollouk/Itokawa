@@ -1,5 +1,5 @@
 import { Logger, LogLevel } from "./utils/logger";
-import { timeoutAsync } from "./utils/promiseUtils";
+import { timeout } from "./utils/promiseUtils";
 import { DeviceEnumerator } from "./devices/deviceEnumerator";
 
 Logger.logLevel = LogLevel.DEBUG;
@@ -23,18 +23,18 @@ async function main()
     log.display(`Connected to ${cs.version}!`);
 
     log.display("Starting locos...");
-    await cs.beginCommandBatch();
-    await cs.setLocomotiveSpeed(2732, 64);
-    await cs.setLocomotiveSpeed(4305, 96);
-    await cs.commitCommandBatch();
+    let batch = await cs.beginCommandBatch();
+    batch.setLocomotiveSpeed(2732, 64);
+    batch.setLocomotiveSpeed(4305, 96);
+    await batch.commit();
 
-    await timeoutAsync(120);
+    await timeout(120);
 
     log.display("Stopping locos...");
-    await cs.beginCommandBatch();
-    await cs.setLocomotiveSpeed(2732, 0);
-    await cs.setLocomotiveSpeed(4305, 0);
-    await cs.commitCommandBatch();
+    batch = await cs.beginCommandBatch();
+    batch.setLocomotiveSpeed(2732, 0);
+    batch.setLocomotiveSpeed(4305, 0);
+    await batch.commit();
 
     log.display("Shutting down....");
     await cs.close();

@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { ICommandStation } from "./commandStation"
+import { ICommandStation, ICommandBatch, CommandStationState } from "./commandStation"
 
 export class MockCommandStation extends EventEmitter implements ICommandStation {
     static readonly deviceId = "Mock Command Station";
@@ -12,6 +12,10 @@ export class MockCommandStation extends EventEmitter implements ICommandStation 
     get version(): string {
         return `${MockCommandStation.deviceId} 1.0`;
     }
+
+    get state(): CommandStationState {
+        return CommandStationState.UNINITIALISED;
+    }
     
     init(): Promise<void> {
         return Promise.resolve();
@@ -19,13 +23,7 @@ export class MockCommandStation extends EventEmitter implements ICommandStation 
     close(): Promise<void> {
         throw new Error("Method not implemented.");
     }
-    beginCommandBatch(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-    commitCommandBatch(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }    
-    setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?: boolean): Promise<void> {
+    beginCommandBatch(): Promise<ICommandBatch> {
         throw new Error("Method not implemented.");
     }
 };

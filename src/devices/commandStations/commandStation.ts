@@ -1,12 +1,25 @@
+export enum CommandStationState {
+    UNINITIALISED = 0,
+    INITIALISING,
+    IDLE,
+    BUSY,
+    ERROR,
+    SHUTTING_DOWN
+}
+
+export interface ICommandBatch {
+    commit(): Promise<void>;
+    setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean): void;
+}
+
 export interface ICommandStation extends NodeJS.EventEmitter {
     readonly version: string;
     readonly deviceId: string;
+    readonly state: CommandStationState;
 
     init(): Promise<void>;
     close(): Promise<void>;
-    beginCommandBatch(): Promise<void>;
-    commitCommandBatch(): Promise<void>;
-    setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean): Promise<void>;
+    beginCommandBatch(): Promise<ICommandBatch>;
 }
 
 export interface ICommandStationConstructable {
@@ -19,7 +32,5 @@ export class CommandStationError extends Error {
         super(message);
     }
 
-    get name():string {
-        return this.constructor.name;
-    }
+    readonly name = this.constructor.name;
 }

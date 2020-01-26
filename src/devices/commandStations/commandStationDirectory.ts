@@ -1,11 +1,11 @@
 import { PortInfo } from "serialport";
-import { ELink } from "./elink";
+import { ELinkCommandStation } from "./elink";
 import { MockCommandStation } from "./commandStation.mock";
 import { ICommandStationConstructable } from "./commandStation";
 
 const deviceMap = new Map<string, ICommandStationConstructable[]>([
-    ["Microchip Technology, Inc.", [ELink]],
-    ["Microchip Technology Inc.", [ELink]],
+    ["Microchip Technology, Inc.", [ELinkCommandStation]],
+    ["Microchip Technology Inc.", [ELinkCommandStation]],
     ["__TEST__", [MockCommandStation]]
 ]);
 
