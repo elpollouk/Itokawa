@@ -1,6 +1,6 @@
 import { Logger, LogLevel } from "./utils/logger";
 import { timeoutAsync } from "./utils/promiseUtils";
-import { DeviceEnumerator } from "./deviceEnumerator";
+import { DeviceEnumerator } from "./devices/deviceEnumerator";
 
 Logger.logLevel = LogLevel.DEBUG;
 let log = new Logger("Main");

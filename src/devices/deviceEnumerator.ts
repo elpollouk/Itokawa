@@ -1,7 +1,7 @@
-import { Logger } from "./utils/logger";
+import { Logger } from "../utils/logger";
 import * as SerialPort from "serialport";
-import { ICommandStation } from "./devices/commandStations/commandStation";
-import { detectCommandStation } from "./devices/commandStations/commandStationDirectory";
+import { ICommandStation } from "./commandStations/commandStation";
+import { detectCommandStation } from "./commandStations/commandStationDirectory";
 
 let log = new Logger("Device");
 

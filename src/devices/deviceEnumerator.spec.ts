@@ -1,20 +1,17 @@
 import { expect } from "chai";
 import "mocha";
 import * as sinon from "sinon";
-import { Logger } from "./utils/logger";
+import { Logger } from "../utils/logger";
 
 import { DeviceEnumerator, Device } from "./deviceEnumerator";
 import * as SerialPort from "serialport";
-import { AsyncSerialPort } from "./devices/asyncSerialPort";
-import { MockCommandStation } from "./devices/commandStations/commandStation.mock";
+import { MockCommandStation } from "./commandStations/commandStation.mock";
 
-const MOCK_ASYNC_SERIAL_PORT = {} as AsyncSerialPort;
 const ELINK_PNPID_WIN = "USB\\VID_04D8&PID_000A\\6&3A757EEC&1&2";
 
 describe("Device Enumerator", () => {
 
     let stubSerialPort_list: sinon.SinonStub;
-    let stubAsyncSerialPort_open: sinon.SinonStub;
     let mockPorts: SerialPort.PortInfo[];
 
     function addPort(path: string, manufacturer: string, pnpId?: string) {
@@ -30,12 +27,10 @@ describe("Device Enumerator", () => {
         mockPorts = [];
 
         stubSerialPort_list = sinon.stub(SerialPort, 'list').returns(Promise.resolve(mockPorts));
-        stubAsyncSerialPort_open = sinon.stub(AsyncSerialPort, "open").returns(Promise.resolve(MOCK_ASYNC_SERIAL_PORT));
     });
 
     afterEach(() => {
         stubSerialPort_list.restore();
-        stubAsyncSerialPort_open.restore();
     });
 
     it("should construct", () => {
