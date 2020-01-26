@@ -4,16 +4,13 @@ use(require("chai-as-promised"));
 import "mocha";
 import { spy, SinonSpy, stub, SinonStub, mock } from "sinon";
 import { LogLevel, Logger } from "../utils/logger";
+import { nextTick } from "../utils/promiseUtils";
 
 import { AsyncSerialPort } from "./asyncSerialPort";
 const SerialPort = require('@serialport/stream');
 const MockBinding = require('@serialport/binding-mock');
 
 const TEST_PORT = "/dev/ttyTest";
-
-function nextTick(): Promise<void> {
-    return new Promise((resolve) => process.nextTick(resolve));
-}
 
 async function ticks(count: number): Promise<void> {
     while (count > 0) {
