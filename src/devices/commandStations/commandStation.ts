@@ -8,3 +8,13 @@ export interface ICommandStation extends NodeJS.EventEmitter {
     close(): Promise<void>;
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean): Promise<void>;
 }
+
+export class CommandStationError extends Error {
+    constructor(message: string) {
+        super(message);
+    }
+
+    get name():string {
+        return this.constructor.name;
+    }
+}

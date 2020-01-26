@@ -1,0 +1,11 @@
+import { CommandStationError } from "./commandStation";
+
+export function encodeLongAddress(address: number, buffer: number[] | Buffer, offset?: number) {
+    if (address <= 127 || address >= 10000) throw new CommandStationError(`Invalid long address, address=${address}`);
+    offset = offset || 0;
+    if (offset < 0 || offset > buffer.length - 2) throw new CommandStationError(`Attempt to write outside of range of buffer, offset=${offset}, buffer size=${buffer.length}`)
+
+    address |= 0xC000;
+    buffer[offset + 0] = address >> 8;
+    buffer[offset + 1] = address & 0xFF;
+}
