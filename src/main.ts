@@ -20,7 +20,7 @@ async function main()
 
     log.display(`Found ${device.name}`);
     let cs = await device.connect();
-    log.display(`Connected to ${cs.version}!`);
+    log.display(`Connected to ${cs.deviceId} ${cs.version}!`);
 
     log.display("Starting locos...");
     let batch = await cs.beginCommandBatch();
@@ -36,7 +36,7 @@ async function main()
     batch.setLocomotiveSpeed(4305, 0);
     await batch.commit();
 
-    log.display("Shutting down....");
+    log.display("Shutting down...");
     await cs.close();
 } 
 

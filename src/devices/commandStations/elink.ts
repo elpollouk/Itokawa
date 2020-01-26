@@ -3,10 +3,11 @@ import { EventEmitter } from "events";
 import { ICommandStation, CommandStationError, ICommandBatch, CommandStationState } from "./commandStation"
 import { AsyncSerialPort } from "../asyncSerialPort";
 import { encodeLongAddress } from "./nmraUtils";
+import { toHumanHex } from "../../utils/hex";
 
 const log = new Logger("eLink");
 
-export const Config = {
+export let Config = {
     heartbeatTime: 5
 }
 
@@ -39,23 +40,23 @@ function ensureValidMessage(message: number[], type?:MessageType) {
 
 function applyChecksum(message: number[] | Buffer) {
     let checkSum = 0;
-    for (let i = 0; i < message.length - 1; i++) {
+    for (let i = 0; i < message.length - 1; i++)
         checkSum ^= message[i];
-    }
+
     message[message.length - 1] = checkSum;
 }
 
 function updateHandshakeMessage(data: number[]) {
     data[0] = MessageType.HANDSHAKE_EXCHANGE;
-    for (let i = 1; i < 6; i++) {
+    for (let i = 1; i < 6; i++)
         data[i] = (data[i] + 0x39) & 0xFF;
-    }
+
     applyChecksum(data);
 }
 
 export class ELinkCommandStation extends EventEmitter implements ICommandStation {
     static readonly deviceId = "eLink";
-    get deviceId() { return ELinkCommandStation.deviceId; }
+    readonly deviceId = ELinkCommandStation.deviceId;
 
     private _state: CommandStationState = CommandStationState.UNINITIALISED;
     private _port: AsyncSerialPort = null;
@@ -91,11 +92,13 @@ export class ELinkCommandStation extends EventEmitter implements ICommandStation
     }
 
     async close() {
+        log.info("Closing connection...");
         this._setState(CommandStationState.SHUTTING_DOWN);
         this._cancelHeartbeart();
         await this._port.close();
         this._port = null;
         this._setState(CommandStationState.UNINITIALISED);
+        log.info("Closed");
     }
     
     async beginCommandBatch() {
@@ -110,9 +113,8 @@ export class ELinkCommandStation extends EventEmitter implements ICommandStation
             this._setBusy();
             this._cancelHeartbeart();
 
-            for (let command of batch) {
+            for (let command of batch)
                 await this._port.write(command);
-            }
 
             await this._sendStatusRequest();
             log.info("Committed command batch successfully")
@@ -234,7 +236,8 @@ export class ELinkCommandStation extends EventEmitter implements ICommandStation
         data = await this._port.concatRead(data, 3);
         ensureValidMessage(data);
 
-        if (data[1] != 0x22 || data[2] != 0x40) throw new CommandStationError(`Unrecognised INFO_RESPONSE, got ${data}`);
+        if (data[1] != 0x22 || data[2] != 0x40)
+            throw new CommandStationError(`Unrecognised INFO_RESPONSE, got ${toHumanHex(data)}`);
 
         log.info("Received status OK response");
     }
@@ -247,7 +250,8 @@ export class ELinkCommandStation extends EventEmitter implements ICommandStation
         ensureValidMessage(data);
 
         const version = data[2];
-        if (!SUPPORTED_VERSIONS.includes(version)) throw new CommandStationError(`Unsupported eLink version encountered, version=${version}`);
+        if (!SUPPORTED_VERSIONS.includes(version))
+            throw new CommandStationError(`Unsupported eLink version encountered, version=${version}`);
 
         const major = Math.trunc(version / 100);
         const minor = Math.trunc(version - (major * 100));
