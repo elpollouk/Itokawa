@@ -3,8 +3,6 @@ import "mocha";
 import * as sinon from "sinon";
 import { LogLevel, Logger } from "./logger";
 
-Logger.logLevel = LogLevel.NONE;
-
 describe("Logger", () => {
 
     let stubConsole_log: sinon.SinonStub;
@@ -13,11 +11,13 @@ describe("Logger", () => {
     function writeLogs(logger: Logger) {
         logger.error("Test error");
         logger.warning("Test warning");
+        logger.display("Test display");
         logger.info("Test info");
         logger.debug("Test debug");
     }
 
     beforeEach(() => {
+        Logger.testMode = false;
         output = [];
 
         stubConsole_log = sinon.stub(console, 'log').callsFake((text: string) => {
@@ -26,6 +26,7 @@ describe("Logger", () => {
     });
 
     afterEach(() => {
+        Logger.testMode = true;
         stubConsole_log.restore();
         Logger.logLevel = LogLevel.NONE;
     });
@@ -62,6 +63,19 @@ describe("Logger", () => {
         ]);
     });
 
+    it("should log correctly if level is DISPLAY", () => {
+        Logger.logLevel = LogLevel.DISPLAY;
+        let logger = new Logger("Test");
+
+        writeLogs(logger);
+
+        expect(output).to.eql([
+            "ERROR:Test: Test error",
+            "WARNING:Test: Test warning",
+            "DISPLAY:Test: Test display"
+        ]);
+    });
+
     it("should log correctly if level is INFO", () => {
         Logger.logLevel = LogLevel.INFO;
         let logger = new Logger("Test");
@@ -71,6 +85,7 @@ describe("Logger", () => {
         expect(output).to.eql([
             "ERROR:Test: Test error",
             "WARNING:Test: Test warning",
+            "DISPLAY:Test: Test display",
             "INFO:Test: Test info"
         ]);
     });
@@ -84,8 +99,25 @@ describe("Logger", () => {
         expect(output).to.eql([
             "ERROR:Test: Test error",
             "WARNING:Test: Test warning",
+            "DISPLAY:Test: Test display",
             "INFO:Test: Test info",
             "DEBUG:Test: Test debug"
+        ]);
+    });
+
+    it("should only call message functions if the level is active", () => {
+        let displayFunc = sinon.mock().returns("display message");
+        let infoFunc = sinon.mock().returns("info message");
+        Logger.logLevel = LogLevel.DISPLAY;
+        let logger = new Logger("Funcs");
+
+        logger.info(infoFunc);
+        logger.display(displayFunc);
+
+        expect(displayFunc.callCount).to.equal(1);
+        expect(infoFunc.callCount).to.equal(0);
+        expect(output).to.eql([
+            "DISPLAY:Funcs: display message"
         ]);
     });
 });

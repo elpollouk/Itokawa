@@ -8,7 +8,7 @@ function _nullUpdate() {}
 
 export class AsyncSerialPort {
     static open(path: string, options: SerialPort.OpenOptions): Promise<AsyncSerialPort> {
-        log.debug(`Opening ${path} with options ${JSON.stringify(options)}`);
+        log.debug(() => `Opening ${path} with options ${JSON.stringify(options)}`);
         return new Promise<AsyncSerialPort>((resolve, reject) => {
             let port = new SerialPort(path, options, (err) => {
                 if (err == null) resolve(new AsyncSerialPort(port));
@@ -26,7 +26,7 @@ export class AsyncSerialPort {
 
     private constructor(private _port:SerialPort) {
         this._port.on('data', (data: Buffer) => {
-            log.debug(`Received: ${toHumanHex(data)}`);
+            log.debug(() => `Received: ${toHumanHex(data)}`);
             for (let i = 0; i < data.length; i++)
                 this._buffer.push(data[i]);
 
@@ -41,7 +41,7 @@ export class AsyncSerialPort {
     }
 
     write(data: Buffer | number[]): Promise<void> {
-        log.debug(`Writing: ${toHumanHex(data)}`);
+        log.debug(() => `Writing: ${toHumanHex(data)}`);
 
         return new Promise((resolve, reject) => {
             let writeCallback = (err: Error, bytesWritten: number) => {

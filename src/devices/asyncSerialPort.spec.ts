@@ -4,17 +4,12 @@ use(require("chai-as-promised"));
 import "mocha";
 import { spy, SinonSpy, stub, SinonStub } from "sinon";
 import { LogLevel, Logger } from "../utils/logger";
-Logger.logLevel = LogLevel.NONE;
 
 import { AsyncSerialPort } from "./asyncSerialPort";
 const SerialPort = require('@serialport/stream');
 const MockBinding = require('@serialport/binding-mock');
 
 const TEST_PORT = "/dev/ttyTest";
-
-function sleep(time: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, time));
-}
 
 function nextTick(): Promise<void> {
     return new Promise((resolve) => process.nextTick(resolve));
@@ -34,6 +29,7 @@ describe("AsyncSerialPort", () => {
     let drainSpy: SinonSpy;
 
     beforeEach(() => {
+        Logger.testMode = true;
         SerialPort.Binding = MockBinding;
         MockBinding.createPort(TEST_PORT);
         openSpy = spy(MockBinding.prototype, "open");
