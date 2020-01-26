@@ -1,12 +1,22 @@
 import { Logger } from "../../utils/logger";
 import { EventEmitter } from "events";
-import { ICommandStation } from "./commandStation"
+import { ICommandStation, CommandStationError } from "./commandStation"
 import { AsyncSerialPort } from "../asyncSerialPort";
+import { encodeLongAddress } from "./nmraUtils";
 
 const log = new Logger("eLink");
 
-const Config = {
+export const Config = {
     heartbeatTime: 5
+}
+
+export enum ElinkState {
+    UNINITIALISED = 0,
+    INITIALISING = 1,
+    IDLE = 2,
+    BUSY = 3,
+    ERROR = 4,
+    SHUTTING_DOWN = 5
 }
 
 enum MessageType {
@@ -15,6 +25,11 @@ enum MessageType {
     HANDSHAKE_EXCHANGE = 0x35,
     HANDSHAKE_KEY = 0x3A,
     INFO_RESPONSE = 0x62,
+    LOCO_COMMAND = 0xE4
+}
+
+enum LocoCommand {
+    SET_SPEED = 0x13
 }
 
 function ensureValidMessage(message: number[], type?:MessageType) {
@@ -27,7 +42,7 @@ function ensureValidMessage(message: number[], type?:MessageType) {
     if (type && message[0] != type) throw new Error(`Unexpected message type, expected ${type}, but got ${message[0]}`);
 }
 
-function applyChecksum(message: number[]) {
+function applyChecksum(message: number[] | Buffer) {
     let checkSum = 0;
     for (let i = 0; i < message.length - 1; i++) {
         checkSum ^= message[i];
@@ -42,15 +57,6 @@ function updateHandshakeMessage(data: number[]) {
         data[i] = (data[i] + 0x39) & 0xFF;
     }
     applyChecksum(data);
-}
-
-export enum ElinkState {
-    UNINITIALISED = 0,
-    INITIALISING,
-    IDLE,
-    BUSY,
-    ERROR,
-    SHUTTING_DOWN
 }
 
 export class ELink extends EventEmitter implements ICommandStation {
@@ -93,9 +99,34 @@ export class ELink extends EventEmitter implements ICommandStation {
         this._port = null;
         this._setState(ElinkState.UNINITIALISED);
     }
+    
+    async commitCommands() {
+        try {
+            log.info("Committing commands...")
+            await this._runRequest(async () => {
+                await this._sendStatusRequest();
+            });
+            log.info("Committed commands successfully")
+        }
+        finally {
+            this._scheduleHeartbeat();
+        }
+    }
 
     async setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean) {
-        this._ensureReady();
+        log.info(() => `Setting loco ${locomotiveId} to speed ${speed}, reverse=${reverse}`);
+        if (speed < 0 || speed > 127) throw new CommandStationError(`Invalid speed requested, speed=${speed}`);
+
+        await this._runRequest(async () => {
+            let request = [ MessageType.LOCO_COMMAND, LocoCommand.SET_SPEED, 0x00, 0x00, 0x00, 0x00 ];
+            encodeLongAddress(locomotiveId, request, 2);
+            speed &= 0x7F;
+            if (!reverse) speed |= 0x80;
+            request[4] = speed;
+            applyChecksum(request);
+
+            await this._port.write(request);
+        });
     }
 
     private _setState(state: ElinkState) {
@@ -103,6 +134,18 @@ export class ELink extends EventEmitter implements ICommandStation {
         this._state = state;
         log.debug(`State changing from ${prevState} to ${state}`);
         this.emit("state", this._state, prevState);
+    }
+
+    private async _runRequest(requestFunc: () => Promise<void>) {
+        this._ensureReady();
+        this._cancelHeartbeart();
+        this._setState(ElinkState.BUSY);
+        try {
+            await requestFunc();
+        }
+        finally {
+            this._setState(ElinkState.IDLE);
+        }
     }
 
     private _ensureState(currentState: ElinkState) {

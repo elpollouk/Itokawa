@@ -22,26 +22,16 @@ async function main()
     let cs = await device.connect();
     log.display(`Connected to ${cs.version}!`);
 
+    await cs.setLocomotiveSpeed(2732, 64);
+    await cs.setLocomotiveSpeed(4305, 64);
+    await cs.commitCommands();
     await timeoutAsync(30);
+    await cs.setLocomotiveSpeed(2732, 0);
+    await cs.setLocomotiveSpeed(4305, 0);
+    await cs.commitCommands();
 
     log.display("Starting shutdown");
     await cs.close();
-
-/*
-    log.info("Sending loco reset commands");
-    await port.write([0xE4, 0x13, 0xCA, 0xAC, 0x80, 0x11]);
-    await port.write([0xE4, 0x13, 0xCA, 0xAC, 0x80, 0x11]);
-    await port.write([0xE4, 0x13, 0xCA, 0xAC, 0x80, 0x11]);
-    await port.write([0xE4, 0x13, 0xCA, 0xAC, 0x80, 0x11]);
-        
-    await port.write([0xE4, 0x13, 0xD0, 0xD1, 0x80, 0x76]);
-    await port.write([0xE4, 0x13, 0xD0, 0xD1, 0x80, 0x76]);
-    await port.write([0xE4, 0x13, 0xD0, 0xD1, 0x80, 0x76]);
-    await port.write([0xE4, 0x13, 0xD0, 0xD1, 0x80, 0x76]);
-        
-    await port.write([0x52, 0x00, 0x8B, 0xD9]);
-    await port.write([0x21, 0x24, 0x05]);
-*/
 } 
 
 

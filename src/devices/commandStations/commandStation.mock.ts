@@ -18,6 +18,9 @@ export class MockCommandStation extends EventEmitter implements ICommandStation 
     close(): Promise<void> {
         throw new Error("Method not implemented.");
     }
+    commitCommands(): Promise<void> {
+        throw new Error("Method not implemented.");
+    }    
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?: boolean): Promise<void> {
         throw new Error("Method not implemented.");
     }
