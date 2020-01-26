@@ -1,5 +1,6 @@
 import { Logger } from "../../utils/logger";
 import { EventEmitter } from "events";
+import { ICommandStation } from "./commandStation"
 import { AsyncSerialPort } from "../asyncSerialPort";
 
 const log = new Logger("eLink");
@@ -52,7 +53,7 @@ export enum ElinkState {
     SHUTTING_DOWN
 }
 
-export class ELink extends EventEmitter {
+export class ELink extends EventEmitter implements ICommandStation {
     static readonly DEVICE_ID = "eLink";
 
     private _state: ElinkState = ElinkState.UNINITIALISED;
@@ -214,8 +215,8 @@ export class ELink extends EventEmitter {
 
         const major = Math.trunc(data[2] / 100);
         const minor = Math.trunc(data[2] - (major * 100));
-        this._version = `${major}.${minor <= 9 ? "0" : ""}${minor}`;
+        this._version = `${ELink.DEVICE_ID} ${major}.${minor <= 9 ? "0" : ""}${minor}`;
 
-        log.info(`eLink version ${this.version}`);
+        log.info(() => `Version: ${this.version}`);
     }
 }

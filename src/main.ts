@@ -1,7 +1,6 @@
 import { Logger, LogLevel } from "./utils/logger";
 import { timeoutAsync } from "./utils/promiseUtils";
-import { DeviceEnumerator, Device } from "./deviceEnumerator";
-import { ELink } from "./devices/commandStations/elink";
+import { DeviceEnumerator } from "./deviceEnumerator";
 
 Logger.logLevel = LogLevel.DEBUG;
 let log = new Logger("Main");
@@ -17,25 +16,12 @@ async function main()
         log.error("No ports found, exiting.");
         return
     }
+    let device = devices[0]
 
-    let device: Device = null;
-    for (let p of devices) {
-        if (p.potentialDevices.length != 0) {
-            device = p;
-            break;
-        }
-    }
+    log.display(`Found ${device.name}`);
+    let cs = await device.connect();
+    log.display(`Connected to ${cs.version}!`);
 
-    if (device === null) {
-        log.error("No recognised devices found, exiting.");
-        return;
-    }
-
-    log.display(`Found ${device.potentialDevices[0]} on ${device.path}`);
-    let cs = new ELink(device.path);
-
-    await cs.init();
-    log.display("Up and running!");
     await timeoutAsync(30);
 
     log.display("Starting shutdown");
