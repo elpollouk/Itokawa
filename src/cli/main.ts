@@ -25,11 +25,12 @@ async function handleCommand(commandArgs: string[]) {
     }
 
     try {
-        const result = await command(commandArgs);
-        if (result) console.log("OK");
+        await command(commandArgs);
+        console.log("OK");
     }
     catch(ex) {
-        console.error(ex);
+        if (ex instanceof Commands.CommandError) console.error(ex.message);
+        else console.error(ex);
     }
 }
 

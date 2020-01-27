@@ -2,7 +2,7 @@ import { Logger, LogLevel } from "../utils/logger";
 import { timeout } from "../utils/promiseUtils";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 
-type CommandFunc = (command:string[])=>Promise<boolean>;
+type CommandFunc = (command:string[])=>Promise<void>;
 export interface Command extends CommandFunc {
     notCommand?: boolean;
     minArgs?: number;
@@ -12,6 +12,10 @@ export interface Command extends CommandFunc {
 
 let _commandStation: ICommandStation = null;
 const _seenLocos = new Set<number>();
+
+function error(message: string) {
+    throw new CommandError(message);
+}
 
 function resolveLocoAddress(locoId: string): number {
     let address = parseInt(locoId);
@@ -32,6 +36,13 @@ function resolveSpeed(speedStr: string): number {
     }
 }
 
+export class CommandError extends Error {
+    static notCommand = true;
+    constructor(message: string) {
+        super(message);
+    }
+}
+
 export function resolveCommand(commandName: string): Command {
     commandName = commandName.toLowerCase();
     if (!(commandName in exports))  return null;
@@ -49,17 +60,13 @@ export function setCommandStation(commandStation: ICommandStation) {
 setCommandStation.notCommand = true;
 
 export async function estop(args: string[]) {
-    if (_seenLocos.size == 0) {
-        console.error("No locos have received commands yet.");
-        return false;
+    if (_seenLocos.size == 0) error("No locos have received commands yet.");
 
-    }
     const batch = await _commandStation.beginCommandBatch();
     for (const address of _seenLocos) {
         batch.setLocomotiveSpeed(address, 0);
     }
     await batch.commit();
-    return true;
 }
 estop.help = "Emergency stop all locos which have received commands this session."
 
@@ -76,21 +83,15 @@ export async function help(args: string[]) {
             if (!resolveCommand(commandName)) continue;
             console.log(`  ${commandName}`);
         }
-        return true;
+        return;
     }
 
     const command = resolveCommand(args[0]);
-    if (!command) {
-        console.error(`Unrecognised command '${args[0]}'`);
-        return false;
-    }
-    if (!command.help) {
-        console.error(`${args[0]} is not helpful`);
-        return false;
-    }
+    if (!command) error(`Unrecognised command '${args[0]}'`);
+    if (!command.help) error(`${args[0]} is not helpful`);
+
     const help = command.help instanceof Function ? command.help() : command.help;
     console.log(help);
-    return true;
 }
 help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
@@ -100,22 +101,13 @@ export async function loco_speed(args: string[]) {
     let speed = resolveSpeed(args[1]);
     let reverse = args[2] == "R" || args[2] == "r";
 
-    if (address < 0) {
-        console.error(`'${args[0]}' is not a valid loco id`);
-        return false;
-    }
-
-    if (speed < 0) {
-        console.error(`'${args[1]}' is not a valid speed value`);
-        return false;
-    }
+    if (address < 0) error(`'${args[0]}' is not a valid loco id`);
+    if (speed < 0) error(`'${args[1]}' is not a valid speed value`);
 
     _seenLocos.add(address);
     const batch = await _commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(address, speed, reverse);
     await batch.commit();
-
-    return true;
 }
 loco_speed.minArgs = 2;
 loco_speed.maxArgs = 3;
@@ -124,17 +116,13 @@ loco_speed.help = "Set locomotive's speed.\n  Usage: loco_speed LOCO_ID SPEED [F
 export async function loglevel(args: string[]) {
     if (args.length == 0) {
         console.log(LogLevel[Logger.logLevel]);
-        return true;
+        return;
     }
 
     const newLevel = args[0].toUpperCase();
-    if (!(newLevel in LogLevel)) {
-        console.error(`${newLevel} isn't a recognised log level`);
-        return false;
-    }
+    if (!(newLevel in LogLevel)) error(`${newLevel} isn't a recognised log level`);
 
     Logger.logLevel = LogLevel[newLevel];
-    return true;
 }
 loglevel.minArgs = 0;
 loglevel.maxArgs = 1;
@@ -142,13 +130,9 @@ loglevel.help = "Sets the application log level.\n  Usage: loglevel [NONE|ERROR|
 
 export async function sleep(args: string[]) {
     const time = parseFloat(args[0]);
-    if (isNaN(time)) {
-        console.error(`'${time}' is not a valid sleep duration`);
-        return false;
-    }
+    if (isNaN(time)) error(`'${time}' is not a valid sleep duration`);
 
     await timeout(time);
-    return true;
 }
 sleep.minArgs = 1;
 sleep.minArgs = 1;
