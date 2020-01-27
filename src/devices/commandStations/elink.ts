@@ -24,9 +24,9 @@ enum LocoCommand {
     SET_SPEED = 0x13
 }
 
-const SUPPORTED_VERSIONS = [
+const SUPPORTED_VERSIONS = new Set([
     0x6B // 1.07
-];
+]);
 
 function ensureValidMessage(message: number[], type?:MessageType) {
     let checkSum = 0;
@@ -257,7 +257,7 @@ export class ELinkCommandStation extends EventEmitter implements ICommandStation
         ensureValidMessage(data);
 
         const version = data[2];
-        if (!SUPPORTED_VERSIONS.includes(version))
+        if (!SUPPORTED_VERSIONS.has(version))
             throw new CommandStationError(`Unsupported eLink version encountered, version=${version}`);
 
         const major = Math.trunc(version / 100);
