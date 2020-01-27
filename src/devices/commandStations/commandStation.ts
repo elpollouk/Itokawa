@@ -17,14 +17,13 @@ export interface ICommandStation extends NodeJS.EventEmitter {
     readonly deviceId: string;
     readonly state: CommandStationState;
 
-    init(): Promise<void>;
     close(): Promise<void>;
     beginCommandBatch(): Promise<ICommandBatch>;
 }
 
 export interface ICommandStationConstructable {
     readonly deviceId: string; 
-    new (connectionString: string): ICommandStation;
+    open(connectionString: string): Promise<ICommandStation>;
 }
 
 export class CommandStationError extends Error {

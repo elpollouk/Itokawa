@@ -3,9 +3,13 @@ import { ICommandStation, ICommandBatch, CommandStationState } from "./commandSt
 
 export class MockCommandStation extends EventEmitter implements ICommandStation {
     static readonly deviceId = "Mock Command Station";
+    static open(connectionString: string): Promise<ICommandStation> {
+        return Promise.resolve(new MockCommandStation());
+    }
+
     get deviceId() { return MockCommandStation.deviceId; }
 
-    constructor(public readonly path: string) {
+    constructor() {
         super();
     }
 
@@ -17,12 +21,10 @@ export class MockCommandStation extends EventEmitter implements ICommandStation 
         return CommandStationState.UNINITIALISED;
     }
     
-    init(): Promise<void> {
-        return Promise.resolve();
-    }
     close(): Promise<void> {
         throw new Error("Method not implemented.");
     }
+    
     beginCommandBatch(): Promise<ICommandBatch> {
         throw new Error("Method not implemented.");
     }

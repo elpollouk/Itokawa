@@ -1,14 +1,13 @@
-import { PortInfo } from "serialport";
+import { DeviceEnumerator } from "../deviceEnumerator";
 import { ELinkCommandStation } from "./elink";
 import { MockCommandStation } from "./commandStation.mock";
-import { ICommandStationConstructable } from "./commandStation";
 
-const deviceMap = new Map<string, ICommandStationConstructable[]>([
-    ["Microchip Technology, Inc.", [ELinkCommandStation]],
-    ["Microchip Technology Inc.", [ELinkCommandStation]],
-    ["__TEST__", [MockCommandStation]]
-]);
+export function registerCommandStations() {
 
-export function detectCommandStation(port: PortInfo): ICommandStationConstructable[] {
-    return deviceMap.get(port.manufacturer) || [];
+    DeviceEnumerator.registerDevice(ELinkCommandStation, "Microchip Technology, Inc.",
+                                                         "Microchip Technology Inc.");
+
+    DeviceEnumerator.registerDevice(MockCommandStation, "__TEST__");
+
 }
+

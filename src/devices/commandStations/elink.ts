@@ -56,6 +56,13 @@ function updateHandshakeMessage(data: number[]) {
 
 export class ELinkCommandStation extends EventEmitter implements ICommandStation {
     static readonly deviceId = "eLink";
+
+    static async open(connectionString: string) {
+        let cs = new ELinkCommandStation(connectionString);
+        await cs.init();
+        return cs;
+    }
+
     readonly deviceId = ELinkCommandStation.deviceId;
 
     private _state: CommandStationState = CommandStationState.UNINITIALISED;

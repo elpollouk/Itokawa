@@ -9,17 +9,16 @@ async function main()
 {
     log.display("Searching for devices...");
     
-    var enumerator = new DeviceEnumerator();
-    let devices = await enumerator.listDevices();
+    let devices = await DeviceEnumerator.listDevices();
 
     if (devices.length == 0) {
-        log.error("No ports found, exiting.");
+        log.error("No devices found, exiting.");
         return
     }
     let device = devices[0]
 
     log.display(`Found ${device.name}`);
-    let cs = await device.connect();
+    let cs = await device.open();
     log.display(`Connected to ${cs.deviceId} ${cs.version}!`);
 
     log.display("Starting locos...");

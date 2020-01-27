@@ -1,11 +1,16 @@
 import { Logger } from "../utils/logger";
 import * as SerialPort from "serialport";
-import { ICommandStation } from "./commandStations/commandStation";
-import { detectCommandStation } from "./commandStations/commandStationDirectory";
+import { ICommandStation, ICommandStationConstructable } from "./commandStations/commandStation";
+import { registerCommandStations } from "./commandStations/commandStationDirectory";
 
 let log = new Logger("Device");
 
-type commandStationConnector = () => Promise<ICommandStation>;
+const deviceManufacturerMap = new Map<string, ICommandStationConstructable[]>();
+const deviceIdMap = new Map<string, ICommandStationConstructable>();
+
+function detectCommandStation(port: SerialPort.PortInfo): ICommandStationConstructable[] {
+    return deviceManufacturerMap.get(port.manufacturer) || [];
+}
 
 export interface Device {
     name: string;
@@ -13,11 +18,23 @@ export interface Device {
     path: string;
     manufacturer: string;
     pnpId: string;
-    connect: commandStationConnector;
+    open: ()=>Promise<ICommandStation>;
 }
 
 export class DeviceEnumerator {
-    async listDevices(): Promise<Device[]> {
+
+    static registerDevice(device: ICommandStationConstructable, ...manufacturers: string[]) {
+        log.info(() => `Registering device ${device.deviceId}`);
+
+        deviceIdMap.set(device.deviceId, device);
+        for (const manufacturer of manufacturers) {
+            let deviceList = deviceManufacturerMap.get(manufacturer) || [];
+            deviceList.push(device);
+            deviceManufacturerMap.set(manufacturer, deviceList);
+        }
+    }
+
+    static async listDevices(): Promise<Device[]> {
         let ports = await SerialPort.list();
 
         let devices: Device[] = [];
@@ -25,23 +42,35 @@ export class DeviceEnumerator {
             log.info(() => `Found ${port.path}, manufacturer=${port.manufacturer}, pnpId=${port.pnpId}`);
             let potentialDevices = detectCommandStation(port);
 
-            for (const deviceClass of potentialDevices)
+            for (const device of potentialDevices)
             {
                 devices.push({
-                    name: `${deviceClass.deviceId} on ${port.path}`,
-                    commandStation: deviceClass.deviceId,
+                    name: `${device.deviceId} on ${port.path}`,
+                    commandStation: device.deviceId,
                     path: port.path,
                     manufacturer: port.manufacturer,
                     pnpId: port.pnpId,
-                    connect: async () => {
-                        let cs = new deviceClass(port.path);
-                        await cs.init();
-                        return cs;
-                    }
+                    open: () => DeviceEnumerator.openDevice(device, port.path)
                 });
             }
         }
 
         return devices;
     }
+
+    static openDevice(deviceId: string | ICommandStationConstructable, connectionString: string): Promise<ICommandStation> {
+        let device: ICommandStationConstructable;
+        if (typeof deviceId === "string") {
+            device = deviceIdMap.get(deviceId);
+            if (!device) throw new Error(`Device ${deviceId} not registered`);
+        }
+        else {
+            device = deviceId;
+        }
+
+        log.info(() => `Requesting open of devive ${device.deviceId} with connection string "${connectionString}"`);
+        return device.open(connectionString);
+    }
 }
+
+registerCommandStations();
