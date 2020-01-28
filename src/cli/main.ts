@@ -4,29 +4,35 @@ import { Logger, LogLevel } from "../utils/logger";
 import { addCommonOptions, applyLogLevel, openDevice } from "../utils/commandLineArgs";
 Logger.logLevel = LogLevel.DISPLAY;
 
+// All commands are implemented as module level function exports and we discover then via "reflection"
 import * as Commands from "./commands";
 
 addCommonOptions(program);
 
+// Command function interface that specifies the available attributes
 type CommandFunc = (command:string[])=>Promise<void>;
 export interface Command extends CommandFunc {
-    notCommand?: boolean;
-    minArgs?: number;
-    maxArgs?: number;
-    help?: () => string | string;
+    notCommand?: boolean;           // Flag that the exported function is not a user command
+    minArgs?: number;               // Minimum number of args the user must supply
+    maxArgs?: number;               // Maximum number of args the user can supply
+    help?: () => string | string;   // String to display for command help
 }
 
+// An exception a command can throw to display an error to the user without a call stack.
+// Should be used for user caused errors such as incorrectly specified args rather than actual failures.
 export class CommandError extends Error {
     constructor(message: string) {
         super(message);
     }
 }
 
+// Helper function to throw a user error of the correct type
 export function error(message: string) {
     throw new CommandError(message);
 }
 
-export async function handleCommand(commandString: string) {
+// Handler for a raw command string.
+export async function execCommand(commandString: string) {
     try {
         const commandArgs = commandString.trim().split(" ").filter((s) => !!s);
         if (commandArgs.length == 0 || !commandArgs[0]) return;
@@ -46,6 +52,8 @@ export async function handleCommand(commandString: string) {
     }
 }
 
+// Return the function for the specified command.
+// If the command isn't found int the Commands exports or isn't a valid command function, an exception is raised
 export function resolveCommand(commandName: string): Command {
     commandName = commandName.toLowerCase();
     const command = Commands[commandName] as Command;
@@ -73,6 +81,7 @@ async function main() {
         prompt: "dcc> "
     });
 
+    // Commands can execute asynchronouosly, so we need to reject user requets while execution is in progress
     let busy = false;
     rl.prompt();
 
@@ -81,7 +90,7 @@ async function main() {
         if (busy) return;
         busy = true;
 
-        await handleCommand(line);
+        await execCommand(line);
 
         rl.prompt();
         busy = false;

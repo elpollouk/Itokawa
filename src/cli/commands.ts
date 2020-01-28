@@ -4,6 +4,7 @@ import { timeout } from "../utils/promiseUtils";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 
 let _commandStation: ICommandStation = null;
+// Maintain a list of locos we've sent commands to for the 'estop' command
 const _seenLocos = new Set<number>();
 
 function resolveLocoAddress(locoId: string): number {
@@ -23,11 +24,26 @@ function resolveSpeed(speedStr: string): number {
     return speed;
 }
 
+// Allow other modules to specify the command station that commands should operate on
 export function setCommandStation(commandStation: ICommandStation) {
     _commandStation = commandStation;
 }
 setCommandStation.notCommand = true;
 
+//-----------------------------------------------------------------------------------------------//
+// Exported commands
+// Please keep them in alphabetical order
+//-----------------------------------------------------------------------------------------------//
+
+// Echo
+export async function echo(args: string[]) {
+    const message = args.join(" ");
+    console.log(message);
+}
+echo.minArgs = 1;
+echo.help = "Echo args back to the output."
+
+// Emergency stop
 export async function estop(args: string[]) {
     if (_seenLocos.size == 0) error("No locos have received commands yet.");
 
@@ -39,12 +55,14 @@ export async function estop(args: string[]) {
 }
 estop.help = "Emergency stop all locos which have received commands this session."
 
+// Exit
 export async function exit(args: string[]) {
     process.exit(0);
 }
 exit.maxArgs = 0;
 exit.help = "Exits this application";
 
+// Help
 export async function help(args: string[]) {
     if (args.length == 0) {
         console.log("Available commands:");
@@ -68,6 +86,7 @@ export async function help(args: string[]) {
 help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
 
+// Loco Speed Control
 export async function loco_speed(args: string[]) {
     let reverse = args[2] == "R" || args[2] == "r";
     let speed = resolveSpeed(args[1]);
@@ -81,6 +100,7 @@ loco_speed.minArgs = 2;
 loco_speed.maxArgs = 3;
 loco_speed.help = "Set locomotive's speed.\n  Usage: loco_speed LOCO_ID SPEED [F|R]";
 
+// Log level
 export async function loglevel(args: string[]) {
     if (args.length == 0) {
         console.log(LogLevel[Logger.logLevel]);
@@ -96,6 +116,7 @@ loglevel.minArgs = 0;
 loglevel.maxArgs = 1;
 loglevel.help = "Sets the application log level.\n  Usage: loglevel [NONE|ERROR|WARNING|DISPLAY|INFO|DEBUG]";
 
+// Sleep
 export async function sleep(args: string[]) {
     const time = parseFloat(args[0]);
     if (isNaN(time)) error(`'${time}' is not a valid sleep duration`);
