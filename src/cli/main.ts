@@ -8,10 +8,12 @@ import { addCommonOptions, applyLogLevel, openDevice } from "../utils/commandLin
 // All commands are implemented as module level function exports and we discover then via "reflection"
 import * as Commands from "./commands";
 import { ICommandStation } from "../devices/commandStations/commandStation";
+import { nextTick } from "../utils/promiseUtils";
 
 addCommonOptions(program);
 program
-    .option("--exit-estop", "Issue eStop on exit");
+    .option("--exit-estop", "Issue eStop on exit")
+    .option("-x --exec <command>", "Execute a command");
 
 // Command function interface that specifies the available attributes
 type CommandFunc = (command:string[])=>Promise<void>;
@@ -93,25 +95,41 @@ async function main() {
     Commands.setCommandStation(_commandStation);
     Commands.setExitHook(onExit);
 
+    // A command has been explicitly specified on the command line, so execute it and then exit
+    if (program.exec) {
+        await execCommand(program.exec);
+        await Commands.exit(null);
+    }
+
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
         prompt: "dcc> "
     });
 
-    // Commands can execute asynchronously, so we need to reject user requets while execution is in progress
-    let busy = false;
     rl.prompt();
 
-    rl.on("line", async (line) => {
-
+    // Commands can execute asynchronously, so we need to buffer user requets while execution is in progress
+    let busy = false;
+    let lineBuffer = [];
+    async function  proccessBufferedLines() {
         if (busy) return;
         busy = true;
 
-        await execCommand(line);
+        while (lineBuffer.length) {
+            const line = lineBuffer.shift();
+            await execCommand(line);
+            await nextTick();
+        }
 
         rl.prompt();
         busy = false;
+    }
+
+    rl.on("line", (line) => {
+
+        lineBuffer.push(line);
+        proccessBufferedLines();
 
     }).on("close", () => {
         process.exit(0);

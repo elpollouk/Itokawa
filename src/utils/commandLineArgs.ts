@@ -1,9 +1,11 @@
 import { CommanderStatic } from "commander";
 import { Logger, LogLevel } from "./logger";
 import { DeviceEnumerator } from "../devices/deviceEnumerator";
+let pjson = require('../../package.json');
 
 export function addCommonOptions(commander: CommanderStatic) {
     commander
+        .version(pjson.version)
         .option("-d --device <device>", "Device to open.")
         .option("-c --connection-string <connectionString>", "Port to open device on.")
         .option("--log-level <loglevel>", "Log level");
