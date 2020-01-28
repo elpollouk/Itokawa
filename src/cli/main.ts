@@ -1,13 +1,17 @@
 import * as readline from "readline";
 import * as program from "commander";
 import { Logger, LogLevel } from "../utils/logger";
-import { addCommonOptions, applyLogLevel, openDevice } from "../utils/commandLineArgs";
 Logger.logLevel = LogLevel.DISPLAY;
+
+import { addCommonOptions, applyLogLevel, openDevice } from "../utils/commandLineArgs";
 
 // All commands are implemented as module level function exports and we discover then via "reflection"
 import * as Commands from "./commands";
+import { ICommandStation } from "../devices/commandStations/commandStation";
 
 addCommonOptions(program);
+program
+    .option("--exit-estop", "Issue eStop on exit");
 
 // Command function interface that specifies the available attributes
 type CommandFunc = (command:string[])=>Promise<void>;
@@ -26,9 +30,22 @@ export class CommandError extends Error {
     }
 }
 
+let _commandStation: ICommandStation = null;
+
 // Helper function to throw a user error of the correct type
 export function error(message: string) {
     throw new CommandError(message);
+}
+
+// Handler for clean up when exit command is issued
+async function onExit() {
+    try {
+        if (program.exitEstop) await Commands.estop(null);
+    }
+    catch(ex) {
+        if (!(ex instanceof CommandError)) throw ex;
+    } 
+    await _commandStation.close();
 }
 
 // Handler for a raw command string.
@@ -67,13 +84,14 @@ async function main() {
     program.parse(process.argv);
     applyLogLevel(program);
 
-    let cs = await openDevice(program);
-    if (!cs) {
+    _commandStation = await openDevice(program);
+    if (!_commandStation) {
         console.error("No deviced detected, exiting...");
         process.exit(1);
     }
-    console.log(`Using ${cs.deviceId} ${cs.version}`);
-    Commands.setCommandStation(cs);
+    console.log(`Using ${_commandStation.deviceId} ${_commandStation.version}`);
+    Commands.setCommandStation(_commandStation);
+    Commands.setExitHook(onExit);
 
     const rl = readline.createInterface({
         input: process.stdin,
@@ -81,7 +99,7 @@ async function main() {
         prompt: "dcc> "
     });
 
-    // Commands can execute asynchronouosly, so we need to reject user requets while execution is in progress
+    // Commands can execute asynchronously, so we need to reject user requets while execution is in progress
     let busy = false;
     rl.prompt();
 
@@ -100,8 +118,4 @@ async function main() {
     });
 }
 
-main().catch((err) => {
-    console.error("*** UNHANDLED EXCEPTION ***")
-    console.error(err.stack);
-    process.exit(1);
-});
+main();

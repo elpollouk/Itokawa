@@ -5,8 +5,8 @@ import { DeviceEnumerator } from "../devices/deviceEnumerator";
 export function addCommonOptions(commander: CommanderStatic) {
     commander
         .option("-d --device <device>", "Device to open.")
-        .option("-c --connectionString <connectionString>", "Port to open device on.")
-        .option("--logLevel <loglevel>", "Log level");
+        .option("-c --connection-string <connectionString>", "Port to open device on.")
+        .option("--log-level <loglevel>", "Log level");
 }
 
 export async function openDevice(commander: CommanderStatic) {

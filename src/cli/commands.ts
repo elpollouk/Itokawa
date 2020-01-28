@@ -3,6 +3,7 @@ import { resolveCommand, error } from "./main"
 import { timeout } from "../utils/promiseUtils";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 
+let _exitHook: ()=>Promise<void> = null;
 let _commandStation: ICommandStation = null;
 // Maintain a list of locos we've sent commands to for the 'estop' command
 const _seenLocos = new Set<number>();
@@ -29,6 +30,10 @@ export function setCommandStation(commandStation: ICommandStation) {
     _commandStation = commandStation;
 }
 setCommandStation.notCommand = true;
+
+export function setExitHook(onExit: ()=>Promise<void>) {
+    _exitHook = onExit;
+}
 
 //-----------------------------------------------------------------------------------------------//
 // Exported commands
@@ -57,6 +62,7 @@ estop.help = "Emergency stop all locos which have received commands this session
 
 // Exit
 export async function exit(args: string[]) {
+    if (_exitHook) await _exitHook();
     process.exit(0);
 }
 exit.maxArgs = 0;

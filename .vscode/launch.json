@@ -14,7 +14,25 @@
             "program": "${workspaceFolder}/dist/main.js",
             "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [
-                "${workspaceFolder}/app/**/*.js"
+                "${workspaceFolder}/dist/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/dist/cli/main.js",
+            "args": [
+                "-d",
+                "Null",
+                "--log-level",
+                "DEBUG"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
             ]
         },
         {
