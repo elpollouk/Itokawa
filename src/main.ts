@@ -27,7 +27,7 @@ async function main()
     batch.setLocomotiveSpeed(4305, 96);
     await batch.commit();
 
-    await timeout(120);
+    await timeout(30);
 
     log.display("Stopping locos...");
     batch = await cs.beginCommandBatch();

@@ -58,7 +58,7 @@ export class DeviceEnumerator {
         return devices;
     }
 
-    static openDevice(deviceId: string | ICommandStationConstructable, connectionString: string): Promise<ICommandStation> {
+    static openDevice(deviceId: string | ICommandStationConstructable, connectionString?: string): Promise<ICommandStation> {
         let device: ICommandStationConstructable;
         if (typeof deviceId === "string") {
             device = deviceIdMap.get(deviceId);
