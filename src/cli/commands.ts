@@ -18,8 +18,8 @@ function resolveLocoAddress(locoId: string): number {
 
 function resolveSpeed(speedStr: string): number {
     let speed = parseInt(speedStr);
-    if (isNaN(speed)) `'${speedStr}' is not a valid speed value`
-    if (speed < 0 || speed > 127) `'${speedStr}' is not a valid speed value`
+    if (isNaN(speed)) error(`'${speedStr}' is not a valid speed value`);
+    if (speed < 0 || speed > 127) error(`'${speedStr}' is not a valid speed value`);
     return speed;
 }
 

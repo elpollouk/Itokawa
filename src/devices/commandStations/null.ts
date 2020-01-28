@@ -1,4 +1,3 @@
-import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger";
 import { CommandStationBase, ICommandBatch, CommandStationState, ICommandStation } from "./commandStation";
 
@@ -38,6 +37,6 @@ export class NullCommandBatch implements ICommandBatch {
     }
     
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?: boolean): void {
-        log.debug(() => `setLocomotiveSpeed - locoId=${locomotiveId}, speed=${speed}}, reverse=${!!reverse}`);
+        log.debug(() => `setLocomotiveSpeed - locoId=${locomotiveId}, speed=${speed}, reverse=${!!reverse}`);
     }
 }

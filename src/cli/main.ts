@@ -1,16 +1,12 @@
 import * as readline from "readline";
 import * as program from "commander";
 import { Logger, LogLevel } from "../utils/logger";
+import { addCommonOptions, applyLogLevel, openDevice } from "../utils/commandLineArgs";
 Logger.logLevel = LogLevel.DISPLAY;
 
-import { DeviceEnumerator } from "../devices/deviceEnumerator";
 import * as Commands from "./commands";
-import { ICommandStation } from "../devices/commandStations/commandStation";
 
-program
-    .option("-d --device <device>", "Device to open.")
-    .option("-c --connectionString <connectionString>", "Port to open device on.")
-    .option("--logLevel <loglevel>", "Log level");
+addCommonOptions(program);
 
 type CommandFunc = (command:string[])=>Promise<void>;
 export interface Command extends CommandFunc {
@@ -59,28 +55,11 @@ export function resolveCommand(commandName: string): Command {
     return command;
 }
 
-async function openDevice(): Promise<ICommandStation> {
-    if (program.device) {
-        return await DeviceEnumerator.openDevice(program.device, program.connectionString);
-    }
-
-    let devices = await DeviceEnumerator.listDevices();
-    if (devices.length == 0) {
-        return null;
-    }
-
-    console.log(`Using ${devices[0].commandStation}`);
-    return await devices[0].open();
-}
-
 async function main() {
     program.parse(process.argv);
-    const ll = (program.logLevel || "").toUpperCase();
-    if (ll in LogLevel) {
-        Logger.logLevel = LogLevel[ll as string];
-    }
+    applyLogLevel(program);
 
-    let cs = await openDevice();
+    let cs = await openDevice(program);
     if (!cs) {
         console.error("No deviced detected, exiting...");
         process.exit(1);
