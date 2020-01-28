@@ -6,25 +6,13 @@ import { DeviceEnumerator } from "../devices/deviceEnumerator";
 import * as Commands from "./commands";
 
 async function handleCommand(commandArgs: string[]) {
-    const commandName = commandArgs.shift();
-    const command = Commands.resolveCommand(commandName);
-
-    if (!command) {
-        console.error(`Unrecognised command '${commandName}'`);
-        return;
-    }
-
-    if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) {
-        console.error(`${commandName} expects at least ${command.minArgs} args`);
-        return;
-    }
-
-    if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) {
-        console.error(`${commandName} expects at most ${command.maxArgs} args`);
-        return;
-    }
-
     try {
+        const commandName = commandArgs.shift();
+        const command = Commands.resolveCommand(commandName);
+
+        if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) Commands.error(`${commandName} expects at least ${command.minArgs} args`);
+        if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) Commands.error(`${commandName} expects at most ${command.maxArgs} args`);
+
         await command(commandArgs);
         console.log("OK");
     }
@@ -43,6 +31,7 @@ async function main() {
 
     console.log(`Using ${devices[0].commandStation}`);
     let cs = await devices[0].open();
+    //let cs = await DeviceEnumerator.openDevice("Null");
     Commands.setCommandStation(cs);
 
     const rl = readline.createInterface({

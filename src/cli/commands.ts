@@ -13,31 +13,29 @@ export interface Command extends CommandFunc {
 let _commandStation: ICommandStation = null;
 const _seenLocos = new Set<number>();
 
-function error(message: string) {
+export function error(message: string) {
     throw new CommandError(message);
 }
+error.notCommand = true;
 
 function resolveLocoAddress(locoId: string): number {
     let address = parseInt(locoId);
-    if (isNaN(address)) return -1;
-    if (address < 1 || address > 9999) return -1;
+    if (isNaN(address)) error(`'${locoId}' is not a valid loco id`);
+    if (address < 1 || address > 9999) error(`'${locoId}' is not a valid loco id`)
+
+    _seenLocos.add(address);
+
     return address;
 }
 
 function resolveSpeed(speedStr: string): number {
-    try {
-        let speed = parseInt(speedStr);
-        if (isNaN(speed)) return -1;
-        if (speed < 0 || speed > 127) return -1;
-        return speed;
-    }
-    catch {
-        return -1;
-    }
+    let speed = parseInt(speedStr);
+    if (isNaN(speed)) `'${speedStr}' is not a valid speed value`
+    if (speed < 0 || speed > 127) `'${speedStr}' is not a valid speed value`
+    return speed;
 }
 
 export class CommandError extends Error {
-    static notCommand = true;
     constructor(message: string) {
         super(message);
     }
@@ -45,10 +43,10 @@ export class CommandError extends Error {
 
 export function resolveCommand(commandName: string): Command {
     commandName = commandName.toLowerCase();
-    if (!(commandName in exports))  return null;
+    if (!(commandName in exports)) error(`Unrecognised command '${commandName}'`);
     const command = exports[commandName] as Command;
-    if (!(command instanceof Function)) return null;
-    if (command.notCommand) return null;
+    if (!(command instanceof Function)) error(`Unrecognised command '${commandName}'`);
+    if (command.notCommand) error(`Unrecognised command '${commandName}'`);
 
     return command;
 }
@@ -80,8 +78,11 @@ export async function help(args: string[]) {
     if (args.length == 0) {
         console.log("Available commands:");
         for (const commandName of Object.keys(exports)) {
-            if (!resolveCommand(commandName)) continue;
-            console.log(`  ${commandName}`);
+            try {
+                resolveCommand(commandName);
+                console.log(`  ${commandName}`);
+            }
+            catch {}
         }
         return;
     }
@@ -97,14 +98,10 @@ help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
 
 export async function loco_speed(args: string[]) {
-    let address = resolveLocoAddress(args[0]);
-    let speed = resolveSpeed(args[1]);
     let reverse = args[2] == "R" || args[2] == "r";
+    let speed = resolveSpeed(args[1]);
+    let address = resolveLocoAddress(args[0]);
 
-    if (address < 0) error(`'${args[0]}' is not a valid loco id`);
-    if (speed < 0) error(`'${args[1]}' is not a valid speed value`);
-
-    _seenLocos.add(address);
     const batch = await _commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(address, speed, reverse);
     await batch.commit();
