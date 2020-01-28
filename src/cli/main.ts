@@ -5,21 +5,51 @@ Logger.logLevel = LogLevel.DISPLAY;
 import { DeviceEnumerator } from "../devices/deviceEnumerator";
 import * as Commands from "./commands";
 
-async function handleCommand(commandArgs: string[]) {
-    try {
-        const commandName = commandArgs.shift();
-        const command = Commands.resolveCommand(commandName);
+type CommandFunc = (command:string[])=>Promise<void>;
+export interface Command extends CommandFunc {
+    notCommand?: boolean;
+    minArgs?: number;
+    maxArgs?: number;
+    help?: () => string | string;
+}
 
-        if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) Commands.error(`${commandName} expects at least ${command.minArgs} args`);
-        if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) Commands.error(`${commandName} expects at most ${command.maxArgs} args`);
+export class CommandError extends Error {
+    constructor(message: string) {
+        super(message);
+    }
+}
+
+export function error(message: string) {
+    throw new CommandError(message);
+}
+
+export async function handleCommand(commandString: string) {
+    try {
+        const commandArgs = commandString.trim().split(" ").filter((s) => !!s);
+        if (commandArgs.length == 0 || !commandArgs[0]) return;
+
+        const commandName = commandArgs.shift();
+        const command = resolveCommand(commandName);
+
+        if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) error(`${commandName} expects at least ${command.minArgs} args`);
+        if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) error(`${commandName} expects at most ${command.maxArgs} args`);
 
         await command(commandArgs);
         console.log("OK");
     }
     catch(ex) {
-        if (ex instanceof Commands.CommandError) console.error(ex.message);
+        if (ex instanceof CommandError) console.error(ex.message);
         else console.error(ex);
     }
+}
+
+export function resolveCommand(commandName: string): Command {
+    commandName = commandName.toLowerCase();
+    const command = Commands[commandName] as Command;
+    if (!(command instanceof Function)) error(`Unrecognised command '${commandName}'`);
+    if (command.notCommand) error(`Unrecognised command '${commandName}'`);
+
+    return command;
 }
 
 async function main() {
@@ -31,6 +61,7 @@ async function main() {
 
     console.log(`Using ${devices[0].commandStation}`);
     let cs = await devices[0].open();
+    
     //let cs = await DeviceEnumerator.openDevice("Null");
     Commands.setCommandStation(cs);
 
@@ -48,9 +79,7 @@ async function main() {
         if (busy) return;
         busy = true;
 
-        const words = line.trim().split(" ").filter((s) => !!s);
-        if (words.length == 0 || !words[0]) return;
-        await handleCommand(words);
+        await handleCommand(line);
 
         rl.prompt();
         busy = false;

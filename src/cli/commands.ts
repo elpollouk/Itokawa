@@ -1,22 +1,10 @@
 import { Logger, LogLevel } from "../utils/logger";
+import { resolveCommand, error } from "./main"
 import { timeout } from "../utils/promiseUtils";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 
-type CommandFunc = (command:string[])=>Promise<void>;
-export interface Command extends CommandFunc {
-    notCommand?: boolean;
-    minArgs?: number;
-    maxArgs?: number;
-    help?: () => string | string;
-}
-
 let _commandStation: ICommandStation = null;
 const _seenLocos = new Set<number>();
-
-export function error(message: string) {
-    throw new CommandError(message);
-}
-error.notCommand = true;
 
 function resolveLocoAddress(locoId: string): number {
     let address = parseInt(locoId);
@@ -34,23 +22,6 @@ function resolveSpeed(speedStr: string): number {
     if (speed < 0 || speed > 127) `'${speedStr}' is not a valid speed value`
     return speed;
 }
-
-export class CommandError extends Error {
-    constructor(message: string) {
-        super(message);
-    }
-}
-
-export function resolveCommand(commandName: string): Command {
-    commandName = commandName.toLowerCase();
-    if (!(commandName in exports)) error(`Unrecognised command '${commandName}'`);
-    const command = exports[commandName] as Command;
-    if (!(command instanceof Function)) error(`Unrecognised command '${commandName}'`);
-    if (command.notCommand) error(`Unrecognised command '${commandName}'`);
-
-    return command;
-}
-resolveCommand.notCommand = true;
 
 export function setCommandStation(commandStation: ICommandStation) {
     _commandStation = commandStation;
