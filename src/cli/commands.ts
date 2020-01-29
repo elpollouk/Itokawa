@@ -1,7 +1,8 @@
 import { Logger, LogLevel } from "../utils/logger";
-import { resolveCommand, error } from "./main"
+import { resolveCommand, error, execCommand } from "./main"
 import { timeout } from "../utils/promiseUtils";
 import { ICommandStation } from "../devices/commandStations/commandStation";
+import * as fs from "fs";
 
 let _exitHook: ()=>Promise<void> = null;
 let _commandStation: ICommandStation = null;
@@ -60,8 +61,29 @@ export async function estop(args: string[]) {
 }
 estop.help = "Emergency stop all locos which have received commands this session."
 
+// Execute a script
+export async function exec(args: string[]) {
+    return new Promise((resolve, reject) => {
+        fs.readFile(args[0], async (err, data) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            const script = data.toString().split("\n");
+            for (const line of script)
+               await execCommand(line, true);
+
+            resolve();
+        });
+    });
+}
+exec.minArgs = 1;
+exec.maxArgs = 1;
+exec.help = "Execute a script.\n  Usage: exec SCRIPT_PATH"
+
 // Exit
-export async function exit(args: string[]) {
+export async function exit(args?: string[]) {
     if (_exitHook) await _exitHook();
     process.exit(0);
 }

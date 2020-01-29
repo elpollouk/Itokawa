@@ -81,6 +81,11 @@ describe("Parsers", () => {
             const result = parseCommand(null);
             expect(result).to.eql([]);
         })
+
+        it ("should trim out all white space", () => {
+            const result = parseCommand("\n\r\ta\t\r\nb\n\r\tc\r\n\t");
+            expect(result).to.eql(["a", "b", "c"]);
+        });
     });
 
 });

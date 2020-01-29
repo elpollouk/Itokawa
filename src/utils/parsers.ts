@@ -1,3 +1,5 @@
+const _whitespaceChars = new Set([" ", "\t", "\r", "\n", ""]);
+
 export function parseCommand(command: string): string[] {
     command = command || "";
     let commandArgs: string[] = [];
@@ -17,18 +19,18 @@ export function parseCommand(command: string): string[] {
             c = command[i] || "";
         }
 
-        if (c === " " && !quoteMode && !isEscaped) {
-            commandArgs.push(currentWord);
-            currentWord = "";
+        if (_whitespaceChars.has(c) && !quoteMode && !isEscaped) {
+            if (currentWord) {
+                commandArgs.push(currentWord);
+                currentWord = "";
+            }    
         }
         else {
             currentWord += c;
         }
     }
-    commandArgs.push(currentWord);
 
-    commandArgs = commandArgs.filter((s) => !!s);
-    if (commandArgs.length == 0) return [];
+    if (currentWord) commandArgs.push(currentWord);
 
     return commandArgs;
 }

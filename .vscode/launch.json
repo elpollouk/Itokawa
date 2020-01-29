@@ -29,7 +29,9 @@
                 "-d",
                 "Null",
                 "--log-level",
-                "DEBUG"
+                "DEBUG",
+                "-x",
+                ".test.txt"
             ],
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"

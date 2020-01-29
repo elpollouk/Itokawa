@@ -14,7 +14,9 @@ import { parseCommand } from "../utils/parsers";
 addCommonOptions(program);
 program
     .option("--exit-estop", "Issue eStop on exit")
-    .option("-x --exec <command>", "Execute a command");
+    .option("--cmd <command>", "Execute a command")
+    .option("-x --exec <script", "Execute a script")
+    .option("--continue", "Continue to CLI after executing script or command");
 
 // Command function interface that specifies the available attributes
 type CommandFunc = (command:string[])=>Promise<void>;
@@ -52,7 +54,7 @@ async function onExit() {
 }
 
 // Handler for a raw command string.
-export async function execCommand(commandString: string) {
+export async function execCommand(commandString: string, suppressOk: boolean=false) {
     try {
         const commandArgs = parseCommand(commandString);
         if (commandArgs.length == 0) return;
@@ -64,7 +66,7 @@ export async function execCommand(commandString: string) {
         if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) error(`${commandName} expects at most ${command.maxArgs} args`);
 
         await command(commandArgs);
-        console.log("OK");
+        if (!suppressOk) console.log("OK");
     }
     catch(ex) {
         if (ex instanceof CommandError) console.error(ex.message);
@@ -96,10 +98,14 @@ async function main() {
     Commands.setCommandStation(_commandStation);
     Commands.setExitHook(onExit);
 
-    // A command has been explicitly specified on the command line, so execute it and then exit
-    if (program.exec) {
-        await execCommand(program.exec);
-        await Commands.exit(null);
+    // A command or script has been explicitly specified on the command line, so execute it and then exit
+    if (program.cmd) {
+        await execCommand(program.cmd, true);
+        if (!program.continue) await Commands.exit();
+    }
+    else if (program.exec) {
+        await Commands.exec([program.exec]);
+        if (!program.continue) await Commands.exit();
     }
 
     const rl = readline.createInterface({
@@ -120,7 +126,7 @@ async function main() {
         while (lineBuffer.length) {
             const line = lineBuffer.shift();
             await execCommand(line);
-            await nextTick();
+            await nextTick(); // Make sure other events have an opportunity to run between commands
         }
 
         rl.prompt();
@@ -137,4 +143,8 @@ async function main() {
     });
 }
 
-main();
+main().catch((err) => {
+    if (err.stack) console.error(err.stack);
+    else console.error(err);
+    process.exit(1);
+});
