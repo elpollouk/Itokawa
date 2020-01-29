@@ -13,8 +13,8 @@ export function parseCommand(command: string): string[] {
         }
         if (c === "^") {
             isEscaped = true;
-            c = command[i+1] || "";
             i++;
+            c = command[i] || "";
         }
 
         if (c === " " && !quoteMode && !isEscaped) {
@@ -22,7 +22,7 @@ export function parseCommand(command: string): string[] {
             currentWord = "";
         }
         else {
-            currentWord += command[i];
+            currentWord += c;
         }
     }
     commandArgs.push(currentWord);

@@ -13,13 +13,13 @@ describe("Parsers", () => {
         });
 
         it("Should parse command with quoted words", () => {
-            const result = parseCommand("a b c");
-            expect(result).to.eql(["a", "b", "c"]);
-        });
-
-        it("Should parse command with quoted words", () => {
             const result = parseCommand("one  \"two three\" four");
             expect(result).to.eql(["one", "two three", "four"]);
+        });
+
+        it("Should parse completely quoted command", () => {
+            const result = parseCommand("\"one  two  three  four\"");
+            expect(result).to.eql(["one  two  three  four"]);
         });
 
         it("Should parse command with embedded quotes within words", () => {
@@ -45,6 +45,21 @@ describe("Parsers", () => {
         it ("should parse any escaped chat", () => {
             const result = parseCommand("^a^b^c^ ^d^e^f");
             expect(result).to.eql(["abc def"]);
+        })
+
+        it ("should not fail if hat is last character of string", () => {
+            const result = parseCommand("a b c ^ ");
+            expect(result).to.eql(["a", "b", "c", " "]);
+        })
+
+        it ("should parse escaped space as last word", () => {
+            const result = parseCommand("a b c ^");
+            expect(result).to.eql(["a", "b", "c"]);
+        })
+
+        it ("should handle tripple escape characters", () => {
+            const result = parseCommand("^^^a ^^^  ^^^\"");
+            expect(result).to.eql(["^a", "^ ", "^\""]);
         })
 
         it ("should parse strings with multiple spaces separating words", () => {

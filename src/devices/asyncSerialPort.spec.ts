@@ -3,7 +3,6 @@ use(require("chai-as-promised"));
 
 import "mocha";
 import { spy, SinonSpy, stub, SinonStub, mock } from "sinon";
-import { LogLevel, Logger } from "../utils/logger";
 import { nextTick } from "../utils/promiseUtils";
 
 import { AsyncSerialPort } from "./asyncSerialPort";
@@ -26,7 +25,6 @@ describe("AsyncSerialPort", () => {
     let drainSpy: SinonSpy;
 
     beforeEach(() => {
-        Logger.testMode = true;
         SerialPort.Binding = MockBinding;
         MockBinding.createPort(TEST_PORT);
         openSpy = spy(MockBinding.prototype, "open");

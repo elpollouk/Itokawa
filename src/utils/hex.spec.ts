@@ -1,7 +1,5 @@
 import { expect } from "chai";
 import "mocha";
-import { LogLevel, Logger } from "./logger";
-Logger.logLevel = LogLevel.NONE;
 
 import * as hex from "./hex"
 

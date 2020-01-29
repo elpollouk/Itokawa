@@ -3,6 +3,10 @@ import "mocha";
 import * as sinon from "sinon";
 import { LogLevel, Logger } from "./logger";
 
+beforeEach(() => {
+    Logger.testMode = true;
+});
+
 describe("Logger", () => {
 
     let stubConsole_log: sinon.SinonStub;

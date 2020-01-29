@@ -1,9 +1,8 @@
 import { expect } from "chai";
 import "mocha";
 import * as sinon from "sinon";
-import { Logger } from "../utils/logger";
 
-import { DeviceEnumerator, Device } from "./deviceEnumerator";
+import { DeviceEnumerator } from "./deviceEnumerator";
 import * as SerialPort from "serialport";
 import { MockCommandStation } from "./commandStations/commandStation.mock";
 
@@ -23,7 +22,6 @@ describe("Device Enumerator", () => {
     }
 
     beforeEach(() => {
-        Logger.testMode = true;
         mockPorts = [];
 
         stubSerialPort_list = sinon.stub(SerialPort, 'list').returns(Promise.resolve(mockPorts));
