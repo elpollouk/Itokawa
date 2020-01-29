@@ -1,6 +1,6 @@
 import { Logger } from "../../utils/logger";
 import { EventEmitter } from "events";
-import { ICommandStation, CommandStationError, ICommandBatch, CommandStationState } from "./commandStation"
+import { ICommandStation, CommandStationError, ICommandBatch, CommandStationState, CommandStationBase } from "./commandStation"
 import { AsyncSerialPort } from "../asyncSerialPort";
 import { encodeLongAddress } from "./nmraUtils";
 import { toHumanHex } from "../../utils/hex";
@@ -54,7 +54,7 @@ function updateHandshakeMessage(data: number[]) {
     applyChecksum(data);
 }
 
-export class ELinkCommandStation extends EventEmitter implements ICommandStation {
+export class ELinkCommandStation extends CommandStationBase {
     static readonly deviceId = "eLink";
 
     static async open(connectionString: string) {
@@ -65,16 +65,14 @@ export class ELinkCommandStation extends EventEmitter implements ICommandStation
 
     readonly deviceId = ELinkCommandStation.deviceId;
 
-    private _state: CommandStationState = CommandStationState.UNINITIALISED;
     private _port: AsyncSerialPort = null;
     private _version: string = "";
     private _heartbeatToken: NodeJS.Timeout = null;
 
-    get state(): CommandStationState { return this._state; }
     get version(): string { return this._version; }
 
     constructor(private _portPath: string) {
-        super();
+        super(log);
     }
 
     async init() {
@@ -115,7 +113,8 @@ export class ELinkCommandStation extends EventEmitter implements ICommandStation
 
     private async _commitCommandBatch(batch: number[][]) {
         log.info("Committing command batch...")
-        this._ensureReady();
+        await this._untilIdle();
+        
         try {
             this._setBusy();
             this._cancelHeartbeart();
@@ -130,29 +129,6 @@ export class ELinkCommandStation extends EventEmitter implements ICommandStation
             this._scheduleHeartbeat();
             this._setIdle();
         }
-    }
-
-    private _setState(state: CommandStationState) {
-        const prevState = this._state;
-        this._state = state;
-        log.debug(`State changing from ${CommandStationState[prevState]} to ${CommandStationState[state]}`);
-        this.emit("state", this._state, prevState);
-    }
-
-    private _setBusy() {
-        this._setState(CommandStationState.BUSY);
-    }
-
-    private _setIdle() {
-        this._setState(CommandStationState.IDLE);
-    }
-
-    private _ensureState(currentState: CommandStationState) {
-        if (this._state != currentState) throw new CommandStationError(`eLink in wrong state for requested operation, state=${this._state}`)
-    }
-
-    private _ensureReady() {
-        this._ensureState(CommandStationState.IDLE);
     }
 
     private _scheduleHeartbeat() {
