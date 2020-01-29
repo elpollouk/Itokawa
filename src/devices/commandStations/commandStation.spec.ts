@@ -123,6 +123,18 @@ describe("Command Station Base", () => {
             expect(error.callCount).to.equal(0);
         })
 
+        it ("should be safe to await the current state", async () => {
+            const cs = new TestCommmandStation();
+            const then = stub();
+            const error = stub();
+            cs.setState(CommandStationState.IDLE);
+            cs.untilState(CommandStationState.IDLE).then(then, error);
+            await nextTick();
+
+            expect(then.callCount).to.equal(1);
+            expect(error.callCount).to.equal(0);
+        })
+
         it ("should be possible to await until IDLE state", async () => {
             const cs = new TestCommmandStation();
             const then = stub();
