@@ -33,8 +33,16 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
     abstract version: string;
     abstract deviceId: string;
 
-    get state() : CommandStationState {
+    get state() {
         return this._state;
+    }
+
+    get isIdle() {
+        return this._state == CommandStationState.IDLE;
+    }
+
+    get isBusy() {
+        return this._state == CommandStationState.BUSY;
     }
 
     protected _log: Logger;
@@ -55,6 +63,23 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
         this._log.debug(() => `State changing from ${CommandStationState[prevState]} to ${CommandStationState[state]}`);
         this.emit("state", this._state, prevState);
     }
+
+    protected _ensureState(state: CommandStationState) {
+        if (this._state != state) throw new CommandStationError(`${this.deviceId} is in wrong state for requested operation, state=${CommandStationState[this._state]}, expectedState=${CommandStationState[state]}`);
+    }
+
+    protected _ensureIdle() {
+        this._ensureState(CommandStationState.IDLE);
+    }
+
+    protected _setBusy() {
+        this._setState(CommandStationState.BUSY);
+    }
+
+    protected _setIdle() {
+        this._setState(CommandStationState.IDLE);
+    }
+
 }
 
 export class CommandStationError extends Error {

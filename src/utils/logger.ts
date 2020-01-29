@@ -40,9 +40,9 @@ export class Logger {
         }
     }
 
-    readonly debug = (message: string | messageBuilder) => this.log(LogLevel.DEBUG, message); 
-    readonly info = (message: string | messageBuilder) => this.log(LogLevel.INFO, message); 
-    readonly display = (message: string | messageBuilder) => this.log(LogLevel.DISPLAY, message);
-    readonly warning = (message: string | messageBuilder) => this.log(LogLevel.WARNING, message); 
-    readonly error = (message: string | messageBuilder) => this.log(LogLevel.ERROR, message); 
+    debug (message: string | messageBuilder) { this.log(LogLevel.DEBUG, message); }
+    info (message: string | messageBuilder) { this.log(LogLevel.INFO, message); }
+    display (message: string | messageBuilder) { this.log(LogLevel.DISPLAY, message); }
+    warning (message: string | messageBuilder) { this.log(LogLevel.WARNING, message); }
+    error (message: string | messageBuilder) { this.log(LogLevel.ERROR, message); }
 }
