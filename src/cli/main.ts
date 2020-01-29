@@ -9,6 +9,7 @@ import { addCommonOptions, applyLogLevel, openDevice } from "../utils/commandLin
 import * as Commands from "./commands";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import { nextTick } from "../utils/promiseUtils";
+import { parseCommand } from "../utils/parsers";
 
 addCommonOptions(program);
 program
@@ -53,8 +54,8 @@ async function onExit() {
 // Handler for a raw command string.
 export async function execCommand(commandString: string) {
     try {
-        const commandArgs = commandString.trim().split(" ").filter((s) => !!s);
-        if (commandArgs.length == 0 || !commandArgs[0]) return;
+        const commandArgs = parseCommand(commandString);
+        if (commandArgs.length == 0) return;
 
         const commandName = commandArgs.shift();
         const command = resolveCommand(commandName);
