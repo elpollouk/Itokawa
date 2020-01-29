@@ -52,7 +52,7 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
     protected _setState(state: CommandStationState) {
         const prevState = this._state;
         this._state = state;
-        this._log.debug(`State changing from ${CommandStationState[prevState]} to ${CommandStationState[state]}`);
+        this._log.debug(() => `State changing from ${CommandStationState[prevState]} to ${CommandStationState[state]}`);
         this.emit("state", this._state, prevState);
     }
 }
