@@ -50,7 +50,7 @@ echo.minArgs = 1;
 echo.help = "Echo args back to the output."
 
 // Emergency stop
-export async function estop(args: string[]) {
+export async function estop(args?: string[]) {
     if (_seenLocos.size == 0) error("No locos have received commands yet.");
 
     const batch = await _commandStation.beginCommandBatch();

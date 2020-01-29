@@ -7,7 +7,7 @@ import { toHumanHex } from "../../utils/hex";
 
 const log = new Logger("eLink");
 
-export let Config = {
+let Config = {
     heartbeatTime: 5
 }
 
@@ -56,6 +56,7 @@ function updateHandshakeMessage(data: number[]) {
 
 export class ELinkCommandStation extends CommandStationBase {
     static readonly deviceId = "eLink";
+    static config = Config;
 
     static async open(connectionString: string) {
         let cs = new ELinkCommandStation(connectionString);

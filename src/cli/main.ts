@@ -10,6 +10,7 @@ import * as Commands from "./commands";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import { nextTick } from "../utils/promiseUtils";
 import { parseCommand } from "../utils/parsers";
+import { toHumanHex } from "../utils/hex";
 
 addCommonOptions(program);
 program
@@ -45,7 +46,7 @@ export function error(message: string) {
 // Handler for clean up when exit command is issued
 async function onExit() {
     try {
-        if (program.exitEstop) await Commands.estop(null);
+        if (program.exitEstop) await Commands.estop();
     }
     catch(ex) {
         if (!(ex instanceof CommandError)) throw ex;
@@ -94,7 +95,13 @@ async function main() {
         console.error("No deviced detected, exiting...");
         process.exit(1);
     }
+
     console.log(`Using ${_commandStation.deviceId} ${_commandStation.version}`);
+    // Dump data received in raw mode
+    _commandStation.on("data", (data: Buffer | number[]) => {
+        console.log(`data: ${toHumanHex(data)}`);
+    });
+
     Commands.setCommandStation(_commandStation);
     Commands.setExitHook(onExit);
 
@@ -114,8 +121,6 @@ async function main() {
         prompt: "dcc> "
     });
 
-    rl.prompt();
-
     // Commands can execute asynchronously, so we need to buffer user requets while execution is in progress
     let busy = false;
     let lineBuffer = [];
@@ -133,6 +138,7 @@ async function main() {
         busy = false;
     }
 
+    rl.prompt();
     rl.on("line", (line) => {
 
         lineBuffer.push(line);
