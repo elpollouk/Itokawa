@@ -3,6 +3,7 @@ import { stub, createStubInstance } from "sinon";
 import "mocha";
 import { CommandStationError, CommandStationBase, CommandStationState } from "./commandStation";
 import { Logger } from "../../utils/logger";
+import { nextTick } from "../../utils/promiseUtils";
 
 describe("CommandSation Error", () => {
     it("should extend Error correctly", () => {
@@ -53,6 +54,13 @@ describe("Command Station Base", () => {
             this._setIdle();
         }
     
+        untilState(state: CommandStationState): Promise<void> {
+            return this._untilState(state);
+        }
+
+        untilIdle(): Promise<void> {
+            return this._untilIdle();
+        }
     }
 
     describe("Constructor", () => {
@@ -79,6 +87,52 @@ describe("Command Station Base", () => {
 
             expect(cs.state).to.equal(CommandStationState.IDLE);
             expect(onState.lastCall.args).to.eql([CommandStationState.IDLE, CommandStationState.UNINITIALISED]);
+        })
+
+        it ("should not fire state changed events multiple times for same event", () => {
+            const cs = new TestCommmandStation();
+            const onState = stub();
+            cs.on("state", onState);
+            cs.setState(CommandStationState.IDLE);
+            cs.setState(CommandStationState.IDLE);
+
+            expect(onState.callCount).to.equal(1);
+            expect(onState.lastCall.args).to.eql([CommandStationState.IDLE, CommandStationState.UNINITIALISED]);
+        })
+
+        it ("should be possible to await until a specific state", async () => {
+            const cs = new TestCommmandStation();
+            const then = stub();
+            const error = stub();
+            cs.untilState(CommandStationState.INITIALISING).then(then, error);
+            await nextTick();
+
+            expect(then.callCount).to.equal(0);
+            expect(error.callCount).to.equal(0);
+
+            cs.setState(CommandStationState.IDLE);
+            await nextTick();
+
+            expect(then.callCount).to.equal(0);
+            expect(error.callCount).to.equal(0);
+
+            cs.setState(CommandStationState.INITIALISING);
+            await nextTick();
+
+            expect(then.callCount).to.equal(1);
+            expect(error.callCount).to.equal(0);
+        })
+
+        it ("should be possible to await until IDLE state", async () => {
+            const cs = new TestCommmandStation();
+            const then = stub();
+            const error = stub();
+            cs.untilIdle().then(then, error);
+            cs.setState(CommandStationState.IDLE);
+            await nextTick();
+
+            expect(then.callCount).to.equal(1);
+            expect(error.callCount).to.equal(0);
         })
     })
 

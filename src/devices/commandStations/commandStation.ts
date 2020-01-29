@@ -58,6 +58,7 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
     abstract beginCommandBatch(): Promise<ICommandBatch>;
 
     protected _setState(state: CommandStationState) {
+        if (state === this._state) return;
         const prevState = this._state;
         this._state = state;
         this._log.debug(() => `State changing from ${CommandStationState[prevState]} to ${CommandStationState[state]}`);
@@ -80,6 +81,22 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
         this._setState(CommandStationState.IDLE);
     }
 
+    protected _untilState(state: CommandStationState): Promise<void> {
+        if (this.state === state) return Promise.resolve();
+        return new Promise((resolve) => {
+            const listener = async (newState: CommandStationState) => {
+                if (newState === state) {
+                    this.off("state", listener);
+                    resolve();
+                }
+            };
+            const token = this.on("state", listener);
+        });
+    }
+
+    protected _untilIdle(): Promise<void> {
+        return this._untilState(CommandStationState.IDLE);
+    }
 }
 
 export class CommandStationError extends Error {
