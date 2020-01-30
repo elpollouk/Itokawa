@@ -2,6 +2,7 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
 import { stub, createStubInstance, SinonStub, SinonStubbedInstance, StubbableType, SinonStubbedMember } from "sinon"
+import { nextTick } from "../../utils/promiseUtils"
 import { AsyncSerialPort } from "../asyncSerialPort"
 import { ELinkCommandStation, ELinkCommandBatch } from "./elink";
 import { CommandStationState } from "./commandStation";
@@ -19,9 +20,10 @@ export function createSinonStubInstance<T>(
 describe("eLink", () => {
     let serialPortOpenStub: SinonStub;
     let setTimeoutStub: SinonStub;
+    let clearTimeoutStub: SinonStub;
     let serialPortStub: StubbedClass<AsyncSerialPort>;
 
-    let portWrites: number[][];
+    let portWrites: (number[] | Buffer)[];
     let portReads: number[][];
 
     function initReads() {
@@ -33,13 +35,22 @@ describe("eLink", () => {
         portReads.push([0x63, 0x21, 0x6B, 0x01, 0x28]);
     }
 
+    function clearIoForAck() {
+        // Clear writes and store reads for command ack
+        portWrites = [];
+        portReads = [
+            [0x62],
+            [0x22, 0x40, 0x00]
+        ];
+    }
+
     beforeEach(() => {
         portWrites = [];
         initReads();
 
         serialPortStub = createSinonStubInstance(AsyncSerialPort);
         serialPortStub.read.callsFake((size) => {
-            if (portReads.length === 0) return Promise.reject(new Error("Unexpect port read in test"));
+            if (portReads.length === 0) return Promise.reject(new Error(`Unexpect port read in test, size=${size}`));
             const data = portReads.shift();
             if (data.length !== size) return Promise.reject(new Error(`Unexpected port read size in test, expected=${data.length}, actual=${size}`));
             return Promise.resolve(data);
@@ -48,16 +59,22 @@ describe("eLink", () => {
             const data = await serialPortStub.read(size);
             return originalData.concat(data);
         });
+        serialPortStub.write.callsFake((data) => {
+            portWrites.push(data);
+            return Promise.resolve();
+        })
 
         serialPortOpenStub = stub(AsyncSerialPort, "open")
             .returns(Promise.resolve(serialPortStub));
 
-        setTimeoutStub = stub(global, "setTimeout");
+        setTimeoutStub = stub(global, "setTimeout").returns({} as NodeJS.Timeout);
+        clearTimeoutStub = stub(global, "clearTimeout");
     })
 
     afterEach(() => {
         serialPortOpenStub.restore();
         setTimeoutStub.restore();
+        clearTimeoutStub.restore();
     })
 
     describe("Open", () => {
@@ -76,6 +93,27 @@ describe("eLink", () => {
             expect(serialPortStub.close.callCount).to.equal(0);
             expect(setTimeoutStub.callCount).to.equal(1);
         })
+
+        it ("should handshake correctly when required", async () => {
+            portReads = [
+                [0x01],
+                [0x02, 0x03],
+                [0x35, 0x00, 0x00, 0x00, 0x00, 0x00, 0x35],
+                [0x01, 0x04, 0x05],
+                [0x63, 0x21, 0x6B, 0x01, 0x28]
+            ];
+
+            const cs = await ELinkCommandStation.open("");
+
+            expect(cs.state).to.equal(CommandStationState.IDLE);
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0x21, 0x24, 0x05],
+                [0x3A, 0x36, 0x34, 0x4A, 0x4B, 0x44, 0x38, 0x39, 0x42, 0x53, 0x54, 0x39],
+                [0x35, 0x39, 0x39, 0x39, 0x39, 0x39, 0x0C],
+                [0x21, 0x21, 0x00]
+            ]);
+        });
 
         it("should fail if serial port fails to open", async () => {
             serialPortOpenStub.returns(Promise.reject(new Error("Mock Error")));
@@ -112,7 +150,70 @@ describe("eLink", () => {
             expect(handler.callCount).to.equal(1);
             expect(handler.lastCall.args[0].message).to.equal("Mock Error Event");
         })
-    });
+    })
+
+    describe("Heartbeat", () => {
+        it("should send a heartbeat when timer expires", async () => {
+            const cs = await ELinkCommandStation.open("");
+            clearIoForAck();
+
+            setTimeoutStub.lastCall.args[0]();
+            expect(cs.state).to.equal(CommandStationState.BUSY);
+
+            await nextTick();
+            expect(cs.state).to.equal(CommandStationState.IDLE);
+            expect(setTimeoutStub.callCount).to.equal(2);
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0x21, 0x24, 0x05]
+            ]);
+        })
+
+        it("shouldn't send a heartbeat if eLink in busy state", async () => {
+            const cs = await ELinkCommandStation.open("");
+            cs["_state"] = CommandStationState.BUSY;
+
+            setTimeoutStub.lastCall.args[0]();
+
+            await nextTick();
+            expect(setTimeoutStub.callCount).to.equal(1);
+        })
+
+        it("should fire error event on heartbeat error", async () => {
+            const cs = await ELinkCommandStation.open("");
+            const onError = stub();
+            cs.on("error", onError);
+            serialPortStub.write.throws(new Error("Mock Write Error"));
+
+            setTimeoutStub.lastCall.args[0]();
+            await nextTick();
+
+            expect(onError.callCount).to.equal(1);
+            expect(onError.lastCall.args[0].message).to.equal("Mock Write Error");
+            expect(cs.state).to.equal(CommandStationState.ERROR);
+        })
+    })
+
+    describe("Batch Committing", () => {
+        it("should write the correct data when committing a batch", async () => {
+            const cs = await ELinkCommandStation.open("");
+            const batch = await cs.beginCommandBatch();
+            batch.setLocomotiveSpeed(1000, 127);
+            batch.setLocomotiveSpeed(1001, 64, true);
+
+            clearIoForAck();
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x13, 0xC3, 0xE8, 0xFF, 0x23],
+                [0xE4, 0x13, 0xC3, 0xE9, 0x40, 0x9D],
+                [0x21, 0x24, 0x05]
+            ]);
+            expect(clearTimeoutStub.callCount).to.equal(1);
+            expect(setTimeoutStub.callCount).to.equal(2);
+        })
+    })
 
     describe("Command Batch", () => {
         it("should correctly set loco speed forward", async () => {

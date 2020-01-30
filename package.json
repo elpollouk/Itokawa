@@ -15,7 +15,6 @@
     "@serialport/list": "^8.0.6",
     "@types/chai": "^4.2.7",
     "@types/chai-as-promised": "^7.1.2",
-    "@types/commander": "^2.12.2",
     "@types/mocha": "^5.2.7",
     "@types/serialport": "^8.0.0",
     "@types/sinon": "^7.5.1",
