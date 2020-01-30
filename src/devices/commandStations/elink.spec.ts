@@ -1,0 +1,206 @@
+import { expect, use } from "chai";
+use(require("chai-as-promised"));
+import "mocha";
+import { stub, createStubInstance, SinonStub, SinonStubbedInstance, StubbableType, SinonStubbedMember } from "sinon"
+import { AsyncSerialPort } from "../asyncSerialPort"
+import { ELinkCommandStation, ELinkCommandBatch } from "./elink";
+import { CommandStationState } from "./commandStation";
+
+export type StubbedClass<T> = SinonStubbedInstance<T> & T;
+
+export function createSinonStubInstance<T>(
+  constructor: StubbableType<T>,
+  overrides?: { [K in keyof T]?: SinonStubbedMember<T[K]> },
+): StubbedClass<T> {
+  const stub = createStubInstance<T>(constructor, overrides);
+  return stub as unknown as StubbedClass<T>;
+}
+
+describe("eLink", () => {
+    let serialPortOpenStub: SinonStub;
+    let setTimeoutStub: SinonStub;
+    let serialPortStub: StubbedClass<AsyncSerialPort>;
+
+    let portWrites: number[][];
+    let portReads: number[][];
+
+    function initReads() {
+        portReads = [];
+        // Already initialised, no handshake required
+        portReads.push([0x62]);
+        portReads.push([0x22, 0x40, 0x00]);
+        // Version Info
+        portReads.push([0x63, 0x21, 0x6B, 0x01, 0x28]);
+    }
+
+    beforeEach(() => {
+        portWrites = [];
+        initReads();
+
+        serialPortStub = createSinonStubInstance(AsyncSerialPort);
+        serialPortStub.read.callsFake((size) => {
+            if (portReads.length === 0) return Promise.reject(new Error("Unexpect port read in test"));
+            const data = portReads.shift();
+            if (data.length !== size) return Promise.reject(new Error(`Unexpected port read size in test, expected=${data.length}, actual=${size}`));
+            return Promise.resolve(data);
+        });
+        serialPortStub.concatRead.callsFake(async (originalData, size) => {
+            const data = await serialPortStub.read(size);
+            return originalData.concat(data);
+        });
+
+        serialPortOpenStub = stub(AsyncSerialPort, "open")
+            .returns(Promise.resolve(serialPortStub));
+
+        setTimeoutStub = stub(global, "setTimeout");
+    })
+
+    afterEach(() => {
+        serialPortOpenStub.restore();
+        setTimeoutStub.restore();
+    })
+
+    describe("Open", () => {
+        it("should open an sync serial port with the correct parameters and handshake", async () => {
+            const cs = await ELinkCommandStation.open("/dev/ttyACM0");
+
+            expect(cs.state).to.eql(CommandStationState.IDLE);
+            expect(serialPortOpenStub.callCount).to.equal(1);
+            expect(serialPortOpenStub.lastCall.args).to.eql([
+                "/dev/ttyACM0",
+                {
+                    baudRate: 115200
+                }
+            ]);
+            expect(serialPortStub.on.callCount).to.equal(1);
+            expect(serialPortStub.close.callCount).to.equal(0);
+            expect(setTimeoutStub.callCount).to.equal(1);
+        })
+
+        it("should fail if serial port fails to open", async () => {
+            serialPortOpenStub.returns(Promise.reject(new Error("Mock Error")));
+            await expect(ELinkCommandStation.open("foo")).to.be.eventually.rejectedWith("Mock Error");
+        })
+
+        it("should fail if unexpected eLink version (1.06)", async () => {
+            // Remove 1.07 info message and replace it with a 1.06 message
+            portReads.pop();
+            portReads.push([0x63, 0x21, 0x6A, 0x01, 0x29]);
+            await expect(ELinkCommandStation.open("")).to.be.eventually.rejectedWith("Unsupported eLink version encountered, version=106");
+        })
+    })
+
+    describe("Close", () => {
+        it("should close underlying port and goto correct state", async () => {
+            const cs = await ELinkCommandStation.open("/dev/ttyACM0");
+            await cs.close();
+
+            expect(cs.state).to.equal(CommandStationState.UNINITIALISED);
+            expect(serialPortStub.close.callCount).to.equal(1);
+        })
+    })
+
+    describe("Events", () => {
+        it("should correctly raise error events", async () => {
+            const handler = stub();
+            const cs = await ELinkCommandStation.open("");
+            cs.on("error", handler);
+
+            expect(serialPortStub.on.lastCall.args[0]).to.equal("error");
+            serialPortStub.on.lastCall.args[1](new Error("Mock Error Event"));
+
+            expect(handler.callCount).to.equal(1);
+            expect(handler.lastCall.args[0].message).to.equal("Mock Error Event");
+        })
+    });
+
+    describe("Command Batch", () => {
+        it("should correctly set loco speed forward", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            batch.setLocomotiveSpeed(1234, 56);
+            await batch.commit();
+
+            expect(commit.callCount).to.equal(1);
+            expect(commit.lastCall.args).to.eqls([[
+                [0xE4, 0x13, 0xC4, 0xD2, 0xB8, 0x59]
+            ]]);
+        })
+
+        it("should correctly set loco speed reverse", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            batch.setLocomotiveSpeed(1234, 56, true);
+            await batch.commit();
+
+            expect(commit.callCount).to.equal(1);
+            expect(commit.lastCall.args).to.eqls([[
+                [0xE4, 0x13, 0xC4, 0xD2, 0x38, 0xD9]
+            ]]);
+        })
+
+        it("should correctly handle multiple commands", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            batch.setLocomotiveSpeed(1234, 56, true);
+            batch.setLocomotiveSpeed(9999, 0);
+            await batch.commit();
+
+            expect(commit.callCount).to.equal(1);
+            expect(commit.lastCall.args).to.eqls([[
+                [0xE4, 0x13, 0xC4, 0xD2, 0x38, 0xD9],
+                [0xE4, 0x13, 0xE7, 0x0F, 0x80, 0x9F]
+            ]]);
+        })
+
+        it("should reject loco addresses above 9999", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            expect(() => batch.setLocomotiveSpeed(10000, 0)).to.throw("Invalid long address, address=10000");
+        })
+
+        it("should reject speeds below 0", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            expect(() => batch.setLocomotiveSpeed(9999, -1)).to.throw("Invalid speed requested, speed=-1");
+        })
+
+        it("should reject speeds above 127", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            expect(() => batch.setLocomotiveSpeed(9999, 128)).to.throw("Invalid speed requested, speed=128");
+        })
+
+
+        it("should reject committing an empty batch ", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            await expect(batch.commit()).to.be.eventually.rejectedWith("Attempted to commit empty batch");
+        })
+
+        it("should reject double committing batch", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+            batch.setLocomotiveSpeed(9999, 0);
+            await batch.commit();
+
+            await expect(batch.commit()).to.be.eventually.rejectedWith("Batch has already been committed");
+        })
+
+        it("should reject new command on already committed batch", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+            batch.setLocomotiveSpeed(9999, 0);
+            await batch.commit();
+
+            expect(() => batch.setLocomotiveSpeed(1000, 0)).to.throw("Batch has already been committed");
+        })
+    })
+})

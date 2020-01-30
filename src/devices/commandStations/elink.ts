@@ -1,6 +1,5 @@
 import { Logger } from "../../utils/logger";
-import { EventEmitter } from "events";
-import { ICommandStation, CommandStationError, ICommandBatch, CommandStationState, CommandStationBase } from "./commandStation"
+import { CommandStationError, ICommandBatch, CommandStationState, CommandStationBase } from "./commandStation"
 import { AsyncSerialPort } from "../asyncSerialPort";
 import { encodeLongAddress } from "./nmraUtils";
 import { toHumanHex } from "../../utils/hex";
