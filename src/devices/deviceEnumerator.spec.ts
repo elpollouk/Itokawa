@@ -4,7 +4,7 @@ import * as sinon from "sinon";
 
 import { DeviceEnumerator } from "./deviceEnumerator";
 import * as SerialPort from "serialport";
-import { MockCommandStation } from "./commandStations/commandStation.mock";
+import { NullCommandStation } from "./commandStations/null";
 
 const ELINK_PNPID_WIN = "USB\\VID_04D8&PID_000A\\6&3A757EEC&1&2";
 
@@ -83,13 +83,13 @@ describe("Device Enumerator", () => {
         let devices = await DeviceEnumerator.listDevices();
         let cs = await devices[0].open();
 
-        expect(cs).to.be.an.instanceOf(MockCommandStation);
+        expect(cs).to.be.an.instanceOf(NullCommandStation);
     });
 
     it ("should be possible to open a registered device directly", async () => {
-        let cs = await DeviceEnumerator.openDevice("Mock Command Station", "Bar");
+        let cs = await DeviceEnumerator.openDevice("Null", "Bar");
 
-        expect(cs).to.be.instanceOf(MockCommandStation);
+        expect(cs).to.be.instanceOf(NullCommandStation);
     });
 
     it ("should fail if attempting to open an invalid device directly", () => {
