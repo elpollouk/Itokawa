@@ -1,4 +1,5 @@
-import { expect } from "chai";
+import { expect, use } from "chai";
+use(require("chai-as-promised"));
 import { stub, createStubInstance } from "sinon";
 import "mocha";
 import { CommandStationError, CommandStationBase, CommandStationState } from "./commandStation";
@@ -75,6 +76,13 @@ describe("Command Station Base", () => {
             const logStub = createStubInstance(Logger);
             const cs = new TestCommmandStation(logStub);
             expect(logStub.info.lastCall.args).to.eql(["Testing"]);
+        })
+    })
+
+    describe("Write Raw", () => {
+        it("should reject raw writes", async () => {
+            const cs = new TestCommmandStation();
+            await expect(cs.writeRaw([])).to.be.eventually.rejectedWith("Raw writes are not unsupported");
         })
     })
 

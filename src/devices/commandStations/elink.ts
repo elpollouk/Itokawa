@@ -108,6 +108,11 @@ export class ELinkCommandStation extends CommandStationBase {
         this._setState(CommandStationState.UNINITIALISED);
         log.info("Closed");
     }
+
+    async writeRaw(data: Buffer | number[]) {
+        this._ensureIdle();
+        await this._port.write(data);
+    }
     
     async beginCommandBatch() {
         log.info("Starting command batch");
@@ -272,6 +277,18 @@ export class ELinkCommandBatch implements ICommandBatch {
         command[4] = speed;
             
         this._addCommand(command);
+    }
+
+    writeRaw(data: Buffer | number[]) {
+        if (!data) throw new CommandStationError("Attempted to write null/undefined data");
+        if (data.length === 0) throw new CommandStationError("Attempted to write empty data")
+        if (data instanceof Buffer) {
+            const d = [];
+            for (let i = 0; i < data.length; i++)
+                d.push(data[i]);
+            data = d;
+        }
+        this._commands.push(data);
     }
 
     private _addCommand(command: number[]) {

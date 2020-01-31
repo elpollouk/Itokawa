@@ -144,6 +144,26 @@ describe("eLink", () => {
         })
     })
 
+    describe("Raw Writes", () => {
+        it("should write raw data directly to the serial port", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            portWrites = [];
+            await cs.writeRaw([0, 3, 5, 7]);
+
+            expect(portWrites).to.eql([
+                [0, 3, 5, 7]
+            ]);
+        })
+
+        it("should reject writes when not IDLE", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+            cs["_state"] = CommandStationState.BUSY;
+            
+            await expect(cs.writeRaw([0, 3, 5, 7])).to.be.eventually.rejected;
+        })
+    })
+
     describe("Events", () => {
         it("should correctly raise error events", async () => {
             const handler = stub();
@@ -248,18 +268,58 @@ describe("eLink", () => {
             ]]);
         })
 
+        it("should correctly add a raw number[] command to the batch", async() => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            batch.writeRaw([9, 7, 6, 5]);
+            await batch.commit();
+
+            expect(commit.callCount).to.equal(1);
+            expect(commit.lastCall.args).to.eqls([[
+                [0x09, 0x07, 0x06, 0x05]
+            ]]);
+        })
+
+        it("should correctly add a raw buffer command to the batch", async() => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            batch.writeRaw(Buffer.from([9, 7, 8]));
+            await batch.commit();
+
+            expect(commit.callCount).to.equal(1);
+            expect(commit.lastCall.args).to.eqls([[
+                [0x09, 0x07, 0x08]
+            ]]);
+        })
+
+        it("should reject a null raw write", async() => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            expect(() => batch.writeRaw(null)).to.throw("Attempted to write null/undefined data");
+        })
+
+        it("should reject an empty raw write", async() => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            expect(() => batch.writeRaw([])).to.throw("Attempted to write empty data");
+        })
+
         it("should correctly handle multiple commands", async () => {
             const commit = stub().returns(Promise.resolve());
             const batch = new ELinkCommandBatch(commit);
 
             batch.setLocomotiveSpeed(1234, 56, true);
-            batch.setLocomotiveSpeed(9999, 0);
+            batch.writeRaw([3, 7, 11]);
             await batch.commit();
 
             expect(commit.callCount).to.equal(1);
             expect(commit.lastCall.args).to.eqls([[
                 [0xE4, 0x13, 0xC4, 0xD2, 0x38, 0xD9],
-                [0xE4, 0x13, 0xE7, 0x0F, 0x80, 0x9F]
+                [0x03, 0x07, 0x0B]
             ]]);
         })
 

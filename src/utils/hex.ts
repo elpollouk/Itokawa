@@ -3,6 +3,8 @@ function leftPad(stringToPad: string, stringToPadWith: string): string {
 }
 
 export function toHumanHex(data: number[] | Buffer): string {
+    if (data.length === 0) return "";
+    
     let padding = "00";
     let r = leftPad(data[0].toString(16), padding);
     

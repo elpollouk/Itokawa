@@ -28,6 +28,12 @@ describe("Hexadecimal Utilities", () => {
 
             expect(result).to.equal("02, 101")
         })
+
+        it("should format an empty array", () => {
+            let result = hex.toHumanHex([]);
+
+            expect(result).to.equal("") 
+        })
     })
 
     describe("fromHex", () => {

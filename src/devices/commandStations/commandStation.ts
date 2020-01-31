@@ -13,6 +13,7 @@ export enum CommandStationState {
 export interface ICommandBatch {
     commit(): Promise<void>;
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean): void;
+    writeRaw(data: Buffer | number[]): void;
 }
 
 export interface ICommandStation extends NodeJS.EventEmitter {
@@ -22,6 +23,7 @@ export interface ICommandStation extends NodeJS.EventEmitter {
 
     close(): Promise<void>;
     beginCommandBatch(): Promise<ICommandBatch>;
+    writeRaw(data: Buffer | number[]): Promise<void>;
 }
 
 export interface ICommandStationConstructable {
@@ -56,6 +58,10 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
 
     abstract close(): Promise<void>;
     abstract beginCommandBatch(): Promise<ICommandBatch>;
+
+    writeRaw(data: Buffer | number[]): Promise<void> {
+        return Promise.reject(new CommandStationError("Raw writes are not unsupported"));
+    }
 
     protected _setState(state: CommandStationState) {
         if (state === this._state) return;

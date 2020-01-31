@@ -1,5 +1,6 @@
 import { Logger } from "../../utils/logger";
 import { CommandStationBase, ICommandBatch, CommandStationState, ICommandStation } from "./commandStation";
+import { toHumanHex } from "../../utils/hex";
 
 const log = new Logger("NullCommandStation");
 
@@ -8,7 +9,7 @@ export class NullCommandStation extends CommandStationBase {
     readonly deviceId = NullCommandStation.deviceId;
     version: string = "1.0.0";
 
-    static open(connectionString: string): Promise<ICommandStation> {
+    static open(connectionString?: string): Promise<ICommandStation> {
         let cs = new NullCommandStation();
         return Promise.resolve(cs);
     }
@@ -27,6 +28,11 @@ export class NullCommandStation extends CommandStationBase {
         log.debug("Beginning command batch...");
         return Promise.resolve(new NullCommandBatch());
     }
+
+    writeRaw(data: Buffer | number[]): Promise<void> {
+        log.debug(() => `Wrote ${data.length} bytes: ${toHumanHex(data)}`);
+        return Promise.resolve();
+    }
 }
 
 export class NullCommandBatch implements ICommandBatch {
@@ -38,5 +44,9 @@ export class NullCommandBatch implements ICommandBatch {
     
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?: boolean): void {
         log.debug(() => `setLocomotiveSpeed - locoId=${locomotiveId}, speed=${speed}, reverse=${!!reverse}`);
+    }
+
+    writeRaw(data: Buffer | number[]): void {
+        log.debug(() => `writeRaw - bytes=${data.length}, data=${toHumanHex(data)}`);
     }
 }
