@@ -17,6 +17,8 @@ export function createSinonStubInstance<T>(
   return stub as unknown as StubbedClass<T>;
 }
 
+const CONNECTION_STRING = "port=/dev/ttyACM0";
+
 describe("eLink", () => {
     let serialPortOpenStub: SinonStub;
     let setTimeoutStub: SinonStub;
@@ -79,7 +81,7 @@ describe("eLink", () => {
 
     describe("Open", () => {
         it("should open an sync serial port with the correct parameters and handshake", async () => {
-            const cs = await ELinkCommandStation.open("/dev/ttyACM0");
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
 
             expect(cs.state).to.eql(CommandStationState.IDLE);
             expect(serialPortOpenStub.callCount).to.equal(1);
@@ -103,7 +105,7 @@ describe("eLink", () => {
                 [0x63, 0x21, 0x6B, 0x01, 0x28]
             ];
 
-            const cs = await ELinkCommandStation.open("");
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
 
             expect(cs.state).to.equal(CommandStationState.IDLE);
             expect(portReads).to.be.empty;
@@ -115,22 +117,26 @@ describe("eLink", () => {
             ]);
         });
 
+        it("should fail if port isn't specified in connection string", async () => {
+            await expect(ELinkCommandStation.open("")).to.be.eventually.rejectedWith("\"port\" not specified in connection string");
+        })
+
         it("should fail if serial port fails to open", async () => {
             serialPortOpenStub.returns(Promise.reject(new Error("Mock Error")));
-            await expect(ELinkCommandStation.open("foo")).to.be.eventually.rejectedWith("Mock Error");
+            await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Mock Error");
         })
 
         it("should fail if unexpected eLink version (1.06)", async () => {
             // Remove 1.07 info message and replace it with a 1.06 message
             portReads.pop();
             portReads.push([0x63, 0x21, 0x6A, 0x01, 0x29]);
-            await expect(ELinkCommandStation.open("")).to.be.eventually.rejectedWith("Unsupported eLink version encountered, version=106");
+            await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Unsupported eLink version encountered, version=106");
         })
     })
 
     describe("Close", () => {
         it("should close underlying port and goto correct state", async () => {
-            const cs = await ELinkCommandStation.open("/dev/ttyACM0");
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
             await cs.close();
 
             expect(cs.state).to.equal(CommandStationState.UNINITIALISED);
@@ -141,7 +147,7 @@ describe("eLink", () => {
     describe("Events", () => {
         it("should correctly raise error events", async () => {
             const handler = stub();
-            const cs = await ELinkCommandStation.open("");
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
             cs.on("error", handler);
 
             expect(serialPortStub.on.lastCall.args[0]).to.equal("error");
@@ -154,7 +160,7 @@ describe("eLink", () => {
 
     describe("Heartbeat", () => {
         it("should send a heartbeat when timer expires", async () => {
-            const cs = await ELinkCommandStation.open("");
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
             clearIoForAck();
 
             setTimeoutStub.lastCall.args[0]();
@@ -170,7 +176,7 @@ describe("eLink", () => {
         })
 
         it("shouldn't send a heartbeat if eLink in busy state", async () => {
-            const cs = await ELinkCommandStation.open("");
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
             cs["_state"] = CommandStationState.BUSY;
 
             setTimeoutStub.lastCall.args[0]();
@@ -180,7 +186,7 @@ describe("eLink", () => {
         })
 
         it("should fire error event on heartbeat error", async () => {
-            const cs = await ELinkCommandStation.open("");
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
             const onError = stub();
             cs.on("error", onError);
             serialPortStub.write.throws(new Error("Mock Write Error"));
@@ -196,7 +202,7 @@ describe("eLink", () => {
 
     describe("Batch Committing", () => {
         it("should write the correct data when committing a batch", async () => {
-            const cs = await ELinkCommandStation.open("");
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
             const batch = await cs.beginCommandBatch();
             batch.setLocomotiveSpeed(1000, 127);
             batch.setLocomotiveSpeed(1001, 64, true);

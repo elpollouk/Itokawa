@@ -3,6 +3,7 @@ import { CommandStationError, ICommandBatch, CommandStationState, CommandStation
 import { AsyncSerialPort } from "../asyncSerialPort";
 import { encodeLongAddress } from "./nmraUtils";
 import { toHumanHex } from "../../utils/hex";
+import { parseConnectionString } from "../../utils/parsers";
 
 const log = new Logger("eLink");
 
@@ -71,16 +72,18 @@ export class ELinkCommandStation extends CommandStationBase {
 
     get version(): string { return this._version; }
 
-    constructor(private _portPath: string) {
+    constructor(private _connectionString: string) {
         super(log);
     }
 
     async init() {
         this._ensureState(CommandStationState.UNINITIALISED);
+        const config = parseConnectionString(this._connectionString);
+        if (!config.port) throw new CommandStationError("\"port\" not specified in connection string");
 
         this._setState(CommandStationState.INITIALISING);
-        log.info(`Opening port ${this._portPath}...`);
-        this._port = await AsyncSerialPort.open(this._portPath, {
+        log.info(`Opening port ${config.port}...`);
+        this._port = await AsyncSerialPort.open(config.port, {
             baudRate: 115200
         });
         this._port.on("error", (err) => {

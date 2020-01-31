@@ -50,7 +50,7 @@ export class DeviceEnumerator {
                     path: port.path,
                     manufacturer: port.manufacturer,
                     pnpId: port.pnpId,
-                    open: () => DeviceEnumerator.openDevice(device, port.path)
+                    open: () => DeviceEnumerator.openDevice(device, `port=${port.path}`)
                 });
             }
         }
