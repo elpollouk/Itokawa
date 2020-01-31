@@ -3,6 +3,7 @@ import { resolveCommand, error, execCommand } from "./main"
 import { timeout } from "../utils/promiseUtils";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import * as fs from "fs";
+import { fromHex } from "../utils/hex";
 
 let _exitHook: ()=>Promise<void> = null;
 let _commandStation: ICommandStation = null;
@@ -143,6 +144,26 @@ export async function loglevel(args: string[]) {
 loglevel.minArgs = 0;
 loglevel.maxArgs = 1;
 loglevel.help = "Sets the application log level.\n  Usage: loglevel [NONE|ERROR|WARNING|DISPLAY|INFO|DEBUG]";
+
+// Write raw data as part of a command batch
+export async function raw_command(args: string[]) {
+    const hex = args.join("");
+    const data = fromHex(hex);
+    const batch = await _commandStation.beginCommandBatch();
+    batch.writeRaw(data);
+    await batch.commit();
+}
+raw_command.minArgs = 1;
+raw_command.help = "Write raw bytes as a command batch\n  Udate: raw_command HEX_DATA";
+
+// Write raw data directly to the command station
+export async function raw_write(args: string[]) {
+    const hex = args.join("");
+    const data = fromHex(hex);
+    await _commandStation.writeRaw(data);
+}
+raw_write.minArgs = 1;
+raw_write.help = "Write raw bytes to the command station\n  Udate: raw_write HEX_DATA";
 
 // Sleep
 export async function sleep(args: string[]) {

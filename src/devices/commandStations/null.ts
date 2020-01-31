@@ -30,7 +30,7 @@ export class NullCommandStation extends CommandStationBase {
     }
 
     writeRaw(data: Buffer | number[]): Promise<void> {
-        log.debug(() => `Wrote ${data.length} bytes: ${toHumanHex(data)}`);
+        log.debug(() => `writeRaw to command station, size=${data.length} bytes=${toHumanHex(data)}`);
         return Promise.resolve();
     }
 }
