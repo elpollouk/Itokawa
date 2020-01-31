@@ -1,28 +1,49 @@
 import { expect } from "chai";
 import "mocha";
 import "./parsers";
-import { parseCommand } from "./parsers";
+import { parseCommand, splitStringEx } from "./parsers";
 
 describe("Parsers", () => {
 
+    describe("SplitStringEx", () => {
+        it("should handle arbitary formats", () => {
+            const result = splitStringEx("a: &b c\nd&  :f*:*&&:**:", [":"], "&", "*");
+            expect(result).to.eql([
+                "a",
+                " b c\nd  ",
+                "f:&:*:"
+            ]);
+        })
+
+        it("should handle empty strings", () => {
+            const result = splitStringEx("", [":"], "&", "*");
+            expect(result).to.be.empty;
+        })
+
+        it("should handle null strings", () => {
+            const result = splitStringEx(null, [":"], "&", "*");
+            expect(result).to.be.empty;
+        })
+    })
+
     describe("Command Parser", () => {
 
-        it("Should parse simple format commands", () => {
+        it("should parse simple format commands", () => {
             const result = parseCommand("a b c");
             expect(result).to.eql(["a", "b", "c"]);
         });
 
-        it("Should parse command with quoted words", () => {
+        it("should parse command with quoted words", () => {
             const result = parseCommand("one  \"two three\" four");
             expect(result).to.eql(["one", "two three", "four"]);
         });
 
-        it("Should parse completely quoted command", () => {
+        it("should parse completely quoted command", () => {
             const result = parseCommand("\"one  two  three  four\"");
             expect(result).to.eql(["one  two  three  four"]);
         });
 
-        it("Should parse command with embedded quotes within words", () => {
+        it("should parse command with embedded quotes within words", () => {
             const result = parseCommand("*\"Hello World\"!!*");
             expect(result).to.eql(["*Hello World!!*"]);
         });

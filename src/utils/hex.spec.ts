@@ -50,6 +50,8 @@ describe("Hexadecimal Utilities", () => {
             expect(() => hex.fromHex("x")).to.throw("'x' is not a valid hex char");
             expect(() => hex.fromHex("g")).to.throw("'g' is not a valid hex char");
             expect(() => hex.fromHex("G")).to.throw("'G' is not a valid hex char");
+            expect(() => hex.fromHex("@")).to.throw("'@' is not a valid hex char"); // ASCII char immediately before 'A'
+            expect(() => hex.fromHex("`")).to.throw("'`' is not a valid hex char"); // ASCII char immediately before 'a'
         })
 
         it("should fail on incomplete byte", () => {

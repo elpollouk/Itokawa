@@ -1,25 +1,27 @@
 const _whitespaceChars = new Set([" ", "\t", "\r", "\n", ""]);
 
-export function parseCommand(command: string): string[] {
-    command = command || "";
+export function splitStringEx(text: string, splitChars: Set<string> | string[], quoteChar: string, escapeChar: string): string[] {
+    if (Array.isArray(splitChars)) splitChars = new Set(splitChars);
+
+    text = text || "";
     let commandArgs: string[] = [];
     let currentWord: string = "";
     let quoteMode: boolean = false;
 
-    for (let i = 0; i < command.length; i++) {
+    for (let i = 0; i < text.length; i++) {
         let isEscaped = false;
-        let c = command[i];
-        if (c === "\"") {
+        let c = text[i];
+        if (c === quoteChar) {
             quoteMode = !quoteMode;
             continue;
         }
-        if (c === "^") {
+        if (c === escapeChar) {
             isEscaped = true;
             i++;
-            c = command[i] || "";
+            c = text[i] || "";
         }
 
-        if (_whitespaceChars.has(c) && !quoteMode && !isEscaped) {
+        if (splitChars.has(c) && !quoteMode && !isEscaped) {
             if (currentWord) {
                 commandArgs.push(currentWord);
                 currentWord = "";
@@ -33,4 +35,8 @@ export function parseCommand(command: string): string[] {
     if (currentWord) commandArgs.push(currentWord);
 
     return commandArgs;
+}
+
+export function parseCommand(command: string): string[] {
+    return splitStringEx(command, _whitespaceChars, "\"", "^");
 }
