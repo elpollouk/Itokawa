@@ -26,27 +26,27 @@ describe("NMRA Utilities", () => {
             expect(buffer).to.eql([0x00, 0xD0, 0xD1, 0x00]);
         });
 
-        it("should correctly encode an address above 127 into Buffer with offset", () => {
+        it("should correctly encode an address above 100 into Buffer with offset", () => {
             let buffer = Buffer.alloc(4);
             encodeLongAddress(4305, buffer, 2);
 
             expect(buffer).to.eql(Buffer.from([0x00, 0x00, 0xD0, 0xD1]));
         });
 
-        it("should correctly encode address 128", () => {
+        it("should correctly encode address 100", () => {
             let buffer = [0, 0];
-            encodeLongAddress(128, buffer);
+            encodeLongAddress(100, buffer);
 
-            expect(buffer).to.eql([0xC0, 0x80]);
+            expect(buffer).to.eql([0xC0, 0x64]);
         });
 
-        it("should fail for address 127", () => {
+        it("should fail for address 99", () => {
             let buffer = Buffer.alloc(2);
 
-            expect(() => encodeLongAddress(127, buffer)).to.throw("Invalid long address, address=127");
+            expect(() => encodeLongAddress(99, buffer)).to.throw("Invalid long address, address=99");
         });
 
-        it("should fail for addresses below 127", () => {
+        it("should fail for addresses below 99", () => {
             let buffer = Buffer.alloc(2);
 
             expect(() => encodeLongAddress(3, buffer)).to.throw("Invalid long address, address=3");
