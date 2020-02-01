@@ -147,11 +147,21 @@ describe("eLink", () => {
             ]);
         })
 
-        it("should reject writes when not IDLE", async () => {
+        it("should wait on raw writes when not IDLE", async () => {
             const cs = await ELinkCommandStation.open(CONNECTION_STRING);
             cs["_state"] = CommandStationState.BUSY;
             
-            await expect(cs.writeRaw([0, 3, 5, 7])).to.be.eventually.rejected;
+            const promise = cs.writeRaw([0, 3, 5, 7]);
+            await nextTick();
+            await nextTick();
+
+            portWrites = [];
+            cs["_setState"](CommandStationState.IDLE);
+            await promise;
+
+            expect(portWrites).to.eql([
+                [0, 3, 5, 7]
+            ]);
         })
     })
 

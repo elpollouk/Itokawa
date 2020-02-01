@@ -107,6 +107,13 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
         this._setState(to);
     }
 
+    protected async _requestIdleToBusy(): Promise<void> {
+        return this._requestStateTransition(
+            CommandStationState.IDLE,
+            CommandStationState.BUSY
+        );
+    }
+
     protected _untilIdle(): Promise<void> {
         return this._untilState(CommandStationState.IDLE);
     }

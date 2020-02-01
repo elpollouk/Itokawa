@@ -39,6 +39,8 @@ function ensureValidMessage(message: number[], type?:MessageType) {
 }
 
 function applyChecksum(message: number[] | Buffer) {
+    // Interestingly, the eLink doesn't seem to verify checksums and will accept
+    // any valid-ish message without complaining.
     let checkSum = 0;
     for (let i = 0; i < message.length - 1; i++)
         checkSum ^= message[i];
@@ -47,6 +49,9 @@ function applyChecksum(message: number[] | Buffer) {
 }
 
 function updateHandshakeMessage(data: number[]) {
+    // Modification of original eLink message has been observed to be +0x39 on
+    // multiple machines. 0x39 could be the checksum of the previous message
+    // the software sent the eLink, or it could be a hard coded value
     data[0] = MessageType.HANDSHAKE_EXCHANGE;
     for (let i = 1; i < 6; i++)
         data[i] = (data[i] + 0x39) & 0xFF;
@@ -110,8 +115,9 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     async writeRaw(data: Buffer | number[]) {
-        this._ensureIdle();
+        await this._requestIdleToBusy();
         await this._port.write(data);
+        this._setIdle();
     }
     
     async beginCommandBatch() {
@@ -122,12 +128,10 @@ export class ELinkCommandStation extends CommandStationBase {
     private async _commitCommandBatch(batch: number[][]) {
         log.info("Committing command batch...")
 
-        await this._requestStateTransition(
-            CommandStationState.IDLE,
-            CommandStationState.BUSY
-        );
-        
+        await this._requestIdleToBusy();
         try {
+            // We need to cancel heartbeats when sending commands as we write a heartbeat request
+            // at the end of the batch anyway.
             this._cancelHeartbeart();
 
             for (let command of batch)
@@ -149,6 +153,9 @@ export class ELinkCommandStation extends CommandStationBase {
         this._heartbeatToken = setTimeout(() => {
 
             log.info("Requesting hearbeat...");
+            // It's theoretically possible for this event to fire while we're already writing to the port.
+            // In this case, abort the request and rely on the current port user to schedule the next
+            // heartbeat.
             if (this.state != CommandStationState.IDLE) {
                 log.error(`eLink in invalid state for heartbeat, state=${CommandStationState[this.state]}`);
                 return;
@@ -163,6 +170,7 @@ export class ELinkCommandStation extends CommandStationBase {
 
             }, (err) => {
 
+                // Heartbeat failed, so assume the device connection has also failed and flag error
                 log.error(`Failed sending heartbeat request: ${err}`);
                 if (err.stack) log.error(err.stack);
                 this._setState(CommandStationState.ERROR);
@@ -182,10 +190,10 @@ export class ELinkCommandStation extends CommandStationBase {
 
     private async _sendStatusRequest() {
         await this._port.write([MessageType.INFO_REQ, 0x24, 0x05]);
-        await this._dispathResponse();
+        await this._disbatchResponse();
     }
 
-    private async _dispathResponse() {
+    private async _disbatchResponse() {
         let data = await this._port.read(1);
     
         switch (data[0])
@@ -212,11 +220,14 @@ export class ELinkCommandStation extends CommandStationBase {
         if (data[1] != 0x04) {
             log.info("Received handshake request");
 
+            // I'm assuming the string is a key, but it seems to be the same for all computers
             await this._port.write([MessageType.HANDSHAKE_KEY, 0x36, 0x34, 0x4A, 0x4B, 0x44, 0x38, 0x39, 0x42, 0x53, 0x54, 0x39]);
             data = await this._port.read(7);
             ensureValidMessage(data, MessageType.HANDSHAKE_EXCHANGE);
             log.info("Received check bytes");
 
+            // We received a series of bytes that we need to modify and send back in order to
+            // complete the handshake
             updateHandshakeMessage(data);
             await this._port.write(data);
             data = await this._port.read(3);
@@ -227,6 +238,7 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     private async _handleInfoResponse(data: number[]) {
+        // This seems to be a generic "OK" message, I've never seen it change
         data = await this._port.concatRead(data, 3);
         ensureValidMessage(data);
 
@@ -243,6 +255,8 @@ export class ELinkCommandStation extends CommandStationBase {
         const data = await this._port.read(5);
         ensureValidMessage(data);
 
+        // I'm sure all the fields in this message contain interesting info, but I have no indication
+        // what they are. At a guess, possibly a firmware checksum to verify updates.
         const version = data[2];
         if (!SUPPORTED_VERSIONS.has(version))
             throw new CommandStationError(`Unsupported eLink version encountered, version=${version}`);
