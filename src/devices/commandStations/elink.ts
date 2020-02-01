@@ -274,7 +274,14 @@ export class ELinkCommandBatch implements ICommandBatch {
         if (speed < 0 || speed > 127) throw new CommandStationError(`Invalid speed requested, speed=${speed}`);
 
         let command = [ MessageType.LOCO_COMMAND, LocoCommand.SET_SPEED, 0x00, 0x00, 0x00, 0x00 ];
-        encodeLongAddress(locomotiveId, command, 2);
+        if (locomotiveId < 100) {
+            // Short addresses can be written directly into the packet
+            command[3] = locomotiveId;
+        }
+        else {
+            encodeLongAddress(locomotiveId, command, 2);
+        }
+
         speed &= 0x7F;
         if (!reverse) speed |= 0x80;
         command[4] = speed;

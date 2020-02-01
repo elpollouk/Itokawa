@@ -287,6 +287,40 @@ describe("eLink", () => {
             ]]);
         })
 
+        it("should correctly encode loco addesses belowe 100", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            batch.setLocomotiveSpeed(3, 127, true);
+            await batch.commit();
+
+            expect(commit.callCount).to.equal(1);
+            expect(commit.lastCall.args).to.eqls([[
+                [0xE4, 0x13, 0x00, 0x03, 0x7F, 0x8B]
+            ]]);
+        })
+
+        it("should reject loco addresses above 9999", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            expect(() => batch.setLocomotiveSpeed(10000, 0)).to.throw("Invalid long address, address=10000");
+        })
+
+        it("should reject speeds below 0", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            expect(() => batch.setLocomotiveSpeed(9999, -1)).to.throw("Invalid speed requested, speed=-1");
+        })
+
+        it("should reject speeds above 127", async () => {
+            const commit = stub().returns(Promise.resolve());
+            const batch = new ELinkCommandBatch(commit);
+
+            expect(() => batch.setLocomotiveSpeed(9999, 128)).to.throw("Invalid speed requested, speed=128");
+        })
+
         it("should correctly add a raw number[] command to the batch", async() => {
             const commit = stub().returns(Promise.resolve());
             const batch = new ELinkCommandBatch(commit);
@@ -341,28 +375,6 @@ describe("eLink", () => {
                 [0x03, 0x07, 0x0B]
             ]]);
         })
-
-        it("should reject loco addresses above 9999", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-
-            expect(() => batch.setLocomotiveSpeed(10000, 0)).to.throw("Invalid long address, address=10000");
-        })
-
-        it("should reject speeds below 0", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-
-            expect(() => batch.setLocomotiveSpeed(9999, -1)).to.throw("Invalid speed requested, speed=-1");
-        })
-
-        it("should reject speeds above 127", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-
-            expect(() => batch.setLocomotiveSpeed(9999, 128)).to.throw("Invalid speed requested, speed=128");
-        })
-
 
         it("should reject committing an empty batch ", async () => {
             const commit = stub().returns(Promise.resolve());
