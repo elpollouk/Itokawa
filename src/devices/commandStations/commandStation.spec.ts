@@ -62,6 +62,10 @@ describe("Command Station Base", () => {
         untilIdle(): Promise<void> {
             return this._untilIdle();
         }
+
+        requestStateTransition(from: CommandStationState, to: CommandStationState): Promise<void> {
+            return this._requestStateTransition(from, to);
+        }
     }
 
     describe("Constructor", () => {
@@ -151,6 +155,43 @@ describe("Command Station Base", () => {
             cs.setState(CommandStationState.IDLE);
             await nextTick();
 
+            expect(then.callCount).to.equal(1);
+            expect(error.callCount).to.equal(0);
+        })
+
+        it ("should be possible to request a specific state transition", async () => {
+            const cs = new TestCommmandStation();
+            const then = stub();
+            const error = stub();
+
+            cs.requestStateTransition(
+                CommandStationState.INITIALISING,
+                CommandStationState.IDLE
+            ).then(then, error);
+            await nextTick();
+
+            expect(cs.state).to.equal(CommandStationState.UNINITIALISED);
+            cs.setState(CommandStationState.INITIALISING);
+            await nextTick();
+
+            expect(cs.state).to.equal(CommandStationState.IDLE);
+            expect(then.callCount).to.equal(1);
+            expect(error.callCount).to.equal(0);
+        })
+
+        it ("should be possible to request a transition from the current state", async () => {
+            const cs = new TestCommmandStation();
+            cs.setState(CommandStationState.IDLE);
+            const then = stub();
+            const error = stub();
+
+            cs.requestStateTransition(
+                CommandStationState.IDLE,
+                CommandStationState.BUSY
+            ).then(then, error);
+
+            expect(cs.state).to.equal(CommandStationState.BUSY);
+            await nextTick();
             expect(then.callCount).to.equal(1);
             expect(error.callCount).to.equal(0);
         })

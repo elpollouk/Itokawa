@@ -230,6 +230,34 @@ describe("eLink", () => {
             expect(clearTimeoutStub.callCount).to.equal(1);
             expect(setTimeoutStub.callCount).to.equal(2);
         })
+
+        it("should be possible to commit two batches at the same time safely", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+            const batch1 = await cs.beginCommandBatch();
+            batch1.setLocomotiveSpeed(1000, 127);
+            const batch2 = await cs.beginCommandBatch();
+            batch2.setLocomotiveSpeed(1000, 127, true);
+
+            portWrites = [];
+            // Add ACK messages
+            portReads.push([0x62]);
+            portReads.push([0x22, 0x40, 0x00]);
+            portReads.push([0x62]);
+            portReads.push([0x22, 0x40, 0x00]);
+
+            const p1 = batch1.commit();
+            const p2 = batch2.commit();
+
+            await p2;
+            await p1;
+
+            expect(portWrites).to.eql([
+                [0xE4, 0x13, 0xC3, 0xE8, 0xFF, 0x23],
+                [0x21, 0x24, 0x05],
+                [0xE4, 0x13, 0xC3, 0xE8, 0x7F, 0xA3],
+                [0x21, 0x24, 0x05]
+            ]);
+        })
     })
 
     describe("Command Batch", () => {

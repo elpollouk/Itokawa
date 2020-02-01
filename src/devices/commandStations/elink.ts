@@ -121,10 +121,13 @@ export class ELinkCommandStation extends CommandStationBase {
 
     private async _commitCommandBatch(batch: number[][]) {
         log.info("Committing command batch...")
-        await this._untilIdle();
+
+        await this._requestStateTransition(
+            CommandStationState.IDLE,
+            CommandStationState.BUSY
+        );
         
         try {
-            this._setBusy();
             this._cancelHeartbeart();
 
             for (let command of batch)
