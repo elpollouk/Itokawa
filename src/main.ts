@@ -5,11 +5,12 @@ import * as expressWs from "express-ws";
 import * as program from "commander";
 import { addCommonOptions, applyLogLevel, openDevice } from "./utils/commandLineArgs";
 import { parseIntStrict } from "./utils/parsers";
-import { encodeLongAddress } from "./devices/commandStations/nmraUtils";
+import * as ngrok from "ngrok";
 
 addCommonOptions(program);
 program
-    .option("-p --port <port>", "Port to listen on", "8080");
+    .option("-p --port <port>", "Port to listen on", "8080")
+    .option("--ngrok", "Enable ngrok endpoint");
 
 Logger.logLevel = LogLevel.DEBUG;
 let log = new Logger("Main");
@@ -45,14 +46,29 @@ async function main()
             batch.setLocomotiveSpeed(request.locoId, request.speed, request.reverse);
             await batch.commit();
         });
-        log.info(`Web socket connected: remote=${req.ip}`);
+        log.info("Web socket connected");
     });
 
     app.use(express.static("static"));
 
-    const server = app.listen(parseIntStrict(program.port), (err) => {
+    const port = parseIntStrict(program.port);
+
+    const server = app.listen(port, (err) => {
+        if (err) {
+            log.error(`Failed to start listening on port ${port}`);
+            log.error(err);
+            return;
+        }
+
         const address: AddressInfo = server.address() as AddressInfo;
         log.display(`Listening on ${address.address}:${address.port}`);
+
+        ngrok.connect(port).then((url) => {
+            log.display(`ngrok url: ${url}`);
+        }, (err) => {
+            log.error("Failed to register ngrok endpoint");
+            log.error(err);
+        });
     })
 } 
 
