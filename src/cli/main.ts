@@ -19,8 +19,10 @@ program
     .option("-x --exec <script", "Execute a script")
     .option("--continue", "Continue to CLI after executing script or command");
 
+export type Output = (message:string)=>void;
+
 // Command function interface that specifies the available attributes
-type CommandFunc = (command:string[])=>Promise<void>;
+type CommandFunc = (command:string[], out:Output, error:Output)=>Promise<void>;
 export interface Command extends CommandFunc {
     notCommand?: boolean;           // Flag that the exported function is not a user command
     minArgs?: number;               // Minimum number of args the user must supply
@@ -38,15 +40,20 @@ export class CommandError extends Error {
 
 let _commandStation: ICommandStation = null;
 
+// Helper function for displaying command output to the user
+function out(message: string) {
+    console.log(message);
+}
+
 // Helper function to throw a user error of the correct type
-export function error(message: string) {
+function error(message: string) {
     throw new CommandError(message);
 }
 
 // Handler for clean up when exit command is issued
 async function onExit() {
     try {
-        if (program.exitEstop) await Commands.estop();
+        if (program.exitEstop) await Commands.estop(null, out, error);
     }
     catch(ex) {
         if (!(ex instanceof CommandError)) throw ex;
@@ -55,29 +62,33 @@ async function onExit() {
 }
 
 // Handler for a raw command string.
-export async function execCommand(commandString: string, suppressOk: boolean=false) {
+export async function execCommand(commandString: string, out: Output, error: Output, suppressOk: boolean=false) {
+    const commandArgs = parseCommand(commandString);
+    if (commandArgs.length == 0) return;
+
+    const commandName = commandArgs.shift();
+    const command = resolveCommand(commandName, error);
+
+    if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) error(`${commandName} expects at least ${command.minArgs} args`);
+    if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) error(`${commandName} expects at most ${command.maxArgs} args`);
+
+    await command(commandArgs, out, error);
+    if (!suppressOk) out("OK");
+}
+
+async function safeExec(exec: ()=>Promise<void>) {
     try {
-        const commandArgs = parseCommand(commandString);
-        if (commandArgs.length == 0) return;
-
-        const commandName = commandArgs.shift();
-        const command = resolveCommand(commandName);
-
-        if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) error(`${commandName} expects at least ${command.minArgs} args`);
-        if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) error(`${commandName} expects at most ${command.maxArgs} args`);
-
-        await command(commandArgs);
-        if (!suppressOk) console.log("OK");
+        await exec();
     }
-    catch(ex) {
+    catch (ex) {
         if (ex instanceof CommandError) console.error(ex.message);
-        else console.error(ex);
+        else console.error(ex);    
     }
 }
 
 // Return the function for the specified command.
 // If the command isn't found int the Commands exports or isn't a valid command function, an exception is raised
-export function resolveCommand(commandName: string): Command {
+export function resolveCommand(commandName: string, error: Output): Command {
     commandName = commandName.toLowerCase();
     const command = Commands[commandName] as Command;
     if (!(command instanceof Function)) error(`Unrecognised command '${commandName}'`);
@@ -107,12 +118,12 @@ async function main() {
 
     // A command or script has been explicitly specified on the command line, so execute it and then exit
     if (program.cmd) {
-        await execCommand(program.cmd, true);
-        if (!program.continue) await Commands.exit();
+        await safeExec(() => execCommand(program.cmd, out, error, true));
+        if (!program.continue) await Commands.exit(null, out, error);
     }
     else if (program.exec) {
-        await Commands.exec([program.exec]);
-        if (!program.continue) await Commands.exit();
+        await safeExec(() => Commands.exec([program.exec], out, error));
+        if (!program.continue) await Commands.exit(null, out, error);
     }
 
     const rl = readline.createInterface({
@@ -130,7 +141,7 @@ async function main() {
 
         while (lineBuffer.length) {
             const line = lineBuffer.shift();
-            await execCommand(line);
+            await safeExec(() => execCommand(line, out, error));
             await nextTick(); // Make sure other events have an opportunity to run between commands
         }
 

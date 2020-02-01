@@ -1,5 +1,5 @@
 import { Logger, LogLevel } from "../utils/logger";
-import { resolveCommand, error, execCommand } from "./main"
+import { resolveCommand, execCommand, Output } from "./main"
 import { timeout } from "../utils/promiseUtils";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import * as fs from "fs";
@@ -10,7 +10,7 @@ let _commandStation: ICommandStation = null;
 // Maintain a list of locos we've sent commands to for the 'estop' command
 const _seenLocos = new Set<number>();
 
-function resolveLocoAddress(locoId: string): number {
+function resolveLocoAddress(locoId: string, error: Output): number {
     let address = parseInt(locoId);
     if (isNaN(address)) error(`'${locoId}' is not a valid loco id`);
     if (address < 1 || address > 9999) error(`'${locoId}' is not a valid loco id`)
@@ -20,7 +20,7 @@ function resolveLocoAddress(locoId: string): number {
     return address;
 }
 
-function resolveSpeed(speedStr: string): number {
+function resolveSpeed(speedStr: string, error: Output): number {
     let speed = parseInt(speedStr);
     if (isNaN(speed)) error(`'${speedStr}' is not a valid speed value`);
     if (speed < 0 || speed > 127) error(`'${speedStr}' is not a valid speed value`);
@@ -43,15 +43,15 @@ export function setExitHook(onExit: ()=>Promise<void>) {
 //-----------------------------------------------------------------------------------------------//
 
 // Echo
-export async function echo(args: string[]) {
+export async function echo(args: string[], out: Output) {
     const message = args.join(" ");
-    console.log(message);
+    out(message);
 }
 echo.minArgs = 1;
 echo.help = "Echo args back to the output."
 
 // Emergency stop
-export async function estop(args?: string[]) {
+export async function estop(args: string[], out: Output, error: Output) {
     if (_seenLocos.size == 0) error("No locos have received commands yet.");
 
     const batch = await _commandStation.beginCommandBatch();
@@ -63,8 +63,8 @@ export async function estop(args?: string[]) {
 estop.help = "Emergency stop all locos which have received commands this session."
 
 // Execute a script
-export async function exec(args: string[]) {
-    return new Promise((resolve, reject) => {
+export function exec(args: string[], out: Output, error: Output) {
+    return new Promise<void>(async (resolve, reject) => {
         fs.readFile(args[0], async (err, data) => {
             if (err) {
                 reject(err);
@@ -73,7 +73,7 @@ export async function exec(args: string[]) {
 
             const script = data.toString().split("\n");
             for (const line of script)
-               await execCommand(line, true);
+               await execCommand(line, out, error, true);
 
             resolve();
         });
@@ -84,7 +84,7 @@ exec.maxArgs = 1;
 exec.help = "Execute a script.\n  Usage: exec SCRIPT_PATH"
 
 // Exit
-export async function exit(args?: string[]) {
+export async function exit(args: string[], out: Output, error: Output) {
     if (_exitHook) await _exitHook();
     process.exit(0);
 }
@@ -92,34 +92,34 @@ exit.maxArgs = 0;
 exit.help = "Exits this application";
 
 // Help
-export async function help(args: string[]) {
+export async function help(args: string[], out: Output, error: Output) {
     if (args.length == 0) {
-        console.log("Available commands:");
+        out("Available commands:");
         for (const commandName of Object.keys(exports)) {
             try {
-                resolveCommand(commandName);
-                console.log(`  ${commandName}`);
+                resolveCommand(commandName, error);
+                out(`  ${commandName}`);
             }
             catch {}
         }
         return;
     }
 
-    const command = resolveCommand(args[0]);
+    const command = resolveCommand(args[0], error);
     if (!command) error(`Unrecognised command '${args[0]}'`);
     if (!command.help) error(`${args[0]} is not helpful`);
 
     const help = command.help instanceof Function ? command.help() : command.help;
-    console.log(help);
+    out(help);
 }
 help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
 
 // Loco Speed Control
-export async function loco_speed(args: string[]) {
+export async function loco_speed(args: string[], out: Output, error: Output) {
     let reverse = args[2] == "R" || args[2] == "r";
-    let speed = resolveSpeed(args[1]);
-    let address = resolveLocoAddress(args[0]);
+    let speed = resolveSpeed(args[1], error);
+    let address = resolveLocoAddress(args[0], error);
 
     const batch = await _commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(address, speed, reverse);
@@ -130,9 +130,9 @@ loco_speed.maxArgs = 3;
 loco_speed.help = "Set locomotive's speed.\n  Usage: loco_speed LOCO_ID SPEED [F|R]";
 
 // Log level
-export async function loglevel(args: string[]) {
+export async function loglevel(args: string[], out: Output, error: Output) {
     if (args.length == 0) {
-        console.log(LogLevel[Logger.logLevel]);
+        out(LogLevel[Logger.logLevel]);
         return;
     }
 
@@ -146,7 +146,7 @@ loglevel.maxArgs = 1;
 loglevel.help = "Sets the application log level.\n  Usage: loglevel [NONE|ERROR|WARNING|DISPLAY|INFO|DEBUG]";
 
 // Write raw data as part of a command batch
-export async function raw_command(args: string[]) {
+export async function raw_command(args: string[], out: Output, error: Output) {
     const hex = args.join("");
     const data = fromHex(hex);
     const batch = await _commandStation.beginCommandBatch();
@@ -157,7 +157,7 @@ raw_command.minArgs = 1;
 raw_command.help = "Write raw bytes as a command batch\n  Udate: raw_command HEX_DATA";
 
 // Write raw data directly to the command station
-export async function raw_write(args: string[]) {
+export async function raw_write(args: string[], out: Output, error: Output) {
     const hex = args.join("");
     const data = fromHex(hex);
     await _commandStation.writeRaw(data);
@@ -166,7 +166,7 @@ raw_write.minArgs = 1;
 raw_write.help = "Write raw bytes to the command station\n  Udate: raw_write HEX_DATA";
 
 // Sleep
-export async function sleep(args: string[]) {
+export async function sleep(args: string[], out: Output, error: Output) {
     const time = parseFloat(args[0]);
     if (isNaN(time)) error(`'${time}' is not a valid sleep duration`);
 
