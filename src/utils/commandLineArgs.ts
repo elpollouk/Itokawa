@@ -6,8 +6,8 @@ let pjson = require('../../package.json');
 export function addCommonOptions(commander: CommanderStatic) {
     commander
         .version(pjson.version)
-        .option("-d --device <device>", "Device to open.")
-        .option("-c --connection-string <connectionString>", "Port to open device on.")
+        .option("-d --device <device>", "Device type to open.")
+        .option("-c --connection-string <connectionString>", "Connection configuration string.")
         .option("--log-level <loglevel>", "Log level");
 }
 
@@ -21,7 +21,6 @@ export async function openDevice(commander: CommanderStatic) {
         return null;
     }
 
-    console.log(`Using ${devices[0].commandStation}`);
     return await devices[0].open();
 }
 

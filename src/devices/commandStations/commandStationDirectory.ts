@@ -1,6 +1,7 @@
 import { DeviceEnumerator } from "../deviceEnumerator";
 import { ELinkCommandStation } from "./elink";
 import { NullCommandStation } from "./null";
+import { RawCommandStation } from "./raw";
 
 export function registerCommandStations() {
 
@@ -8,6 +9,6 @@ export function registerCommandStations() {
                                                          "Microchip Technology Inc.");
 
     DeviceEnumerator.registerDevice(NullCommandStation, "__TEST__");
-
+    DeviceEnumerator.registerDevice(RawCommandStation);
 }
 

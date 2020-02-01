@@ -33,6 +33,7 @@ export class AsyncSerialPort extends EventEmitter {
             for (let i = 0; i < data.length; i++)
                 this._buffer.push(data[i]);
 
+            this.emit("data", data);
             this._updateReader();
         });
         this._port.on("error", (err) => {

@@ -1,21 +1,12 @@
 import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
-import { stub, createStubInstance, SinonStub, SinonStubbedInstance, StubbableType, SinonStubbedMember } from "sinon"
+import { stub, SinonStub } from "sinon"
+import { createSinonStubInstance, StubbedClass } from "../../utils/testUtils"
 import { nextTick } from "../../utils/promiseUtils"
 import { AsyncSerialPort } from "../asyncSerialPort"
 import { ELinkCommandStation, ELinkCommandBatch } from "./elink";
 import { CommandStationState } from "./commandStation";
-
-export type StubbedClass<T> = SinonStubbedInstance<T> & T;
-
-export function createSinonStubInstance<T>(
-  constructor: StubbableType<T>,
-  overrides?: { [K in keyof T]?: SinonStubbedMember<T[K]> },
-): StubbedClass<T> {
-  const stub = createStubInstance<T>(constructor, overrides);
-  return stub as unknown as StubbedClass<T>;
-}
 
 const CONNECTION_STRING = "port=/dev/ttyACM0";
 
