@@ -4,6 +4,7 @@ import * as express from "express";
 import * as expressWs from "express-ws";
 import * as program from "commander";
 import * as ngrok from "ngrok";
+import * as lifecycle from "./server/lifecycle";
 import { addCommonOptions, applyLogLevel, openDevice } from "./utils/commandLineArgs";
 import { parseIntStrict } from "./utils/parsers";
 import { CommandStationState } from "./devices/commandStations/commandStation";
@@ -11,6 +12,7 @@ import { CommandStationState } from "./devices/commandStations/commandStation";
 addCommonOptions(program);
 program
     .option("-p --port <port>", "Port to listen on", "8080")
+    .option("--datadir <path>", "Directory to save data to")
     .option("--ngrok", "Enable ngrok endpoint");
 
 Logger.logLevel = LogLevel.DEBUG;
@@ -58,6 +60,8 @@ async function main()
 {
     program.parse(process.argv);
     applyLogLevel(program);
+
+    await lifecycle.start(program.datadir);
 
     const cs = await openDevice(program);
     if (!cs) log.error("No devices found");
