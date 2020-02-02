@@ -1,10 +1,12 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as pathMod from "path";
+import { exec } from "child_process";
 import { Logger } from "../utils/logger";
 
 const log = new Logger("LifeCycle");
 let _dataPath: string = null;
+let _shutdownCommand = "sudo shutdown -r now";
 
 function initDataDirectory(dataPath: string) {
     dataPath = dataPath || pathMod.join(os.homedir(), ".itokawa");
@@ -47,4 +49,40 @@ export async function start(dataPath?: string) {
             reject(ex);
         }
     });
+}
+
+function execAsync(command: string): Promise<string> {
+    return new Promise(async (resolve, reject) => {
+        try {
+            log.info(`Executing: ${command}`);
+
+            let rejected = false;
+            const proc = exec(command, (err, stdout, stderr) => {
+                if (err) reject(err);
+                if (stderr) log.error(`stderr=${stderr}`);
+                if (stdout) log.info(`stdout=${stdout}`);
+                if (!rejected) resolve(stdout); 
+            });
+            proc.on("exit", (code) => {
+                log.info(`Process exit code: ${code}`);
+                if (code !== 0) {
+                    rejected = true;
+                    reject(new Error(`Process exited with code ${code}`));
+                }
+            });
+        }
+        catch (ex) {
+            reject(ex);
+        }
+    });
+}
+
+export function shutdown() {
+    log.info("Requesting shutdown...");
+    return execAsync(_shutdownCommand);
+}
+
+export async function getGitRevision() {
+    log.info("Requesting git revision...");
+    return (await execAsync("git rev-parse HEAD")).trim();
 }

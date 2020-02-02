@@ -30,19 +30,33 @@
 
     function send(data) {
         if (!socket) return;
+        if (busy) return;
+        busy = true;
+
         socket.send(JSON.stringify(data));
     }
 
     window.setLocoSpeed = function (locoId, speed, reverse) {
-        if (busy) return;
-        busy = true;
-
         send({
-            type: 1,
+            type: 2,
             requestTime: getTimeStamp(),
             locoId: locoId,
             speed: speed,
             reverse: !!reverse
+        });
+    }
+
+    window.requestShutdown = function () {
+        send({
+            type: 1,
+            action: 1
+        });
+    }
+
+    window.requestGitRev = function () {
+        send({
+            type: 1,
+            action: 2
         });
     }
 

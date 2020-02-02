@@ -19,7 +19,8 @@ Logger.logLevel = LogLevel.DEBUG;
 let log = new Logger("Main");
 
 enum RequestType {
-    LocoSpeed = 1
+    LifeCycle = 1,
+    LocoSpeed = 2
 }
 
 interface CommandRequest {
@@ -31,6 +32,16 @@ interface LocoSpeedRequest extends CommandRequest {
     locoId: number,
     speed: number,
     reverse: boolean
+}
+
+enum LifeCycleAction {
+    ping = 0,
+    shutdown = 1,
+    gitrev = 2
+}
+
+interface LifeCycleRequest extends CommandRequest {
+    action: LifeCycleAction
 }
 
 interface CommandResponse {
@@ -62,17 +73,33 @@ async function main()
             log.info(`WebSocket Message: ${msg}`);
             if (!cs) return;
             let response: CommandResponse;
+            let data = "OK";
             try {
                 log.debug(() => `Command Station State = ${CommandStationState[cs.state]}`);
-                const request = JSON.parse(msg.toString()) as LocoSpeedRequest;
-                if (request.type != RequestType.LocoSpeed) throw new Error(`Invalid request type: ${request.type}`);
+                const request = JSON.parse(msg.toString()) as CommandRequest;
 
-                const batch = await cs.beginCommandBatch();
-                batch.setLocomotiveSpeed(request.locoId, request.speed, request.reverse);
-                await batch.commit();
+                switch (request.type) {
+                case RequestType.LifeCycle:
+                    const lcr = request as LifeCycleRequest;
+                    if (lcr.action === LifeCycleAction.shutdown) await lifecycle.shutdown();
+                    else if (lcr.action === LifeCycleAction.gitrev) data = await lifecycle.getGitRevision();  
+                    break;
+
+                case RequestType.LocoSpeed:
+                    const lsr = request as LocoSpeedRequest;
+                    if (request.type !== RequestType.LocoSpeed) throw new Error(`Invalid request type: ${request.type}`);
+
+                    const batch = await cs.beginCommandBatch();
+                    batch.setLocomotiveSpeed(lsr.locoId, lsr.speed, lsr.reverse);
+                    await batch.commit();
+                    break;
+
+                default:
+                    throw new Error(`Unrecognised request type: ${request.type}`);
+                }
 
                 response = {
-                    data: "OK",
+                    data: data,
                     responseTime: Logger.timestamp()
                 }
             }
