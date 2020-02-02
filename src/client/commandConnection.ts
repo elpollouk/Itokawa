@@ -68,7 +68,7 @@ export class CommandConnection {
         this._state = state;
     }
 
-    request(message: messages.CommandRequest, callback: RequestCallback): RequestCallback {
+    request(message: messages.CommandRequest, callback: RequestCallback) {
         try {
             if (!this.isIdle) throw new Error("Request already in progress");
             this._setState(ConnectionState.Busy);
@@ -80,7 +80,6 @@ export class CommandConnection {
         }
         catch (ex) {
             callback(ex);
-            return null;
         }
     }
 
@@ -97,8 +96,9 @@ export class CommandConnection {
     }
 
     close() {
+        this._cancelHeartbeat();
         this._state = ConnectionState.Closed;
-        this._socket.close();
+        if (this._socket) this._socket.close();
     }
 
     private _onOpen(ev: Event) {
