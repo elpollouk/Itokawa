@@ -87,7 +87,7 @@ describe("Device Enumerator", () => {
     });
 
     it ("should be possible to open a registered device directly", async () => {
-        let cs = await DeviceEnumerator.openDevice("Null", "Bar");
+        let cs = await DeviceEnumerator.openDevice("Null", "Foo=Bar");
 
         expect(cs).to.be.instanceOf(NullCommandStation);
     });
