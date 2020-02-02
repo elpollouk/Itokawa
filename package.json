@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/main.js",
     "build": "npm run tsc && npm run bundle",
-    "tsc": "node_modules/.bin/tsc && npm run bundle",
+    "tsc": "node_modules/.bin/tsc",
     "bundle": "node_modules/.bin/webpack",
     "test": "node_modules/.bin/nyc node_modules/.bin/mocha -r ts-node/register \"src/**/*.spec.ts\"",
     "cli": "node dist/cli/main.js"

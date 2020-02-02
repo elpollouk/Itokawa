@@ -1,4 +1,5 @@
-node_modules/
 dist/
+node_modules/
+static/bundle.js
 .nyc_output
 .test.*
