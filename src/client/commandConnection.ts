@@ -1,7 +1,10 @@
-import { CommandRequest, CommandResponse } from "../common/messages"
-import { toHumanHex } from "../utils/hex";
+import * as messages from "../common/messages"
+import { timestamp } from "../common/time";
+import { CommandStationState } from "../devices/commandStations/commandStation";
 
-type RequestCallback = (err: Error, response?: CommandResponse)=>void
+const HEARTBEAT_TIME = 30; // In seconds
+
+type RequestCallback = (err: Error, response?: messages.CommandResponse)=>void
 
 export enum ConnectionState {
     Opening,
@@ -31,6 +34,8 @@ export class CommandConnection {
     private _socket: WebSocket;
     private _callback: RequestCallback = null;
     private _state: ConnectionState = ConnectionState.Opening;
+    private _heartbeartToken: any = null;
+    private _lastHeatbeatResponse: messages.LifeCyclePingResponse = null;
 
     get state() {
         return this._state;
@@ -40,27 +45,38 @@ export class CommandConnection {
         return this.state === ConnectionState.Idle;
     }
 
+    get deviceId(): string {
+        const info = this._lastHeatbeatResponse;
+        return info ? info.commandStation : "";
+    }
+
+    get deviceState(): CommandStationState {
+        const info = this._lastHeatbeatResponse;
+        return info ? info.commandStationState : CommandStationState.UNINITIALISED;
+    }
+
+    get gitRevision(): string {
+        const info = this._lastHeatbeatResponse;
+        return info ? info.gitrev : "";
+    }
+
     constructor(readonly url: string) {
-        this._socket = new WebSocket(CommandConnection.relativeUri(url));
-        this._socket.onopen = (ev) => this.onOpen(ev);
-        this._socket.onmessage = (message) => this.onMessage(message);
-        this._socket.onclose = (ev) => this.onClose(ev);
-        this._socket.onerror = (ev) => this.onError(ev);
+        this.retry();
     }
 
     private _setState(state: ConnectionState) {
         this._state = state;
     }
 
-    request(message: CommandRequest, callback: RequestCallback): RequestCallback {
+    request(message: messages.CommandRequest, callback: RequestCallback): RequestCallback {
         try {
             if (!this.isIdle) throw new Error("Request already in progress");
             this._setState(ConnectionState.Busy);
+            this._cancelHeartbeat();
 
+            message.requestTime = timestamp();
             this._socket.send(JSON.stringify(message));
             this._callback = callback;
-
-            return this._callback;
         }
         catch (ex) {
             callback(ex);
@@ -68,16 +84,41 @@ export class CommandConnection {
         }
     }
 
-    private onOpen(ev: Event) {
-        console.log("WebSocket opened");
-        this._setState(ConnectionState.Idle);
+    retry() {
+        if (this._socket) throw new Error("Socket already open");
+
+        this._socket = new WebSocket(CommandConnection.relativeUri(this.url));
+        this._socket.onopen = (ev) => this._onOpen(ev);
+        this._socket.onmessage = (message) => this._onMessage(message);
+        this._socket.onclose = (ev) => this._onClose(ev);
+        this._socket.onerror = (ev) => this._onError(ev);
+
+        this._state = ConnectionState.Opening;
     }
 
-    private onClose(ev: CloseEvent) {
-        console.log("WebSocket clossed");
+    close() {
+        this._state = ConnectionState.Closed;
+        this._socket.close();
+    }
+
+    private _onOpen(ev: Event) {
+        console.log("WebSocket opened");
+        this._setState(ConnectionState.Idle);
+        this._requestHeartbeat();
+    }
+
+    private _onClose(ev: CloseEvent) {
+        console.log("WebSocket closed");
+
+        this._cancelHeartbeat();
 
         const prevState = this.state;
-        this._setState(ConnectionState.Closed);
+        if (prevState !== ConnectionState.Closed) {
+            console.error("Unexpected close, scheduling retry attempt...");
+            this._setState(ConnectionState.Errored);
+            this._scheduleHeartbeat();
+        }
+        this._socket = null;
 
         const cb = this._callback;
         this._callback = null;
@@ -86,7 +127,7 @@ export class CommandConnection {
         }
     }
 
-    private onError(ev: Event) {
+    private _onError(ev: any) {
         console.error("WebSocket error");
 
         const prevState = this.state;
@@ -97,9 +138,12 @@ export class CommandConnection {
         if (prevState === ConnectionState.Busy && cb) {
             cb(new Error("WebSocket error encountered"));
         }
+
+        this._cancelHeartbeat();
+        this._scheduleHeartbeat();
     }
 
-    private onMessage(message: MessageEvent) {
+    private _onMessage(message: MessageEvent) {
         console.log(`WebSocket message received: ${message.data}`);
 
         if (this.state === ConnectionState.Busy) {
@@ -109,5 +153,41 @@ export class CommandConnection {
 
             if (cb) cb(null, JSON.parse(message.data));
         }
+        this._scheduleHeartbeat();
+    }
+
+    private _scheduleHeartbeat() {
+        if (this._heartbeartToken) throw new Error("Heartbeat already shedulled");
+
+        this._heartbeartToken = setTimeout(() => {
+
+            this._heartbeartToken = null;
+            if (this.state === ConnectionState.Busy) return; // Ignore heartbeats if another request is already in progress
+
+            this._requestHeartbeat();
+
+        }, HEARTBEAT_TIME * 1000);
+    }
+
+    private _cancelHeartbeat() {
+        if (this._heartbeartToken) {
+            clearTimeout(this._heartbeartToken);
+            this._heartbeartToken = null;
+        }
+    }
+
+    private _requestHeartbeat() {
+        if (!this._socket) {
+            this.retry();
+            return;
+        }
+
+        this.request({
+            type: messages.RequestType.LifeCycle,
+            action: messages.LifeCycleAction.ping
+        } as messages.LifeCycleRequest, (err, response) => {
+            if (err) this._onError(err);
+            else this._lastHeatbeatResponse = response as messages.LifeCyclePingResponse;
+        });
     }
 }

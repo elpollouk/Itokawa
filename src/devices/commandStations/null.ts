@@ -7,7 +7,7 @@ import { timeout } from "../../utils/promiseUtils";
 const log = new Logger("NullCommandStation");
 
 export class NullCommandStation extends CommandStationBase {
-    static readonly deviceId = "Null";
+    static readonly deviceId = "NullCommandStation";
     readonly deviceId = NullCommandStation.deviceId;
     version: string = "1.0.0";
     private readonly _execTime: number;

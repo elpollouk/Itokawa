@@ -8,7 +8,7 @@ describe("Null Command Station", () => {
     it("should open without error", async () => {
         const cs = await NullCommandStation.open(null);
         expect(cs).to.not.be.null;
-        expect(cs.deviceId).to.equal("Null");
+        expect(cs.deviceId).to.equal("NullCommandStation");
         expect(cs.version).to.equal("1.0.0");
         expect(cs.state).to.equal(CommandStationState.IDLE);
     })

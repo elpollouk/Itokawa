@@ -2,6 +2,7 @@ import { expect } from "chai";
 import "mocha";
 import * as sinon from "sinon";
 import { LogLevel, Logger } from "./logger";
+import * as time from "../common/time";
 
 beforeEach(() => {
     Logger.testMode = true;
@@ -29,7 +30,7 @@ describe("Logger", () => {
             output.push(text);
         });
 
-        stubLogger_timestamp = sinon.stub(Logger, "timestamp").returns("2017-02-02T12:51:19.124Z");
+        stubLogger_timestamp = sinon.stub(time, "timestamp").returns("2017-02-02T12:51:19.124Z");
     });
 
     afterEach(() => {

@@ -1,4 +1,5 @@
 import { Logger, LogLevel } from "./utils/logger";
+import { timestamp } from "./common/time";
 import { AddressInfo } from "net";
 import * as express from "express";
 import * as expressWs from "express-ws";
@@ -87,7 +88,7 @@ async function main()
                 }
             }
 
-            response.responseTime = Logger.timestamp()
+            response.responseTime = timestamp()
             ws.send(JSON.stringify(response));
         });
         ws.on("close", () => {

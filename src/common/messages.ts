@@ -5,7 +5,7 @@ export enum RequestType {
 
 export interface CommandRequest {
     type: RequestType,
-    requestTime: string
+    requestTime?: string
 }
 
 export interface LocoSpeedRequest extends CommandRequest {
