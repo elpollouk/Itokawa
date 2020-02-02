@@ -1,41 +1,30 @@
 import { Logger, LogLevel } from "../utils/logger";
-import { resolveCommand, execCommand, Output } from "./main"
+import { resolveCommand, execCommand, CommandContext } from "./main"
 import { timeout } from "../utils/promiseUtils";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import * as fs from "fs";
 import { fromHex } from "../utils/hex";
 
-let _exitHook: ()=>Promise<void> = null;
-let _commandStation: ICommandStation = null;
 // Maintain a list of locos we've sent commands to for the 'estop' command
 const _seenLocos = new Set<number>();
 
-function resolveLocoAddress(locoId: string, error: Output): number {
+function resolveLocoAddress(context: CommandContext, locoId: string): number {
     let address = parseInt(locoId);
-    if (isNaN(address)) error(`'${locoId}' is not a valid loco id`);
-    if (address < 1 || address > 9999) error(`'${locoId}' is not a valid loco id`)
+    if (isNaN(address)) context.error(`'${locoId}' is not a valid loco id`);
+    if (address < 1 || address > 9999) context.error(`'${locoId}' is not a valid loco id`)
 
     _seenLocos.add(address);
 
     return address;
 }
 
-function resolveSpeed(speedStr: string, error: Output): number {
+function resolveSpeed(context: CommandContext, speedStr: string): number {
     let speed = parseInt(speedStr);
-    if (isNaN(speed)) error(`'${speedStr}' is not a valid speed value`);
-    if (speed < 0 || speed > 127) error(`'${speedStr}' is not a valid speed value`);
+    if (isNaN(speed)) context.error(`'${speedStr}' is not a valid speed value`);
+    if (speed < 0 || speed > 127) context.error(`'${speedStr}' is not a valid speed value`);
     return speed;
 }
 
-// Allow other modules to specify the command station that commands should operate on
-export function setCommandStation(commandStation: ICommandStation) {
-    _commandStation = commandStation;
-}
-setCommandStation.notCommand = true;
-
-export function setExitHook(onExit: ()=>Promise<void>) {
-    _exitHook = onExit;
-}
 
 //-----------------------------------------------------------------------------------------------//
 // Exported commands
@@ -43,18 +32,18 @@ export function setExitHook(onExit: ()=>Promise<void>) {
 //-----------------------------------------------------------------------------------------------//
 
 // Echo
-export async function echo(args: string[], out: Output) {
+export async function echo(context: CommandContext, args: string[]) {
     const message = args.join(" ");
-    out(message);
+    context.out(message);
 }
 echo.minArgs = 1;
 echo.help = "Echo args back to the output."
 
 // Emergency stop
-export async function estop(args: string[], out: Output, error: Output) {
-    if (_seenLocos.size == 0) error("No locos have received commands yet.");
+export async function estop(context: CommandContext, args?: string[]) {
+    if (_seenLocos.size == 0) context.error("No locos have received commands yet.");
 
-    const batch = await _commandStation.beginCommandBatch();
+    const batch = await context.commandStation.beginCommandBatch();
     for (const address of _seenLocos) {
         batch.setLocomotiveSpeed(address, 0);
     }
@@ -63,7 +52,7 @@ export async function estop(args: string[], out: Output, error: Output) {
 estop.help = "Emergency stop all locos which have received commands this session."
 
 // Execute a script
-export function exec(args: string[], out: Output, error: Output) {
+export function exec(context: CommandContext, args: string[]) {
     return new Promise<void>(async (resolve, reject) => {
         fs.readFile(args[0], async (err, data) => {
             if (err) {
@@ -73,7 +62,7 @@ export function exec(args: string[], out: Output, error: Output) {
 
             const script = data.toString().split("\n");
             for (const line of script)
-               await execCommand(line, out, error, true);
+               await execCommand(context, line, true);
 
             resolve();
         });
@@ -84,44 +73,44 @@ exec.maxArgs = 1;
 exec.help = "Execute a script.\n  Usage: exec SCRIPT_PATH"
 
 // Exit
-export async function exit(args: string[], out: Output, error: Output) {
-    if (_exitHook) await _exitHook();
+export async function exit(context: CommandContext, args?: string[]) {
+    if (context.onExit) await context.onExit(context);
     process.exit(0);
 }
 exit.maxArgs = 0;
 exit.help = "Exits this application";
 
 // Help
-export async function help(args: string[], out: Output, error: Output) {
+export async function help(context: CommandContext, args: string[]) {
     if (args.length == 0) {
-        out("Available commands:");
+        context.out("Available commands:");
         for (const commandName of Object.keys(exports)) {
             try {
-                resolveCommand(commandName, error);
-                out(`  ${commandName}`);
+                resolveCommand(context, commandName);
+                context.out(`  ${commandName}`);
             }
             catch {}
         }
         return;
     }
 
-    const command = resolveCommand(args[0], error);
-    if (!command) error(`Unrecognised command '${args[0]}'`);
-    if (!command.help) error(`${args[0]} is not helpful`);
+    const command = resolveCommand(context, args[0]);
+    if (!command) context.error(`Unrecognised command '${args[0]}'`);
+    if (!command.help) context.error(`${args[0]} is not helpful`);
 
     const help = command.help instanceof Function ? command.help() : command.help;
-    out(help);
+    context.out(help);
 }
 help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
 
 // Loco Speed Control
-export async function loco_speed(args: string[], out: Output, error: Output) {
+export async function loco_speed(context: CommandContext, args: string[]) {
     let reverse = args[2] == "R" || args[2] == "r";
-    let speed = resolveSpeed(args[1], error);
-    let address = resolveLocoAddress(args[0], error);
+    let speed = resolveSpeed(context, args[1]);
+    let address = resolveLocoAddress(context, args[0]);
 
-    const batch = await _commandStation.beginCommandBatch();
+    const batch = await context.commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(address, speed, reverse);
     await batch.commit();
 }
@@ -130,14 +119,14 @@ loco_speed.maxArgs = 3;
 loco_speed.help = "Set locomotive's speed.\n  Usage: loco_speed LOCO_ID SPEED [F|R]";
 
 // Log level
-export async function loglevel(args: string[], out: Output, error: Output) {
+export async function loglevel(context: CommandContext, args: string[]) {
     if (args.length == 0) {
-        out(LogLevel[Logger.logLevel]);
+        context.out(LogLevel[Logger.logLevel]);
         return;
     }
 
     const newLevel = args[0].toUpperCase();
-    if (!(newLevel in LogLevel)) error(`${newLevel} isn't a recognised log level`);
+    if (!(newLevel in LogLevel)) context.error(`${newLevel} isn't a recognised log level`);
 
     Logger.logLevel = LogLevel[newLevel];
 }
@@ -146,10 +135,10 @@ loglevel.maxArgs = 1;
 loglevel.help = "Sets the application log level.\n  Usage: loglevel [NONE|ERROR|WARNING|DISPLAY|INFO|DEBUG]";
 
 // Write raw data as part of a command batch
-export async function raw_command(args: string[], out: Output, error: Output) {
+export async function raw_command(context: CommandContext, args: string[]) {
     const hex = args.join("");
     const data = fromHex(hex);
-    const batch = await _commandStation.beginCommandBatch();
+    const batch = await context.commandStation.beginCommandBatch();
     batch.writeRaw(data);
     await batch.commit();
 }
@@ -157,18 +146,18 @@ raw_command.minArgs = 1;
 raw_command.help = "Write raw bytes as a command batch\n  Udate: raw_command HEX_DATA";
 
 // Write raw data directly to the command station
-export async function raw_write(args: string[], out: Output, error: Output) {
+export async function raw_write(context: CommandContext, args: string[]) {
     const hex = args.join("");
     const data = fromHex(hex);
-    await _commandStation.writeRaw(data);
+    await context.commandStation.writeRaw(data);
 }
 raw_write.minArgs = 1;
 raw_write.help = "Write raw bytes to the command station\n  Udate: raw_write HEX_DATA";
 
 // Sleep
-export async function sleep(args: string[], out: Output, error: Output) {
+export async function sleep(context: CommandContext, args: string[]) {
     const time = parseFloat(args[0]);
-    if (isNaN(time)) error(`'${time}' is not a valid sleep duration`);
+    if (isNaN(time)) context.error(`'${time}' is not a valid sleep duration`);
 
     await timeout(time);
 }

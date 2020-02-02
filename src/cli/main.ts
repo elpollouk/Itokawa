@@ -19,10 +19,10 @@ program
     .option("-x --exec <script", "Execute a script")
     .option("--continue", "Continue to CLI after executing script or command");
 
-export type Output = (message:string)=>void;
+type Output = (message:string)=>void;
 
 // Command function interface that specifies the available attributes
-type CommandFunc = (command:string[], out:Output, error:Output)=>Promise<void>;
+type CommandFunc = (context: CommandContext, command:string[])=>Promise<void>;
 export interface Command extends CommandFunc {
     notCommand?: boolean;           // Flag that the exported function is not a user command
     minArgs?: number;               // Minimum number of args the user must supply
@@ -38,42 +38,50 @@ export class CommandError extends Error {
     }
 }
 
-let _commandStation: ICommandStation = null;
+// Context used to allow commands to interact with their execution environment
+export interface CommandContext {
+    out: Output;
+    error: Output;
+    commandStation: ICommandStation;
+    onExit?:(context: CommandContext)=>Promise<void>;
+}
+
+let _commandContext: CommandContext = null;
 
 // Helper function for displaying command output to the user
-function out(message: string) {
+function _out(message: string) {
     console.log(message);
 }
 
 // Helper function to throw a user error of the correct type
-function error(message: string) {
+function _error(message: string) {
     throw new CommandError(message);
 }
 
 // Handler for clean up when exit command is issued
-async function onExit() {
+async function _onExit(context: CommandContext) {
     try {
-        if (program.exitEstop) await Commands.estop(null, out, error);
+        if (program.exitEstop) await Commands.estop(context);
     }
     catch(ex) {
         if (!(ex instanceof CommandError)) throw ex;
     } 
-    await _commandStation.close();
+    await context.commandStation.close();
 }
 
 // Handler for a raw command string.
-export async function execCommand(commandString: string, out: Output, error: Output, suppressOk: boolean=false) {
+export async function execCommand(context: CommandContext, commandString: string, suppressOk: boolean=false) {
     const commandArgs = parseCommand(commandString);
     if (commandArgs.length == 0) return;
 
     const commandName = commandArgs.shift();
-    const command = resolveCommand(commandName, error);
+    const command = resolveCommand(context, commandName);
 
-    if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) error(`${commandName} expects at least ${command.minArgs} args`);
-    if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) error(`${commandName} expects at most ${command.maxArgs} args`);
+    if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) context.error(`${commandName} expects at least ${command.minArgs} args`);
+    if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) context.error(`${commandName} expects at most ${command.maxArgs} args`);
 
-    await command(commandArgs, out, error);
-    if (!suppressOk) out("OK");
+    await command(context, commandArgs);
+    if (!suppressOk) context.out("OK");
 }
 
 async function safeExec(exec: ()=>Promise<void>) {
@@ -88,11 +96,11 @@ async function safeExec(exec: ()=>Promise<void>) {
 
 // Return the function for the specified command.
 // If the command isn't found int the Commands exports or isn't a valid command function, an exception is raised
-export function resolveCommand(commandName: string, error: Output): Command {
+export function resolveCommand(context: CommandContext, commandName: string): Command {
     commandName = commandName.toLowerCase();
     const command = Commands[commandName] as Command;
-    if (!(command instanceof Function)) error(`Unrecognised command '${commandName}'`);
-    if (command.notCommand) error(`Unrecognised command '${commandName}'`);
+    if (!(command instanceof Function)) context.error(`Unrecognised command '${commandName}'`);
+    if (command.notCommand) context.error(`Unrecognised command '${commandName}'`);
 
     return command;
 }
@@ -101,29 +109,34 @@ async function main() {
     program.parse(process.argv);
     applyLogLevel(program);
 
-    _commandStation = await openDevice(program);
-    if (!_commandStation) {
+    const cs = await openDevice(program);
+    if (!cs) {
         console.error("No deviced detected, exiting...");
         process.exit(1);
     }
 
-    console.log(`Using ${_commandStation.deviceId} ${_commandStation.version}`);
+    console.log(`Using ${cs.deviceId} ${cs.version}`);
     // Dump data received in raw mode
-    _commandStation.on("data", (data: Buffer | number[]) => {
+    cs.on("data", (data: Buffer | number[]) => {
         console.log(`data: ${toHumanHex(data)}`);
     });
 
-    Commands.setCommandStation(_commandStation);
-    Commands.setExitHook(onExit);
+    // Set up the global context for command execution
+    _commandContext = {
+        out: _out,
+        error: _error,
+        onExit: _onExit,
+        commandStation: cs
+    };
 
     // A command or script has been explicitly specified on the command line, so execute it and then exit
     if (program.cmd) {
-        await safeExec(() => execCommand(program.cmd, out, error, true));
-        if (!program.continue) await Commands.exit(null, out, error);
+        await safeExec(() => execCommand(_commandContext, program.cmd, true));
+        if (!program.continue) await Commands.exit(_commandContext);
     }
     else if (program.exec) {
-        await safeExec(() => Commands.exec([program.exec], out, error));
-        if (!program.continue) await Commands.exit(null, out, error);
+        await safeExec(() => Commands.exec(_commandContext, [program.exec]));
+        if (!program.continue) await Commands.exit(_commandContext);
     }
 
     const rl = readline.createInterface({
@@ -141,7 +154,7 @@ async function main() {
 
         while (lineBuffer.length) {
             const line = lineBuffer.shift();
-            await safeExec(() => execCommand(line, out, error));
+            await safeExec(() => execCommand(_commandContext, line));
             await nextTick(); // Make sure other events have an opportunity to run between commands
         }
 
