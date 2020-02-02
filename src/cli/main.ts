@@ -19,8 +19,6 @@ program
     .option("-x --exec <script", "Execute a script")
     .option("--continue", "Continue to CLI after executing script or command");
 
-type Output = (message:string)=>void;
-
 // Command function interface that specifies the available attributes
 type CommandFunc = (context: CommandContext, command:string[])=>Promise<void>;
 export interface Command extends CommandFunc {
@@ -30,20 +28,21 @@ export interface Command extends CommandFunc {
     help?: () => string | string;   // String to display for command help
 }
 
+// Context used to allow commands to interact with their execution environment
+type Output = (message:string)=>void;
+export interface CommandContext {
+    out: Output;
+    error: Output;
+    commandStation: ICommandStation;
+    onExit?:(context: CommandContext)=>Promise<void>;
+}
+
 // An exception a command can throw to display an error to the user without a call stack.
 // Should be used for user caused errors such as incorrectly specified args rather than actual failures.
 export class CommandError extends Error {
     constructor(message: string) {
         super(message);
     }
-}
-
-// Context used to allow commands to interact with their execution environment
-export interface CommandContext {
-    out: Output;
-    error: Output;
-    commandStation: ICommandStation;
-    onExit?:(context: CommandContext)=>Promise<void>;
 }
 
 let _commandContext: CommandContext = null;
