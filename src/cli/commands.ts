@@ -1,7 +1,6 @@
 import { Logger, LogLevel } from "../utils/logger";
 import { resolveCommand, execCommand, CommandContext } from "./main"
 import { timeout } from "../utils/promiseUtils";
-import { ICommandStation } from "../devices/commandStations/commandStation";
 import * as fs from "fs";
 import { fromHex } from "../utils/hex";
 
