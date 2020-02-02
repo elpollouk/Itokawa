@@ -39,23 +39,6 @@ interface CommandResponse {
     responseTime: string
 }
 
-function padZero(number, size?) {
-    size = size || 2;
-    return ("00" + number).substr(-size);
-}
-
-function getTimeStamp() {
-    const d = new Date()
-    const year = d.getUTCFullYear();
-    const month = padZero(d.getUTCMonth()+1);
-    const date = padZero(d.getUTCDate());
-    const hours = padZero(d.getUTCHours());
-    const mins = padZero(d.getUTCMinutes());
-    const seconds = padZero(d.getUTCSeconds());
-    const ms = padZero(d.getUTCMilliseconds(), 3);
-    return `${year}-${month}-${date}T${hours}:${mins}:${seconds}.${ms}Z`;
-}
-
 async function main()
 {
     program.parse(process.argv);
@@ -90,13 +73,13 @@ async function main()
 
                 response = {
                     data: "OK",
-                    responseTime: getTimeStamp()
+                    responseTime: Logger.timestamp()
                 }
             }
             catch (ex) {
                 response = {
                     error: ex.message,
-                    responseTime: getTimeStamp()
+                    responseTime: Logger.timestamp()
                 }
             }
 
