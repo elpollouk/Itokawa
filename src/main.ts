@@ -7,7 +7,8 @@ import * as ngrok from "ngrok";
 import * as lifecycle from "./server/lifecycle";
 import { addCommonOptions, applyLogLevel, openDevice } from "./utils/commandLineArgs";
 import { parseIntStrict } from "./utils/parsers";
-import { CommandStationState } from "./devices/commandStations/commandStation";
+import { ICommandStation } from "./devices/commandStations/commandStation";
+import * as messages from "./common/messages";
 
 addCommonOptions(program);
 program
@@ -17,38 +18,41 @@ program
 
 Logger.logLevel = LogLevel.DEBUG;
 let log = new Logger("Main");
+let _commandStation: ICommandStation = null;
 
-enum RequestType {
-    LifeCycle = 1,
-    LocoSpeed = 2
-}
+const messageHandlers = new Map<messages.RequestType, (msg: messages.CommandRequest)=>Promise<messages.CommandResponse>>();
 
-interface CommandRequest {
-    type: RequestType,
-    requestTime: string
-}
+messageHandlers.set(messages.RequestType.LifeCycle, async (msg): Promise<messages.CommandResponse> => {
+    const request = msg as messages.LifeCycleRequest;
+    switch(request.action) {
+        case messages.LifeCycleAction.ping:
+            const response: messages.LifeCyclePingResponse = {
+                commandStation: _commandStation ? _commandStation.deviceId : "",
+                commandStationState: _commandStation ? _commandStation.state : -1,
+                gitrev: lifecycle.getGitRevision(),
+                data: "OK"
+            };
+            return response;
 
-interface LocoSpeedRequest extends CommandRequest {
-    locoId: number,
-    speed: number,
-    reverse: boolean
-}
+        case messages.LifeCycleAction.shutdown:
+            await lifecycle.shutdown();
+            return { data: "OK" };
 
-enum LifeCycleAction {
-    ping = 0,
-    shutdown = 1,
-    gitrev = 2
-}
+        default:
+            throw new Error(`Unrecognised life cycle action: ${request.action}`);
+    }
+});
 
-interface LifeCycleRequest extends CommandRequest {
-    action: LifeCycleAction
-}
+messageHandlers.set(messages.RequestType.LocoSpeed, async (msg): Promise<messages.CommandResponse> => {
+    if (!_commandStation) throw new Error("No command station connected");
+    const request = msg as messages.LocoSpeedRequest;
+    if (request.type !== messages.RequestType.LocoSpeed) throw new Error(`Invalid request type: ${request.type}`);
 
-interface CommandResponse {
-    data?: any,
-    error?: string,
-    responseTime: string
-}
+    const batch = await _commandStation.beginCommandBatch();
+    batch.setLocomotiveSpeed(request.locoId, request.speed, request.reverse);
+    await batch.commit();
+    return { data: "OK" };
+});
 
 async function main()
 {
@@ -57,9 +61,9 @@ async function main()
 
     await lifecycle.start(program.datadir);
 
-    const cs = await openDevice(program);
-    if (!cs) log.error("No devices found");
-    else log.display(`Using ${cs.deviceId} ${cs.version}`);
+    _commandStation = await openDevice(program);
+    if (!_commandStation) log.error("No devices found");
+    else log.display(`Using ${_commandStation.deviceId} ${_commandStation.version}`);
 
     const ews = expressWs(express());
     const app = ews.app;
@@ -71,45 +75,19 @@ async function main()
     app.ws("/control", (ws, req) => {
         ws.on("message", async (msg) => {
             log.info(`WebSocket Message: ${msg}`);
-            if (!cs) return;
-            let response: CommandResponse;
-            let data = "OK";
+            let response: messages.CommandResponse;
             try {
-                log.debug(() => `Command Station State = ${CommandStationState[cs.state]}`);
-                const request = JSON.parse(msg.toString()) as CommandRequest;
-
-                switch (request.type) {
-                case RequestType.LifeCycle:
-                    const lcr = request as LifeCycleRequest;
-                    if (lcr.action === LifeCycleAction.shutdown) await lifecycle.shutdown();
-                    else if (lcr.action === LifeCycleAction.gitrev) data = await lifecycle.getGitRevision();  
-                    break;
-
-                case RequestType.LocoSpeed:
-                    const lsr = request as LocoSpeedRequest;
-                    if (request.type !== RequestType.LocoSpeed) throw new Error(`Invalid request type: ${request.type}`);
-
-                    const batch = await cs.beginCommandBatch();
-                    batch.setLocomotiveSpeed(lsr.locoId, lsr.speed, lsr.reverse);
-                    await batch.commit();
-                    break;
-
-                default:
-                    throw new Error(`Unrecognised request type: ${request.type}`);
-                }
-
-                response = {
-                    data: data,
-                    responseTime: Logger.timestamp()
-                }
+                const request = JSON.parse(msg.toString()) as messages.CommandRequest;
+                if (!messageHandlers.has(request.type)) throw new Error(`Unrecognised request type: ${request.type}`);
+                response = await messageHandlers.get(request.type)(request);
             }
             catch (ex) {
                 response = {
                     error: ex.message,
-                    responseTime: Logger.timestamp()
                 }
             }
 
+            response.responseTime = Logger.timestamp()
             ws.send(JSON.stringify(response));
         });
         ws.on("close", () => {

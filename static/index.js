@@ -53,10 +53,10 @@
         });
     }
 
-    window.requestGitRev = function () {
+    window.requestPing = function () {
         send({
             type: 1,
-            action: 2
+            action: 0
         });
     }
 
