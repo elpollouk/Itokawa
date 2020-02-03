@@ -1,27 +1,11 @@
 <html>
     <head>
         <title>Train Control</title>
-        <script src="index.js"></script>
+        <link rel="stylesheet" type="text/css" href="index.css"/>
+        <script src="bundle.js"></script>
     </head>
     <body onload="main()">
-        <h1>Train Control</h1>
-        <div>
-            <span>Class 43 HST</span>
-            <button onclick="setLocoSpeed(4305, 32)">Slow</button>
-            <button onclick="setLocoSpeed(4305, 64)">Medium</button>
-            <button onclick="setLocoSpeed(4305, 96)">Fast</button>
-            <button onclick="setLocoSpeed(4305, 0)">Stop</button>
-        </div>
-        <div>
-            <span>GWR 0-6-0</span>
-            <button onclick="setLocoSpeed(2732, 30)">Slow</button>
-            <button onclick="setLocoSpeed(2732, 40)">Medium</button>
-            <button onclick="setLocoSpeed(2732, 64)">Fast</button>
-            <button onclick="setLocoSpeed(2732, 0)">Stop</button>
-        </div>
-        <div>
-            <button onclick="requestShutdown()">Shutdown</button>
-            <button onclick="requestPing()">Ping</button>
-        </div>
+        <div id="trainControls"></div>
+        <div id="globalControls" class="container"></div>
     </body>
 </html>

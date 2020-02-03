@@ -68,7 +68,7 @@ export class CommandConnection {
         this._state = state;
     }
 
-    request(message: messages.CommandRequest, callback: RequestCallback) {
+    request(message: messages.CommandRequest, callback?: RequestCallback) {
         try {
             if (!this.isIdle) throw new Error("Request already in progress");
             this._setState(ConnectionState.Busy);

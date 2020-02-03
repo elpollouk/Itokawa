@@ -1,0 +1,14 @@
+.container {
+    padding: 2px;
+}
+
+.trainControl .title {
+    width: 8em;
+    display: inline-block;
+}
+
+.trainControl button {
+    width: 6em;
+    margin-left: 2px;
+    margin-right: 2px;
+}
