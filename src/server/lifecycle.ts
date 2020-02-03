@@ -6,7 +6,7 @@ import { Logger } from "../utils/logger";
 
 const log = new Logger("LifeCycle");
 let _dataPath: string = null;
-let _shutdownCommand = "sudo shutdown -r now";
+let _shutdownCommand = "sudo shutdown -h now";
 let _gitRev: string = "";
 
 function _initDataDirectory(dataPath: string) {
