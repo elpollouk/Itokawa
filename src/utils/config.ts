@@ -1,0 +1,153 @@
+import * as fs from "fs";
+import * as xml2js from "xml2js";
+import { Logger } from "./logger";
+import { splitStringEx } from "./parsers";
+
+const log = new Logger("Config");
+
+type Value = string | number | boolean | ConfigNode;
+
+export class ConfigNode {
+    has(path: string): boolean {
+        return typeof(this.get(path)) !== "undefined";
+    }
+
+    get(path: string, defaultValue?: Value): Value {
+        const _path = splitStringEx(path, ["."], "\"", "^");
+        return this._get(_path, defaultValue);
+    }
+
+    private _get(path: string[], defaultValue?: Value): Value {
+        const key = path.shift();
+        if (!(key in this)) return defaultValue;
+        
+        const value = this[key];
+        if (value instanceof ConfigNode && path.length !== 0) return value._get(path, defaultValue);
+        if (path.length !== 0) return defaultValue;
+
+        return value;
+    }
+
+    set(path: string, value: Value) {
+        const _path = splitStringEx(path, ["."], "\"", "^");
+        return this._set(_path, value);
+    }
+
+    private _set(path: string[], value?: Value) {
+        const key = path.shift();
+        if (path.length === 0) {
+            this[key] = value;
+            return;
+        }
+
+        if (!(key in this) || !(this[key] instanceof ConfigNode)) {
+            const newNode = new ConfigNode();
+            this[key] = newNode;
+            newNode._set(path, value);
+            return
+        }
+
+        const node = this[key];
+        node._set(path, value);
+    }
+}
+
+export async function loadConfig(path: string): Promise<ConfigNode> {
+    try {
+        if (!fs.existsSync(path)) {
+            log.warning(`${path} does not exist`);
+            return new ConfigNode();
+        }
+
+        const xml = fs.readFileSync(path, {
+            encoding: "utf8"
+        });
+
+        const parser = new xml2js.Parser({ attrkey: "_attr" });
+        const data = await parser.parseStringPromise(xml);
+
+        return _parseNode(data["config"]);
+    }
+    catch (ex) {
+        log.error(`Error while loading ${path}`);
+        log.error(ex);
+        return new ConfigNode();
+    }
+}
+
+const _PARSERS = {
+    "bool": (value: any) => value === "true",
+    "number": (value: any) => parseFloat(value),
+    "default" : (value: any) => value
+};
+
+function _parseNode(data: any): ConfigNode {
+    const node = new ConfigNode();
+
+    for (const key in data) {
+        const children = data[key] as any[];
+        const value = children[0];
+
+        if (value instanceof Object) {
+            if ("_" in value) {
+                const type = value._attr["type"] || "default";
+                node[key] = _PARSERS[type](value._);
+            }
+            else{
+                node[key] = _parseNode(value);
+            }
+        }
+        else{
+            node[key] = value;
+        }
+    }
+
+    return node;
+}
+
+export async function saveConfig(path: string, config: ConfigNode) {
+    const buffer = [ "<config>\n"];
+
+    _writeNode(buffer, config, 1);
+
+    buffer.push("</config>");
+    fs.writeFileSync(path, buffer.join(""), {
+        encoding: "utf8"
+    });
+}
+
+const _EXPLICIT_TYPES = new Set<string>([
+    "number",
+    "boolean"
+]);
+
+function _writeNode(buffer: any[], node: ConfigNode, indent: number) {
+    for (const key in node) {
+        if (typeof(key) === "undefined") continue;
+        const value = node[key];
+        const type = typeof(value);
+        if (type === "function") continue;
+
+        _writeIndent(buffer, indent);
+        buffer.push(`<${key}`);
+        if (type == "object") {
+            buffer.push(">\n");
+            _writeNode(buffer, value, indent + 1);
+            _writeIndent(buffer, indent);
+        }
+        else {
+            if (_EXPLICIT_TYPES.has(type)) {
+                buffer.push(` type="${type}"`);
+            }
+            buffer.push(">");
+            buffer.push(value);
+        }
+        buffer.push(`</${key}>\n`);
+    }
+}
+
+function _writeIndent(buffer: any[], indent: number) {
+    for (let i = 0; i < indent; i++){
+        buffer.push("    ");
+    }
+}
