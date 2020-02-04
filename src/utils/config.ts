@@ -123,10 +123,8 @@ const _EXPLICIT_TYPES = new Set<string>([
 
 function _writeNode(buffer: any[], node: ConfigNode, indent: number) {
     for (const key in node) {
-        if (typeof(key) === "undefined") continue;
         const value = node[key];
         const type = typeof(value);
-        if (type === "function") continue;
 
         _writeIndent(buffer, indent);
         buffer.push(`<${key}`);
