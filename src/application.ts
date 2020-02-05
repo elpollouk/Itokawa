@@ -3,10 +3,10 @@ import * as fs from "fs";
 import * as os from "os";
 import * as pathMod from "path";
 import { CommanderStatic } from "commander";
-import { exec } from "child_process";
 import { Logger } from "./utils/logger";
 import { ConfigNode, loadConfig } from "./utils/config";
 import { applyLogLevel } from "./utils/commandLineArgs";
+import { execAsync } from "./utils/exec";
 
 const log = new Logger("Application");
 
@@ -24,35 +24,9 @@ function _initDataDirectory(dataPath: string) {
     return dataPath;
 }
 
-function _execAsync(command: string): Promise<string> {
-    return new Promise(async (resolve, reject) => {
-        try {
-            log.info(`Executing: ${command}`);
-
-            let rejected = false;
-            const proc = exec(command, (err, stdout, stderr) => {
-                if (err) reject(err);
-                if (stderr) log.error(`stderr=${stderr}`);
-                if (stdout) log.info(`stdout=${stdout}`);
-                if (!rejected) resolve(stdout); 
-            });
-            proc.on("exit", (code) => {
-                log.info(`Process exit code: ${code}`);
-                if (code !== 0) {
-                    rejected = true;
-                    reject(new Error(`Process exited with code ${code}`));
-                }
-            });
-        }
-        catch (ex) {
-            reject(ex);
-        }
-    });
-}
-
 async function _getGitRevision() {
     log.info("Requesting git revision...");
-    const rev = (await _execAsync("git rev-parse HEAD")).trim();
+    const rev = (await execAsync("git rev-parse HEAD")).trim();
     log.display(`Current git version: ${rev}`);
     return rev;
 }

@@ -10,6 +10,7 @@ import { addCommonOptions,  openDevice } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import * as messages from "../common/messages";
+import { execShutdown } from "./shutdown";
 
 addCommonOptions(program);
 program
@@ -60,6 +61,7 @@ async function main()
     program.parse(process.argv);
 
     await application.start(program);
+    application.onshtudown = execShutdown;
 
     _commandStation = await openDevice(program);
     if (!_commandStation) log.error("No devices found");
