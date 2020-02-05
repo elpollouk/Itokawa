@@ -2,7 +2,7 @@ import * as messages from "../common/messages"
 import { timestamp } from "../common/time";
 import { CommandStationState } from "../devices/commandStations/commandStation";
 
-const HEARTBEAT_TIME = 30; // In seconds
+const HEARTBEAT_TIME = 15; // In seconds
 
 type RequestCallback = (err: Error, response?: messages.CommandResponse)=>void
 

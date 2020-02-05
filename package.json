@@ -4,7 +4,7 @@
   "description": "",
   "private": true,
   "scripts": {
-    "start": "node dist/main.js",
+    "start": "node dist/server/main.js",
     "build": "npm run tsc && npm run bundle",
     "tsc": "node_modules/.bin/tsc",
     "bundle": "node_modules/.bin/webpack",

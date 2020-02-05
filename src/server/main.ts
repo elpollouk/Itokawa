@@ -1,15 +1,15 @@
-import { Logger, LogLevel } from "./utils/logger";
-import { timestamp } from "./common/time";
+import { Logger, LogLevel } from "../utils/logger";
+import { timestamp } from "../common/time";
 import { AddressInfo } from "net";
 import * as express from "express";
 import * as expressWs from "express-ws";
 import * as program from "commander";
 import * as ngrok from "ngrok";
-import * as lifecycle from "./server/lifecycle";
-import { addCommonOptions, applyLogLevel, openDevice } from "./utils/commandLineArgs";
-import { parseIntStrict } from "./utils/parsers";
-import { ICommandStation } from "./devices/commandStations/commandStation";
-import * as messages from "./common/messages";
+import { application } from "../application";
+import { addCommonOptions,  openDevice } from "../utils/commandLineArgs";
+import { parseIntStrict } from "../utils/parsers";
+import { ICommandStation } from "../devices/commandStations/commandStation";
+import * as messages from "../common/messages";
 
 addCommonOptions(program);
 program
@@ -30,13 +30,13 @@ messageHandlers.set(messages.RequestType.LifeCycle, async (msg): Promise<message
             const response: messages.LifeCyclePingResponse = {
                 commandStation: _commandStation ? _commandStation.deviceId : "",
                 commandStationState: _commandStation ? _commandStation.state : -1,
-                gitrev: lifecycle.getGitRevision(),
+                gitrev: application.gitrev,
                 data: "OK"
             };
             return response;
 
         case messages.LifeCycleAction.shutdown:
-            await lifecycle.shutdown();
+            await application.shutdown();
             return { data: "OK" };
 
         default:
@@ -58,9 +58,8 @@ messageHandlers.set(messages.RequestType.LocoSpeed, async (msg): Promise<message
 async function main()
 {
     program.parse(process.argv);
-    applyLogLevel(program);
 
-    await lifecycle.start(program.datadir);
+    await application.start(program);
 
     _commandStation = await openDevice(program);
     if (!_commandStation) log.error("No devices found");
