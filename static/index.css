@@ -12,3 +12,9 @@
     margin-left: 2px;
     margin-right: 2px;
 }
+
+.qrcode {
+    image-rendering: pixelated; 
+    width: 198px;
+    height: 198px;
+}
