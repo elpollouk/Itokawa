@@ -9,7 +9,8 @@
     "tsc": "node_modules/.bin/tsc",
     "bundle": "node_modules/.bin/webpack",
     "test": "node_modules/.bin/nyc node_modules/.bin/mocha -r ts-node/register \"src/**/*.spec.ts\"",
-    "cli": "node dist/cli/main.js"
+    "cli": "node dist/cli/main.js",
+    "update": "git pull && npm install && npm run build && npm test"
   },
   "author": "",
   "license": "MIT",

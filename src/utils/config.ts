@@ -22,8 +22,12 @@ export class ConfigNode {
         if (!(key in this)) return defaultValue;
         
         const value = this[key];
-        if (value instanceof ConfigNode && path.length !== 0) return value._get(path, defaultValue);
-        if (path.length !== 0) return defaultValue;
+        // If there are still path components, then we need to go deeper into the config
+        if (path.length !== 0) {
+            if (value instanceof ConfigNode && path.length !== 0) return value._get(path, defaultValue);
+            // We can't go any deeper from here, so return the default value
+            return defaultValue;
+        }
 
         return value;
     }
