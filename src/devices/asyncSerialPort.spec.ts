@@ -150,7 +150,7 @@ describe("AsyncSerialPort", () => {
         it("should update bytes available on data arrival", async () => {
             let port = await open();
             emitData([3, 5, 7]);
-            await ticks(2);
+            await ticks(3);
 
             expect(port.bytesAvailable).to.equal(3);
         });
