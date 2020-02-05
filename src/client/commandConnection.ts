@@ -36,6 +36,8 @@ export class CommandConnection {
     private _state: ConnectionState = ConnectionState.Opening;
     private _heartbeartToken: any = null;
     private _lastHeatbeatResponse: messages.LifeCyclePingResponse = null;
+    private _publicUrl: string = `${window.location.protocol}://${window.location.hostname}:${window.location.port}`;
+    private _onPublicUrlChanged: (url:string)=>void;
 
     get state() {
         return this._state;
@@ -58,6 +60,23 @@ export class CommandConnection {
     get gitRevision(): string {
         const info = this._lastHeatbeatResponse;
         return info ? info.gitrev : "";
+    }
+
+    get publicUrl(): string {
+        return this._publicUrl;
+    }
+
+    set onPublicUrlChanged(value: (url:string)=>void) {
+        this._onPublicUrlChanged = value;
+        if (value) {
+            value(this._publicUrl);
+        }
+    }
+
+    private _setPublicUrl(url: string) {
+        if (url === this._publicUrl) return;
+        this._publicUrl = url;
+        if (this._onPublicUrlChanged) this._onPublicUrlChanged(url);
     }
 
     constructor(readonly url: string) {
@@ -187,7 +206,10 @@ export class CommandConnection {
             action: messages.LifeCycleAction.ping
         } as messages.LifeCycleRequest, (err, response) => {
             if (err) this._onError(err);
-            else this._lastHeatbeatResponse = response as messages.LifeCyclePingResponse;
+            else {
+                this._lastHeatbeatResponse = response as messages.LifeCyclePingResponse;
+                this._setPublicUrl(this._lastHeatbeatResponse.publicUrl);
+            }
         });
     }
 }

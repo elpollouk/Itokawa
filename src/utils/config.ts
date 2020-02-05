@@ -58,6 +58,7 @@ export class ConfigNode {
 
 export async function loadConfig(path: string): Promise<ConfigNode> {
     try {
+        log.info(() => `Loading ${path}`);
         if (!fs.existsSync(path)) {
             log.warning(`${path} does not exist`);
             return new ConfigNode();

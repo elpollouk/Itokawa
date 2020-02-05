@@ -1,6 +1,7 @@
 import { CommandConnection } from "./commandConnection";
 import { TrainControl } from "./controls/trainControl";
 import { RequestButton } from "./controls/requestButton";
+import { PublicUrlQrCode } from "./controls/publicUrlQrCode";
 import { LifeCycleRequest, RequestType, LifeCycleAction } from "../common/messages";
 
 (function () {
@@ -30,6 +31,8 @@ import { LifeCycleRequest, RequestType, LifeCycleAction } from "../common/messag
                 action: LifeCycleAction.shutdown
             };
         });
+
+        new PublicUrlQrCode(document.getElementById("qrcodeContainer"), connection);
     }
 
 })();

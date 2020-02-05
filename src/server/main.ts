@@ -1,6 +1,7 @@
 import { Logger, LogLevel } from "../utils/logger";
 import { timestamp } from "../common/time";
 import { AddressInfo } from "net";
+import * as os from "os";
 import * as express from "express";
 import * as expressWs from "express-ws";
 import * as program from "commander";
@@ -24,6 +25,8 @@ let _commandStation: ICommandStation = null;
 
 const messageHandlers = new Map<messages.RequestType, (msg: messages.CommandRequest)=>Promise<messages.CommandResponse>>();
 
+let _publicUrl = null;
+
 messageHandlers.set(messages.RequestType.LifeCycle, async (msg): Promise<messages.CommandResponse> => {
     const request = msg as messages.LifeCycleRequest;
     switch(request.action) {
@@ -32,6 +35,7 @@ messageHandlers.set(messages.RequestType.LifeCycle, async (msg): Promise<message
                 commandStation: _commandStation ? _commandStation.deviceId : "",
                 commandStationState: _commandStation ? _commandStation.state : -1,
                 gitrev: application.gitrev,
+                publicUrl: _publicUrl,
                 data: "OK"
             };
             return response;
@@ -60,7 +64,7 @@ async function main()
 {
     program.parse(process.argv);
 
-    await application.start(program);
+    await application.start(program, true);
     application.onshtudown = execShutdown;
 
     _commandStation = await openDevice(program);
@@ -110,11 +114,13 @@ async function main()
         }
 
         const address: AddressInfo = server.address() as AddressInfo;
-        log.display(`Listening on ${address.address}:${address.port}`);
+        _publicUrl = `http://${os.hostname()}:${address.port}`;
+        log.display(`Listening on ${_publicUrl}`);
 
-        if (program.ngrok) {
+        if (program.ngrok || application.config.has("server.publish.ngrok")) {
             ngrok.connect(port).then((url) => {
                 log.display(`ngrok url: ${url}`);
+                _publicUrl = url;
             }, (err) => {
                 log.error("Failed to register ngrok endpoint");
                 log.error(err);

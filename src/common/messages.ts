@@ -32,5 +32,6 @@ export interface CommandResponse {
 export interface LifeCyclePingResponse extends CommandResponse {
     gitrev: string,
     commandStation: string,
-    commandStationState: number
+    commandStationState: number,
+    publicUrl: string
 }
