@@ -4,7 +4,7 @@ import * as os from "os";
 import * as pathMod from "path";
 import { CommanderStatic } from "commander";
 import { Logger } from "./utils/logger";
-import { ConfigNode, loadConfig } from "./utils/config";
+import { ConfigNode, loadConfig, saveConfig } from "./utils/config";
 import { applyLogLevel } from "./utils/commandLineArgs";
 import { execAsync } from "./utils/exec";
 
@@ -46,6 +46,7 @@ class Application {
     }
 
     private _config: ConfigNode = new ConfigNode();
+    private _configPath: string;
     private _gitrev: string = "";
     private _dataPath: string;
 
@@ -63,7 +64,8 @@ class Application {
                 applyLogLevel(args);
 
                 this._dataPath =_initDataDirectory(args.datadir);
-                this._config = await loadConfig(this.getDataPath("config.xml"));
+                this._configPath = this.getDataPath("config.xml");
+                this._config = await loadConfig(this._configPath);
                 this._gitrev = await _getGitRevision();
 
                 if (savepid) {
@@ -86,6 +88,10 @@ class Application {
     
         if (path) return pathMod.join(this._dataPath, path);
         return this._dataPath;
+    }
+
+    async saveConfig() {
+        await saveConfig(this._configPath, this.config);
     }
 
     async shutdown() {
