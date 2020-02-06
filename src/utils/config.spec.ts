@@ -123,6 +123,16 @@ describe("Config", () => {
             })
         })
 
+        describe("getAs", () => {
+            it("should make tsc happy", () => {
+                const node = new ConfigNode();
+                node["foo"] = 123.45
+                const value: number = node.getAs<number>("foo");
+
+                expect(value).to.equal(123.45);
+            })
+        })
+
         describe("set", () => {
             it("should set immediate node number value", () => {
                 const node = new ConfigNode();

@@ -5,17 +5,18 @@ import * as os from "os";
 import * as express from "express";
 import * as expressWs from "express-ws";
 import * as program from "commander";
-import * as ngrok from "ngrok";
+import * as ngrok from "../publishers/ngrok";
 import { application } from "../application";
 import { addCommonOptions,  openDevice } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import * as messages from "../common/messages";
 import { execShutdown } from "./shutdown";
+import { ConfigNode } from "../utils/config";
 
 addCommonOptions(program);
 program
-    .option("-p --port <port>", "Port to listen on", "8080")
+    .option("-p --port <port>", "Port to listen on")
     .option("--datadir <path>", "Directory to save data to")
     .option("--ngrok", "Enable ngrok endpoint");
 
@@ -104,9 +105,10 @@ async function main()
 
     app.use(express.static("static"));
 
-    const port = parseIntStrict(program.port);
+    let port = program.port || application.config.get("server.port", 8080);
+    if (typeof(port) === "string") port = parseIntStrict(port);
 
-    const server = app.listen(port, (err) => {
+    const server = app.listen(port, (err: any) => {
         if (err) {
             log.error(`Failed to start listening on port ${port}`);
             log.error(err);
@@ -117,8 +119,9 @@ async function main()
         _publicUrl = `http://${os.hostname()}:${address.port}`;
         log.display(`Listening on ${_publicUrl}`);
 
-        if (program.ngrok || application.config.has("server.publish.ngrok")) {
-            ngrok.connect(port).then((url) => {
+        const ngrokConfig = application.config.getAs<ConfigNode>("server.publish.ngrok");
+        if (program.ngrok || ngrokConfig) {
+            ngrok.publish(port, ngrokConfig).then((url) => {
                 log.display(`ngrok url: ${url}`);
                 _publicUrl = url;
             }, (err) => {

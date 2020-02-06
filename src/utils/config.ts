@@ -17,6 +17,10 @@ export class ConfigNode {
         return this._get(_path, defaultValue);
     }
 
+    getAs<T extends Value>(path: string, defaultValue?: T): T {
+        return this.get(path, defaultValue) as T;
+    }
+
     private _get(path: string[], defaultValue?: Value): Value {
         const key = path.shift();
         if (!(key in this)) return defaultValue;
