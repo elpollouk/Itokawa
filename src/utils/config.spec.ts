@@ -9,7 +9,7 @@ import { ConfigNode, loadConfig, saveConfig } from "./config";
 
 const TEST_CONFIG = '<config><endpoint><publish><ngrok/></publish></endpoint>'
                   + '<test1 type="bool">true</test1><test2 type="number">123</test2><test3>foo bar</test3>'
-                  + '<nested><A>1</A><B>2</B><C>3</C></nested>'
+                  + '<nested><A>a</A><B>b</B><C>c</C></nested>'
                   + '</config>';
 
 describe("Config", () => {
@@ -270,9 +270,9 @@ describe("Config", () => {
             expect(config.get("test1")).to.be.true;
             expect(config.get("test2")).to.equal(123);
             expect(config.get("test3")).to.equal("foo bar");
-            expect(config.get("nested.A")).to.equal("1");
-            expect(config.get("nested.B")).to.equal("2");
-            expect(config.get("nested.C")).to.equal("3");
+            expect(config.get("nested.A")).to.equal("a");
+            expect(config.get("nested.B")).to.equal("b");
+            expect(config.get("nested.C")).to.equal("c");
             expect(config.has("endpoint.publish.ngrok")).to.be.true;
         })
 
@@ -283,6 +283,20 @@ describe("Config", () => {
             expect(config.get("test")).to.equal("A");
         })
 
+        it("should parse explicit integers as numbers", async () => {
+            readFsStub.returns('<config><test type="int">123</test></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test")).to.equal(123);
+        })
+
+        it("should parse explicit strings as strings", async () => {
+            readFsStub.returns('<config><test type="string">123</test></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test")).to.equal("123");
+        });
+
         it("should ignore non-type attributes", async () => {
             readFsStub.returns('<config><test foo="bar">Foo</test></config>');
             const config = await loadConfig("test/path/config.xml");
@@ -290,7 +304,35 @@ describe("Config", () => {
             expect(config.get("test")).to.equal("Foo");
         })
 
-        it("should handle XML comments", async () => {
+        it("should ignore non-type attributes on a config node", async () => {
+            readFsStub.returns('<config><test foo="bar"><baz>Testing</baz></test></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test.baz")).to.equal("Testing");
+        })
+
+        it("should handle self closed XML tags empty strings", async () => {
+            readFsStub.returns('<config><foo/></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("foo")).to.equal("");
+        })
+
+        it("should handle empty XML tags as empty strings", async () => {
+            readFsStub.returns('<config><test></test></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test")).to.equal("");
+        })
+
+        it("should handle self closed XML tags empty strings", async () => {
+            readFsStub.returns('<config><foo/></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("foo")).to.equal("");
+        })
+
+        it("should ignore XML comments", async () => {
             readFsStub.returns('<config><!-- TEST COMMENT //--><test type="number">543.12</test></config>');
             const config = await loadConfig("test/path/config.xml");
 

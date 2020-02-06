@@ -83,6 +83,8 @@ export async function loadConfig(path: string): Promise<ConfigNode> {
 const _PARSERS = {
     "bool": (value: any) => value === "true",
     "number": (value: any) => parseFloat(value),
+    "int": (value: any) => parseInt(value),
+    "string": (value: any) => `${value}`,
     "default" : (value: any) => value
 };
 
