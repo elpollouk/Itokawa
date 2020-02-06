@@ -290,6 +290,22 @@ describe("Config", () => {
             expect(config.get("test")).to.equal(123);
         })
 
+        it("should parse explicit floats as numbers", async () => {
+            readFsStub.returns('<config><test type="float">123.45</test></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test")).to.equal(123.45);
+        })
+
+        it("should parse explicit bools as true/false", async () => {
+            readFsStub.returns('<config><test1 type="bool">false</test1><test2 type="bool">TrUe</test2><test3 type="bool">adsfasd</test3></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test1")).to.be.false;
+            expect(config.get("test2")).to.be.true;
+            expect(config.get("test3")).to.be.false;
+        })
+
         it("should parse explicit strings as strings", async () => {
             readFsStub.returns('<config><test type="string">123</test></config>');
             const config = await loadConfig("test/path/config.xml");
@@ -297,11 +313,45 @@ describe("Config", () => {
             expect(config.get("test")).to.equal("123");
         });
 
-        it("should ignore non-type attributes", async () => {
-            readFsStub.returns('<config><test foo="bar">Foo</test></config>');
+        it("should auto detect integer numbers", async () => {
+            readFsStub.returns('<config><test1>12345</test1><test2>123abc</test2></config>');
             const config = await loadConfig("test/path/config.xml");
 
-            expect(config.get("test")).to.equal("Foo");
+            expect(config.get("test1")).to.equal(12345);
+            expect(config.get("test2")).to.equal("123abc");
+        })
+
+        it("should auto detect float numbers", async () => {
+            readFsStub.returns('<config><test1>123.45</test1><test2>123.</test2><test3>123.abc</test3></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test1")).to.equal(123.45);
+            expect(config.get("test2")).to.equal(123.0);
+            expect(config.get("test3")).to.equal("123.abc");
+        })
+
+        it("should not detect IP4 addresses as floats", async () => {
+            readFsStub.returns('<config><test>192.168.1.77</test></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test")).to.equal("192.168.1.77");
+        })
+
+        it("should auto detect booleans", async () => {
+            readFsStub.returns('<config><test1>trUE</test1><test2>faLse</test2><test3>truefalse</test3></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test1")).to.be.true
+            expect(config.get("test2")).to.be.false;
+            expect(config.get("test3")).to.equal("truefalse");
+        })
+
+        it("should ignore non-type attributes", async () => {
+            readFsStub.returns('<config><test1 foo="bar">Foo</test1><test2 a="b">35.7</test2></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test1")).to.equal("Foo");
+            expect(config.get("test2")).to.equal(35.7);
         })
 
         it("should ignore non-type attributes on a config node", async () => {

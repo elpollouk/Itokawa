@@ -81,12 +81,31 @@ export async function loadConfig(path: string): Promise<ConfigNode> {
 }
 
 const _PARSERS = {
-    "bool": (value: any) => value === "true",
+    "bool": (value: any) => `${value}`.toLowerCase() === "true",
     "number": (value: any) => parseFloat(value),
+    "float": (value: any) => parseFloat(value),
     "int": (value: any) => parseInt(value),
-    "string": (value: any) => `${value}`,
-    "default" : (value: any) => value
+    "string": (value: any) => `${value}`
 };
+
+interface TypeDetector {
+    regex: RegExp,
+    typeName: string
+};
+
+const _TYPE_DETECTORS: TypeDetector[] = [
+    { regex: /^\d+\.\d*$/, typeName: "float" },
+    { regex: /^\d+$/, typeName: "int" },
+    { regex: /^[tT][rR][uU][eE]$|^[fF][aA][lL][sS][eE]$/, typeName: "bool" }
+];
+
+function _autoParseValue(value: string): number | boolean | string {
+    for (const detector of _TYPE_DETECTORS)
+        if (detector.regex.test(value))
+            return _PARSERS[detector.typeName](value);
+
+    return value;
+}
 
 function _parseNode(data: any): ConfigNode {
     const node = new ConfigNode();
@@ -97,15 +116,20 @@ function _parseNode(data: any): ConfigNode {
 
         if (value instanceof Object) {
             if ("_" in value) {
-                const type = value._attr["type"] || "default";
-                node[key] = _PARSERS[type](value._);
+                const type = value._attr["type"];
+                if (type in _PARSERS) {
+                    node[key] = _PARSERS[type](value._);
+                }
+                else {
+                    node[key] = _autoParseValue(value._);
+                }
             }
             else{
                 node[key] = _parseNode(value);
             }
         }
         else{
-            node[key] = value;
+            node[key] = _autoParseValue(value);
         }
     }
 
