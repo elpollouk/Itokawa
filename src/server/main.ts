@@ -1,4 +1,6 @@
 import { Logger, LogLevel } from "../utils/logger";
+Logger.logLevel = LogLevel.DISPLAY;
+
 import { timestamp } from "../common/time";
 import { AddressInfo } from "net";
 import * as os from "os";
@@ -20,7 +22,6 @@ program
     .option("--datadir <path>", "Directory to save data to")
     .option("--ngrok", "Enable ngrok endpoint");
 
-Logger.logLevel = LogLevel.DEBUG;
 let log = new Logger("Main");
 let _commandStation: ICommandStation = null;
 

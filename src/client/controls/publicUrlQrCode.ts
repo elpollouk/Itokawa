@@ -4,6 +4,9 @@ import * as qrcode from "qrcode";
 export class PublicUrlQrCode {
     readonly element: HTMLElement;
 
+    image: HTMLImageElement;
+    url: HTMLAnchorElement;
+
     constructor(readonly parent: HTMLElement, readonly connection: CommandConnection) {
         this.element = this._buildUi();
         this.parent.appendChild(this.element);
@@ -13,14 +16,27 @@ export class PublicUrlQrCode {
                     console.error(err);
                     return;
                 }
-                (this.element as HTMLImageElement).src = dataUrl;
+                this.image.src = dataUrl;
+                this.url.href = url;
+                this.url.innerText = url;
             });
         };
     }
 
     private _buildUi(): HTMLElement {
-        const image = document.createElement("img");
-        image.className = "qrcode";
-        return image;
+        const container = document.createElement("div");
+        container.className = "qrcode";
+
+        let div = document.createElement("div");
+        this.image = document.createElement("img");
+        div.appendChild(this.image);
+        container.append(div);
+
+        div = document.createElement("div");
+        this.url = document.createElement("a");
+        div.appendChild(this.url);
+        container.appendChild(div);
+
+        return container;
     }
 }

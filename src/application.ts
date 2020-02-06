@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as pathMod from "path";
 import { CommanderStatic } from "commander";
-import { Logger } from "./utils/logger";
+import { Logger, LogLevel } from "./utils/logger";
 import { ConfigNode, loadConfig, saveConfig } from "./utils/config";
 import { applyLogLevel } from "./utils/commandLineArgs";
 import { execAsync } from "./utils/exec";
@@ -20,14 +20,26 @@ function _initDataDirectory(dataPath: string) {
         throw new Error(`${dataPath} is not a directory`);
     }
 
-    log.display(`datadir=${dataPath}`);
+    log.info(`datadir=${dataPath}`);
     return dataPath;
+}
+
+function _applyLogConfig(config: ConfigNode) {
+    const logLevelName = config.getAs("level", "DISPLAY").toUpperCase();
+    if (logLevelName in LogLevel) {
+        const logLevel = LogLevel[logLevelName];
+        // We only want to raise the log level via the config rather lower it
+        // This is in case we've raised it via the the command line for debugging
+        if (logLevel > Logger.logLevel) {
+            Logger.logLevel = logLevel;
+        }
+    }
 }
 
 async function _getGitRevision() {
     log.info("Requesting git revision...");
     const rev = (await execAsync("git rev-parse HEAD")).trim();
-    log.display(`Current git version: ${rev}`);
+    log.info(`Current git version: ${rev}`);
     return rev;
 }
 
@@ -56,21 +68,28 @@ class Application {
 
     // Initialise server life cycle handling
     //  * Initialise the data directory
-    //  * Write a pid file to the data directory
+    //  * Load the config file
+    //  * Configure logging
     //  * Fetch the current git revision
+    //  * Write a pid file to the data directory
     start(args: CommanderStatic, savepid: boolean = false): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
+                // We apply an initial log level based on the command line args so that we can debug
+                // directory initialisation and config loading if needed
                 applyLogLevel(args);
 
                 this._dataPath =_initDataDirectory(args.datadir);
                 this._configPath = this.getDataPath("config.xml");
                 this._config = await loadConfig(this._configPath);
+
+                _applyLogConfig(this.config.getAs("application.log", new ConfigNode()));
+
                 this._gitrev = await _getGitRevision();
 
                 if (savepid) {
                     const pid = process.pid;
-                    log.display(`pid=${pid}`);
+                    log.info(`pid=${pid}`);
                     const pidPath = this.getDataPath("pid");
                     fs.writeFileSync(pidPath, `${pid}`);
                 }
