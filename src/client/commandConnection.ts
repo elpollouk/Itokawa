@@ -5,6 +5,7 @@ import { CommandStationState } from "../devices/commandStations/commandStation";
 const HEARTBEAT_TIME = 15; // In seconds
 
 type RequestCallback = (err: Error, response?: messages.CommandResponse)=>void
+type ValueCallback<T> = (value:T)=>void;
 
 export enum ConnectionState {
     Opening,
@@ -34,10 +35,13 @@ export class CommandConnection {
     private _socket: WebSocket;
     private _callback: RequestCallback = null;
     private _state: ConnectionState = ConnectionState.Opening;
+    private _deviceState: CommandStationState = CommandStationState.NOT_CONNECTED;
     private _heartbeartToken: any = null;
     private _lastHeatbeatResponse: messages.LifeCyclePingResponse = null;
     private _publicUrl: string = `${window.location.protocol}://${window.location.hostname}:${window.location.port}`;
-    private _onPublicUrlChanged: (url:string)=>void;
+    private _onPublicUrlChanged: ValueCallback<string>;
+    private _onStateChanged: ValueCallback<ConnectionState>;
+    private _onDeviceStateChanged: ValueCallback<CommandStationState>;
 
     get state() {
         return this._state;
@@ -53,8 +57,7 @@ export class CommandConnection {
     }
 
     get deviceState(): CommandStationState {
-        const info = this._lastHeatbeatResponse;
-        return info ? info.commandStationState : CommandStationState.UNINITIALISED;
+        return this._deviceState;
     }
 
     get gitRevision(): string {
@@ -66,7 +69,7 @@ export class CommandConnection {
         return this._publicUrl;
     }
 
-    set onPublicUrlChanged(value: (url:string)=>void) {
+    set onPublicUrlChanged(value: ValueCallback<string>) {
         this._onPublicUrlChanged = value;
         if (value) {
             value(this._publicUrl);
@@ -79,12 +82,34 @@ export class CommandConnection {
         if (this._onPublicUrlChanged) this._onPublicUrlChanged(url);
     }
 
-    constructor(readonly url: string) {
-        this.retry();
+    set onStateChanged(value: ValueCallback<ConnectionState>) {
+        this._onStateChanged = value;
+        if (value) {
+            value(this._state);
+        }
     }
 
     private _setState(state: ConnectionState) {
+        if (state === this._state) return;
         this._state = state;
+        if (this._onStateChanged) this._onStateChanged(state);
+    }
+
+    set onDeviceStateChanged(value: ValueCallback<CommandStationState>) {
+        this._onDeviceStateChanged = value;
+        if (value) {
+            value(this._deviceState);
+        }
+    }
+
+    private _setDeviceState(state: CommandStationState) {
+        if (state === this._deviceState) return;
+        this._deviceState = state;
+        if (this._onDeviceStateChanged) this._onDeviceStateChanged(state);
+    }
+
+    constructor(readonly url: string) {
+        this.retry();
     }
 
     request(message: messages.CommandRequest, callback?: RequestCallback) {
@@ -116,7 +141,7 @@ export class CommandConnection {
 
     close() {
         this._cancelHeartbeat();
-        this._state = ConnectionState.Closed;
+        this._setState(ConnectionState.Closed);
         if (this._socket) this._socket.close();
     }
 
@@ -137,6 +162,7 @@ export class CommandConnection {
             this._setState(ConnectionState.Errored);
             this._scheduleHeartbeat();
         }
+        this._setDeviceState(CommandStationState.NOT_CONNECTED);
         this._socket = null;
 
         const cb = this._callback;
@@ -209,6 +235,7 @@ export class CommandConnection {
             else {
                 this._lastHeatbeatResponse = response as messages.LifeCyclePingResponse;
                 this._setPublicUrl(this._lastHeatbeatResponse.publicUrl);
+                this._setDeviceState(this._lastHeatbeatResponse.commandStationState);
             }
         });
     }

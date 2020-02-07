@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger";
 
 export enum CommandStationState {
+    NOT_CONNECTED = -1,
     UNINITIALISED = 0,
     INITIALISING,
     IDLE,

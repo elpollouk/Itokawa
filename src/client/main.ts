@@ -1,4 +1,5 @@
 import { CommandConnection } from "./commandConnection";
+import { ConnectionStatus } from "./controls/connectionStatus";
 import { TrainControl } from "./controls/trainControl";
 import { RequestButton } from "./controls/requestButton";
 import { PublicUrlQrCode } from "./controls/publicUrlQrCode";
@@ -11,8 +12,9 @@ import { LifeCycleRequest, RequestType, LifeCycleAction } from "../common/messag
         connection = new CommandConnection("/control");
         window["commandConnection"] = connection;
 
-        const trainControls = document.getElementById("trainControls");
+        new ConnectionStatus(document.getElementById("statusBar"), connection);
 
+        const trainControls = document.getElementById("trainControls");
         new TrainControl(trainControls,
                          connection,
                          "Class 43 HST",

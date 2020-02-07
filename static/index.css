@@ -2,6 +2,37 @@ body {
     font-family: sans-serif;
 }
 
+.connectionStatus {
+    text-align: right;
+}
+
+.connectionStatus .led {
+    width: 1.5em;
+    height: 1.5em;
+    margin: 1px;
+    display: inline-block;
+    border-color: rgb(24, 24, 24);
+    border-width: 2px;
+    border-style: solid;
+    transition: background-color 0.2s;
+}
+
+.connectionStatus .disconnected {
+    background-color: gray;
+}
+
+.connectionStatus .connecting {
+    background-color: orange;
+}
+
+.connectionStatus .connected {
+    background-color: greenyellow;
+}
+
+.connectionStatus .error {
+    background-color: red;
+}
+
 .container {
     padding: 2px;
 }
