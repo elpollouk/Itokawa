@@ -2,6 +2,11 @@ body {
     font-family: sans-serif;
 }
 
+#statusBar {
+    background-color: lightgray;
+    padding: 2px;
+}
+
 .connectionStatus {
     text-align: right;
 }
