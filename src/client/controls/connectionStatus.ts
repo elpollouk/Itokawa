@@ -10,7 +10,7 @@ export class ConnectionStatus {
         this.element = this._buildUi();
         this.parent.appendChild(this.element);
 
-        connection.onStateChanged = (state) => {
+        connection.bind("state", (state: ConnectionState) => {
             switch (state) {
                 case ConnectionState.Closed:
                     this.networkStatus.className = "led disconnected";
@@ -29,9 +29,9 @@ export class ConnectionStatus {
                     this.networkStatus.className = "led error";
                     break;
             }
-        };
+        });
 
-        connection.onDeviceStateChanged = (state) => {
+        connection.bind("deviceState", (state: CommandStationState) => {
             switch (state) {
                 case CommandStationState.NOT_CONNECTED:
                 case CommandStationState.UNINITIALISED:
@@ -52,7 +52,7 @@ export class ConnectionStatus {
                     this.commandStationStatus.className = "led error";
                     break;
             }
-        };
+        });
     }
 
     _buildUi(): HTMLElement {

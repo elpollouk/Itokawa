@@ -1,3 +1,4 @@
+import { Bindable } from "./utils/events";
 import * as messages from "../common/messages"
 import { timestamp } from "../common/time";
 import { CommandStationState } from "../devices/commandStations/commandStation";
@@ -5,7 +6,6 @@ import { CommandStationState } from "../devices/commandStations/commandStation";
 const HEARTBEAT_TIME = 15; // In seconds
 
 type RequestCallback = (err: Error, response?: messages.CommandResponse)=>void
-type ValueCallback<T> = (value:T)=>void;
 
 export enum ConnectionState {
     Opening,
@@ -15,7 +15,7 @@ export enum ConnectionState {
     Errored
 }
 
-export class CommandConnection {
+export class CommandConnection extends Bindable {
 
     static relativeUri(path: string): string {
         const loc = window.location;
@@ -32,20 +32,14 @@ export class CommandConnection {
         return new_uri;
     }
 
+    state = ConnectionState.Closed;
+    deviceState = CommandStationState.NOT_CONNECTED;
+    publicUrl = `${window.location.protocol}://${window.location.hostname}:${window.location.port}`;
+
     private _socket: WebSocket;
     private _callback: RequestCallback = null;
-    private _state: ConnectionState = ConnectionState.Opening;
-    private _deviceState: CommandStationState = CommandStationState.NOT_CONNECTED;
     private _heartbeartToken: any = null;
     private _lastHeatbeatResponse: messages.LifeCyclePingResponse = null;
-    private _publicUrl: string = `${window.location.protocol}://${window.location.hostname}:${window.location.port}`;
-    private _onPublicUrlChanged: ValueCallback<string>;
-    private _onStateChanged: ValueCallback<ConnectionState>;
-    private _onDeviceStateChanged: ValueCallback<CommandStationState>;
-
-    get state() {
-        return this._state;
-    }
 
     get isIdle() {
         return this.state === ConnectionState.Idle;
@@ -56,66 +50,25 @@ export class CommandConnection {
         return info ? info.commandStation : "";
     }
 
-    get deviceState(): CommandStationState {
-        return this._deviceState;
-    }
-
     get gitRevision(): string {
         const info = this._lastHeatbeatResponse;
         return info ? info.gitrev : "";
     }
 
-    get publicUrl(): string {
-        return this._publicUrl;
-    }
-
-    set onPublicUrlChanged(value: ValueCallback<string>) {
-        this._onPublicUrlChanged = value;
-        if (value) {
-            value(this._publicUrl);
-        }
-    }
-
-    private _setPublicUrl(url: string) {
-        if (url === this._publicUrl) return;
-        this._publicUrl = url;
-        if (this._onPublicUrlChanged) this._onPublicUrlChanged(url);
-    }
-
-    set onStateChanged(value: ValueCallback<ConnectionState>) {
-        this._onStateChanged = value;
-        if (value) {
-            value(this._state);
-        }
-    }
-
-    private _setState(state: ConnectionState) {
-        if (state === this._state) return;
-        this._state = state;
-        if (this._onStateChanged) this._onStateChanged(state);
-    }
-
-    set onDeviceStateChanged(value: ValueCallback<CommandStationState>) {
-        this._onDeviceStateChanged = value;
-        if (value) {
-            value(this._deviceState);
-        }
-    }
-
-    private _setDeviceState(state: CommandStationState) {
-        if (state === this._deviceState) return;
-        this._deviceState = state;
-        if (this._onDeviceStateChanged) this._onDeviceStateChanged(state);
-    }
-
     constructor(readonly url: string) {
+        super();
+        this.makeBindableProperty(
+            "state",
+            "deviceState",
+            "publicUrl"
+        );
         this.retry();
     }
 
     request(message: messages.CommandRequest, callback?: RequestCallback) {
         try {
             if (!this.isIdle) throw new Error("Request already in progress");
-            this._setState(ConnectionState.Busy);
+            this.state = ConnectionState.Busy;
             this._cancelHeartbeat();
 
             message.requestTime = timestamp();
@@ -136,18 +89,18 @@ export class CommandConnection {
         this._socket.onclose = (ev) => this._onClose(ev);
         this._socket.onerror = (ev) => this._onError(ev);
 
-        this._state = ConnectionState.Opening;
+        this.state = ConnectionState.Opening;
     }
 
     close() {
         this._cancelHeartbeat();
-        this._setState(ConnectionState.Closed);
+        this.state = ConnectionState.Closed;
         if (this._socket) this._socket.close();
     }
 
     private _onOpen(ev: Event) {
         console.log("WebSocket opened");
-        this._setState(ConnectionState.Idle);
+        this.state = ConnectionState.Idle;
         this._requestHeartbeat();
     }
 
@@ -159,10 +112,10 @@ export class CommandConnection {
         const prevState = this.state;
         if (prevState !== ConnectionState.Closed) {
             console.error("Unexpected close, scheduling retry attempt...");
-            this._setState(ConnectionState.Errored);
+            this.state = ConnectionState.Errored;
             this._scheduleHeartbeat();
         }
-        this._setDeviceState(CommandStationState.NOT_CONNECTED);
+        this.deviceState = CommandStationState.NOT_CONNECTED;
         this._socket = null;
 
         const cb = this._callback;
@@ -176,7 +129,7 @@ export class CommandConnection {
         console.error("WebSocket error");
 
         const prevState = this.state;
-        this._setState(ConnectionState.Errored);
+        this.state = ConnectionState.Errored;
 
         const cb = this._callback;
         this._callback = null;
@@ -192,7 +145,7 @@ export class CommandConnection {
         console.log(`WebSocket message received: ${message.data}`);
 
         if (this.state === ConnectionState.Busy) {
-            this._setState(ConnectionState.Idle);
+            this.state = ConnectionState.Idle;
             const cb = this._callback;
             this._callback = null;
 
@@ -234,8 +187,8 @@ export class CommandConnection {
             if (err) this._onError(err);
             else {
                 this._lastHeatbeatResponse = response as messages.LifeCyclePingResponse;
-                this._setPublicUrl(this._lastHeatbeatResponse.publicUrl);
-                this._setDeviceState(this._lastHeatbeatResponse.commandStationState);
+                this.publicUrl = this._lastHeatbeatResponse.publicUrl;
+                this.deviceState = this._lastHeatbeatResponse.commandStationState;
             }
         });
     }

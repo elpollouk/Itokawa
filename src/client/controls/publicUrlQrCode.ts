@@ -10,7 +10,7 @@ export class PublicUrlQrCode {
     constructor(readonly parent: HTMLElement, readonly connection: CommandConnection) {
         this.element = this._buildUi();
         this.parent.appendChild(this.element);
-        connection.onPublicUrlChanged = (url) => {
+        connection.bind("publicUrl", (url: string) => {
             qrcode.toDataURL(url, (err, dataUrl) => {
                 if (err) {
                     console.error(err);
@@ -20,7 +20,7 @@ export class PublicUrlQrCode {
                 this.url.href = url;
                 this.url.innerText = url;
             });
-        };
+        });
     }
 
     private _buildUi(): HTMLElement {
