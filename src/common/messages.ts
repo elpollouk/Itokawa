@@ -4,8 +4,8 @@ export enum RequestType {
 }
 
 export interface CommandRequest {
-    type: RequestType,
     requestTime?: string
+    type: RequestType,
 }
 
 export interface LocoSpeedRequest extends CommandRequest {
@@ -24,6 +24,7 @@ export interface LifeCycleRequest extends CommandRequest {
 }
 
 export interface CommandResponse {
+    lastMessage: boolean,
     data?: any,
     error?: string,
     responseTime?: string

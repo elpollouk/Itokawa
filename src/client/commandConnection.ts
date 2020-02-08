@@ -145,11 +145,17 @@ export class CommandConnection extends Bindable {
         console.log(`WebSocket message received: ${message.data}`);
 
         if (this.state === ConnectionState.Busy) {
-            this.state = ConnectionState.Idle;
+            const data = JSON.parse(message.data) as messages.CommandResponse;
             const cb = this._callback;
-            this._callback = null;
 
-            if (cb) cb(null, JSON.parse(message.data));
+            // We want to clear state out before firing the callback so that the callback has the option
+            // to issue a new request immediately
+            if (data.lastMessage) {
+                this.state = ConnectionState.Idle;
+                this._callback = null;
+            }
+
+            if (cb) cb(null, data);
         }
         this._scheduleHeartbeat();
     }

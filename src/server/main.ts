@@ -38,13 +38,14 @@ messageHandlers.set(messages.RequestType.LifeCycle, async (msg): Promise<message
                 commandStationState: _commandStation ? _commandStation.state : -1,
                 gitrev: application.gitrev,
                 publicUrl: _publicUrl,
+                lastMessage: true,
                 data: "OK"
             };
             return response;
 
         case messages.LifeCycleAction.shutdown:
             await application.shutdown();
-            return { data: "OK" };
+            return { lastMessage: true, data: "OK" };
 
         default:
             throw new Error(`Unrecognised life cycle action: ${request.action}`);
@@ -59,7 +60,7 @@ messageHandlers.set(messages.RequestType.LocoSpeed, async (msg): Promise<message
     const batch = await _commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(request.locoId, request.speed, request.reverse);
     await batch.commit();
-    return { data: "OK" };
+    return { lastMessage: true, data: "OK" };
 });
 
 async function main()
@@ -91,7 +92,8 @@ async function main()
             }
             catch (ex) {
                 response = {
-                    error: ex.message,
+                    lastMessage: true,
+                    error: ex.message
                 }
             }
 

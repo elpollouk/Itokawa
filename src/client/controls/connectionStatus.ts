@@ -5,6 +5,7 @@ export class ConnectionStatus {
     readonly element: HTMLElement;
     networkStatus: HTMLElement;
     commandStationStatus: HTMLElement;
+    activityStatus: HTMLElement;
 
     constructor(readonly parent: HTMLElement, readonly connection: CommandConnection) {
         this.element = this._buildUi();
@@ -22,7 +23,7 @@ export class ConnectionStatus {
 
                 case ConnectionState.Idle:
                 case ConnectionState.Busy:
-                        this.networkStatus.className = "led connected";
+                    this.networkStatus.className = "led connected";
                     break;
 
                 default:
@@ -53,6 +54,23 @@ export class ConnectionStatus {
                     break;
             }
         });
+
+        let timeoutToken: NodeJS.Timeout;
+        connection.bind("state", (state: ConnectionState) => {
+            if (timeoutToken) clearTimeout(timeoutToken);
+            switch (state) {
+                case ConnectionState.Busy:
+                    this.activityStatus.className = "led connected";
+                    break;
+
+                default:
+                    timeoutToken = setTimeout(() => {
+                        this.activityStatus.className = "led disconnected";
+                        timeoutToken = null;
+                    }, 250);
+                    break;
+            }
+        });
     }
 
     _buildUi(): HTMLElement {
@@ -68,6 +86,7 @@ export class ConnectionStatus {
 
         this.networkStatus = createLed();
         this.commandStationStatus = createLed();
+        this.activityStatus = createLed();
 
         return container;
     }
