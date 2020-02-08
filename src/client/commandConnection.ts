@@ -1,4 +1,4 @@
-import { Bindable } from "./utils/events";
+import { Bindable } from "./utils/bindable";
 import * as messages from "../common/messages"
 import { timestamp } from "../common/time";
 import { CommandStationState } from "../devices/commandStations/commandStation";
@@ -76,7 +76,7 @@ export class CommandConnection extends Bindable {
             this._callback = callback;
         }
         catch (ex) {
-            callback(ex);
+            if (callback) callback(ex);
         }
     }
 

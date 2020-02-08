@@ -20,6 +20,7 @@ body {
     border-color: rgb(24, 24, 24);
     border-width: 2px;
     border-style: solid;
+    border-radius: 0.75em;
     transition: background-color 0.2s;
 }
 
