@@ -16,7 +16,9 @@ export interface LocoSpeedRequest extends CommandRequest {
 
 export enum LifeCycleAction {
     ping = 0,
-    shutdown = 1
+    shutdown = 1,
+    restart = 2,
+    update =3,
 }
 
 export interface LifeCycleRequest extends CommandRequest {

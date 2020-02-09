@@ -13,7 +13,7 @@ import { addCommonOptions,  openDevice } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import * as messages from "../common/messages";
-import { execShutdown } from "./shutdown";
+import { execShutdown, execRestart } from "./shutdown";
 import { ConfigNode } from "../utils/config";
 
 addCommonOptions(program);
@@ -29,6 +29,12 @@ let _publicUrl = null;
 type Sender = (message: messages.CommandResponse)=>Promise<void>;
 const messageHandlers = new Map<messages.RequestType, (msg: messages.CommandRequest, send: Sender)=>Promise<void>>();
 
+function ok(): messages.CommandResponse {
+    return {
+        lastMessage: true,
+        data: "OK"
+    };
+}
 
 messageHandlers.set(messages.RequestType.LifeCycle, async (msg, send): Promise<void> => {
     const request = msg as messages.LifeCycleRequest;
@@ -46,7 +52,11 @@ messageHandlers.set(messages.RequestType.LifeCycle, async (msg, send): Promise<v
 
         case messages.LifeCycleAction.shutdown:
             await application.shutdown();
-            return send({ lastMessage: true, data: "OK" });
+            return send(ok());
+
+        case messages.LifeCycleAction.restart:
+            await execRestart();
+            return send(ok());
 
         default:
             throw new Error(`Unrecognised life cycle action: ${request.action}`);
@@ -61,7 +71,7 @@ messageHandlers.set(messages.RequestType.LocoSpeed, async (msg, send): Promise<v
     const batch = await _commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(request.locoId, request.speed, request.reverse);
     await batch.commit();
-    return send({ lastMessage: true, data: "OK" });
+    return send(ok());
 });
 
 async function main()

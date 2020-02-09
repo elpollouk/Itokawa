@@ -34,6 +34,15 @@ import { LifeCycleRequest, RequestType, LifeCycleAction } from "../common/messag
             };
         });
 
+        new RequestButton<LifeCycleRequest>(globalControls, connection, "Restart", () => {
+            const yes = confirm("Are you sure you want to restart device?");
+            if (!yes) return null;
+            return {
+                type: RequestType.LifeCycle,
+                action: LifeCycleAction.restart
+            };
+        });
+
         new PublicUrlQrCode(document.getElementById("qrcodeContainer"), connection);
     }
 
