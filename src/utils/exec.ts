@@ -48,9 +48,11 @@ export function spawnAsync(command: string, onStdOut: OutputCallback, onStdErr: 
             reject(err);
         });
         proc.stdout.on("data", (data) => {
+            if (data instanceof Buffer) data = data.toString("utf8");
             onStdOut(data);
         });
         proc.stderr.on("data", (data) => {
+            if (data instanceof Buffer) data = data.toString("utf8");
             onStdOut(data);
         });
     });

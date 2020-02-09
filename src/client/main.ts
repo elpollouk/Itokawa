@@ -4,10 +4,12 @@ import { TrainControl } from "./controls/trainControl";
 import { RequestButton } from "./controls/requestButton";
 import { PublicUrlQrCode } from "./controls/publicUrlQrCode";
 import { LifeCycleRequest, RequestType, LifeCycleAction } from "../common/messages";
+import { updatePage } from "./pages/update";
 
 (function () {
     let connection: CommandConnection = null;
 
+    window["updatePage"] = updatePage;
     window["main"] = function () {
         connection = new CommandConnection("/control");
         window["commandConnection"] = connection;

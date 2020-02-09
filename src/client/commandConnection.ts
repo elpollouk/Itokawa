@@ -101,7 +101,7 @@ export class CommandConnection extends Bindable {
     private _onOpen(ev: Event) {
         console.log("WebSocket opened");
         this.state = ConnectionState.Idle;
-        this._requestHeartbeat();
+        if (this.isIdle) this._requestHeartbeat();
     }
 
     private _onClose(ev: CloseEvent) {
@@ -153,11 +153,11 @@ export class CommandConnection extends Bindable {
             if (data.lastMessage) {
                 this.state = ConnectionState.Idle;
                 this._callback = null;
+                this._scheduleHeartbeat();
             }
 
             if (cb) cb(null, data);
         }
-        this._scheduleHeartbeat();
     }
 
     private _scheduleHeartbeat() {

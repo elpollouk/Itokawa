@@ -14,6 +14,7 @@ import { parseIntStrict } from "../utils/parsers";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import * as messages from "../common/messages";
 import { execShutdown, execRestart } from "./shutdown";
+import { updateApplication } from "./updateApplication";
 import { ConfigNode } from "../utils/config";
 
 addCommonOptions(program);
@@ -48,15 +49,22 @@ messageHandlers.set(messages.RequestType.LifeCycle, async (msg, send): Promise<v
                 lastMessage: true,
                 data: "OK"
             };
-            return send(response);
+            await send(response);
+            break;
 
         case messages.LifeCycleAction.shutdown:
             await application.shutdown();
-            return send(ok());
+            await send(ok());
+            break;
 
         case messages.LifeCycleAction.restart:
             await execRestart();
-            return send(ok());
+            await send(ok());
+            break;
+
+        case messages.LifeCycleAction.update:
+            await updateApplication(send);
+            break;
 
         default:
             throw new Error(`Unrecognised life cycle action: ${request.action}`);

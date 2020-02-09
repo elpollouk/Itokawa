@@ -8,6 +8,12 @@ button {
     margin-right: 2px;
 }
 
+.flexContainer {
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+}
+
 #statusBar {
     background-color: lightgray;
     margin: -8px -8px 2px -8px;
@@ -63,4 +69,28 @@ button {
     image-rendering: pixelated; 
     width: 198px;
     height: 198px;
+}
+
+#updateTty {
+    flex-grow : 1;
+    background-color: black;
+    margin-left: -6px;
+    margin-right: -6px;
+    margin-bottom: -6px;
+}
+
+.tty {
+    background-color: black;
+    font-family: monospace;
+    color: lightgray;
+    padding: 4px;
+    box-sizing: border-box;
+}
+
+.tty span {
+    word-wrap: break-word;
+}
+
+.tty .stderr {
+    color: red;
 }
