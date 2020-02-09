@@ -24,11 +24,11 @@ import { updatePage } from "./pages/update";
         new TrainControl(trainControls,
                          connection,
                          "GWR 0-6-0",
-                         2732, [0, 32, 64, 96]);
+                         2732, [0, 32, 48, 64]);
         new TrainControl(trainControls,
                          connection,
                          "LMS 2-6-4",
-                         2328, [0, 32, 55, 80]);
+                         2328, [0, 32, 56, 80]);
         
         new RequestButton<CommandRequest>(document.getElementById("emergencyStop"), connection, "Emergency Stop", () => {
             return {
@@ -55,10 +55,13 @@ import { updatePage } from "./pages/update";
             };
         });
 
-        const updateLink = document.createElement("a");
-        updateLink.innerText = "Update";
-        updateLink.href = "update";
-        globalControls.appendChild(updateLink);
+        const updateButton = document.createElement("button");
+        updateButton.innerText = "Update";
+        updateButton.onclick = () => {
+            const yes = confirm("Are you sure you want to update device?");
+            if (yes) window.location.href = "update";
+        };
+        globalControls.appendChild(updateButton);
 
         new PublicUrlQrCode(document.getElementById("qrcodeContainer"), connection);
     }

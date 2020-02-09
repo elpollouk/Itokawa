@@ -66,6 +66,7 @@ button {
 .trainControl .title {
     width: 35%;
     display: inline-block;
+    font-size: large;
 }
 
 .qrcode {

@@ -31,7 +31,7 @@ export async function updateApplication(send: (message: messages.CommandResponse
         if (exitCode !== 0) throw new Error(`Update failed, process exited with code ${exitCode}`);
         await send({
             lastMessage: true,
-            data: "Scheduling restart in 3 seconds..."
+            data: "\nScheduling restart in 3 seconds..."
         });
 
         setTimeout(() => {
