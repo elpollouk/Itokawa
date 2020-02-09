@@ -26,6 +26,7 @@ program
 let log = new Logger("Main");
 let _commandStation: ICommandStation = null;
 let _publicUrl = null;
+const _seenLocos = new Set<number>();
 
 type Sender = (message: messages.CommandResponse)=>Promise<void>;
 const messageHandlers = new Map<messages.RequestType, (msg: messages.CommandRequest, send: Sender)=>Promise<void>>();
@@ -79,6 +80,23 @@ messageHandlers.set(messages.RequestType.LocoSpeed, async (msg, send): Promise<v
     const batch = await _commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(request.locoId, request.speed, request.reverse);
     await batch.commit();
+
+    _seenLocos.add(request.locoId);
+
+    return send(ok());
+});
+
+messageHandlers.set(messages.RequestType.EmergencyStop, async (msg, send): Promise<void> => {
+    if (!_commandStation) throw new Error("No command station connected");
+    log.info("Issuing emergency stop");
+
+    const batch = await _commandStation.beginCommandBatch();
+    for (const locoId of _seenLocos) {
+        log.debug(() => `Stopping loco ${locoId}`);
+        batch.setLocomotiveSpeed(locoId, 0);
+    }
+    await batch.commit();
+
     return send(ok());
 });
 

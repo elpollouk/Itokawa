@@ -3,7 +3,7 @@ import { ConnectionStatus } from "./controls/connectionStatus";
 import { TrainControl } from "./controls/trainControl";
 import { RequestButton } from "./controls/requestButton";
 import { PublicUrlQrCode } from "./controls/publicUrlQrCode";
-import { LifeCycleRequest, RequestType, LifeCycleAction } from "../common/messages";
+import { LifeCycleRequest, RequestType, LifeCycleAction, CommandRequest } from "../common/messages";
 import { updatePage } from "./pages/update";
 
 (function () {
@@ -29,7 +29,12 @@ import { updatePage } from "./pages/update";
                          connection,
                          "LMS 2-6-4",
                          2328, [0, 32, 55, 80]);
-               
+        
+        new RequestButton<CommandRequest>(document.getElementById("emergencyStop"), connection, "Emergency Stop", () => {
+            return {
+                type: RequestType.EmergencyStop
+            };
+        });
 
         const globalControls = document.getElementById("globalControls");
         new RequestButton<LifeCycleRequest>(globalControls, connection, "Shutdown", () => {

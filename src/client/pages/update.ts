@@ -23,7 +23,9 @@ function issueUpdateRequest() {
         return;
     }
 
-    tty.stdout("Requesting update...")
+    tty.stdout("Requesting update...\n");
+    tty.stdout(`Current git revision: ${connection.gitRevision}\n`);
+
     connection.request({
         type: RequestType.LifeCycle,
         action: LifeCycleAction.update

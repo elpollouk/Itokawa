@@ -1,6 +1,7 @@
 export enum RequestType {
     LifeCycle = 1,
-    LocoSpeed = 2
+    LocoSpeed = 2,
+    EmergencyStop = 3
 }
 
 export interface CommandRequest {
