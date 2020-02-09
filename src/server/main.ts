@@ -24,12 +24,13 @@ program
 
 let log = new Logger("Main");
 let _commandStation: ICommandStation = null;
-
-const messageHandlers = new Map<messages.RequestType, (msg: messages.CommandRequest)=>Promise<messages.CommandResponse>>();
-
 let _publicUrl = null;
 
-messageHandlers.set(messages.RequestType.LifeCycle, async (msg): Promise<messages.CommandResponse> => {
+type Sender = (message: messages.CommandResponse)=>Promise<void>;
+const messageHandlers = new Map<messages.RequestType, (msg: messages.CommandRequest, send: Sender)=>Promise<void>>();
+
+
+messageHandlers.set(messages.RequestType.LifeCycle, async (msg, send): Promise<void> => {
     const request = msg as messages.LifeCycleRequest;
     switch(request.action) {
         case messages.LifeCycleAction.ping:
@@ -41,18 +42,18 @@ messageHandlers.set(messages.RequestType.LifeCycle, async (msg): Promise<message
                 lastMessage: true,
                 data: "OK"
             };
-            return response;
+            return send(response);
 
         case messages.LifeCycleAction.shutdown:
             await application.shutdown();
-            return { lastMessage: true, data: "OK" };
+            return send({ lastMessage: true, data: "OK" });
 
         default:
             throw new Error(`Unrecognised life cycle action: ${request.action}`);
     }
 });
 
-messageHandlers.set(messages.RequestType.LocoSpeed, async (msg): Promise<messages.CommandResponse> => {
+messageHandlers.set(messages.RequestType.LocoSpeed, async (msg, send): Promise<void> => {
     if (!_commandStation) throw new Error("No command station connected");
     const request = msg as messages.LocoSpeedRequest;
     if (request.type !== messages.RequestType.LocoSpeed) throw new Error(`Invalid request type: ${request.type}`);
@@ -60,7 +61,7 @@ messageHandlers.set(messages.RequestType.LocoSpeed, async (msg): Promise<message
     const batch = await _commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(request.locoId, request.speed, request.reverse);
     await batch.commit();
-    return { lastMessage: true, data: "OK" };
+    return send({ lastMessage: true, data: "OK" });
 });
 
 async function main()
@@ -82,23 +83,25 @@ async function main()
     });*/
 
     app.ws("/control", (ws, req) => {
+        const send = (msg: messages.CommandResponse) => {
+            msg.responseTime = timestamp()
+            ws.send(JSON.stringify(msg));
+            return Promise.resolve();
+        };
+
         ws.on("message", async (msg) => {
-            log.info(`WebSocket Message: ${msg}`);
-            let response: messages.CommandResponse;
+            log.debug(() => `WebSocket Message: ${msg}`);
             try {
                 const request = JSON.parse(msg.toString()) as messages.CommandRequest;
                 if (!messageHandlers.has(request.type)) throw new Error(`Unrecognised request type: ${request.type}`);
-                response = await messageHandlers.get(request.type)(request);
+                await messageHandlers.get(request.type)(request, send);
             }
             catch (ex) {
-                response = {
+                send({
                     lastMessage: true,
                     error: ex.message
-                }
+                });
             }
-
-            response.responseTime = timestamp()
-            ws.send(JSON.stringify(response));
         });
         ws.on("close", () => {
             log.info("Web socket closed");
@@ -119,7 +122,7 @@ async function main()
         }
 
         const address: AddressInfo = server.address() as AddressInfo;
-        _publicUrl = `http://${os.hostname()}:${address.port}`;
+        _publicUrl = `http://${os.hostname()}:${address.port}/`;
         log.display(`Listening on ${_publicUrl}`);
 
         const ngrokConfig = application.config.getAs<ConfigNode>("server.publish.ngrok");
