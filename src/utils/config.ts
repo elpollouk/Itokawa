@@ -111,6 +111,14 @@ function _autoParseValue(value: string): number | boolean | string {
     return value;
 }
 
+function _autoDetectType(value: string) {
+    for (const detector of _TYPE_DETECTORS)
+        if (detector.regex.test(value))
+            return detector.typeName;
+
+    return "string";
+}
+
 function _parseNode(data: any): ConfigNode {
     const node = new ConfigNode();
 
@@ -151,11 +159,6 @@ export async function saveConfig(path: string, config: ConfigNode) {
     });
 }
 
-const _EXPLICIT_TYPES = new Set<string>([
-    "number",
-    "boolean"
-]);
-
 function _writeNode(buffer: any[], node: ConfigNode, indent: number) {
     for (const key in node) {
         const value = node[key];
@@ -169,8 +172,8 @@ function _writeNode(buffer: any[], node: ConfigNode, indent: number) {
             _writeIndent(buffer, indent);
         }
         else {
-            if (_EXPLICIT_TYPES.has(type)) {
-                buffer.push(` type="${type}"`);
+            if (typeof(value) === "string" && _autoDetectType(`${value}`) !== "string") {
+                buffer.push(' type="string"');
             }
             buffer.push(">");
             buffer.push(value);

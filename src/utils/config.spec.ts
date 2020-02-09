@@ -468,7 +468,7 @@ describe("Config", () => {
             expect(writeFsStub.callCount).to.equal(1);
             expect(writeFsStub.lastCall.args).to.eql([
                 "/config2.xml",
-                '<config>\n    <test1 type="number">1</test1>\n    <test2 type="number">2.3</test2>\n</config>', {
+                '<config>\n    <test1>1</test1>\n    <test2>2.3</test2>\n</config>', {
                     encoding: "utf8"
                 }
             ]);
@@ -485,11 +485,33 @@ describe("Config", () => {
             expect(writeFsStub.lastCall.args).to.eql([
                 "/config3.xml",
                 '<config>\n' +
-                '    <test1 type="number">1</test1>\n' +
+                '    <test1>1</test1>\n' +
                 '    <test2>\n' +
-                '        <a type="boolean">false</a>\n' +
+                '        <a>false</a>\n' +
                 '        <b>foo</b>\n' +
                 '    </test2>\n' +
+                '</config>', {
+                    encoding: "utf8"
+                }
+            ]);
+        })
+
+        it("should save explicit string values", async () => {
+            const node = new ConfigNode();
+            node.set("test1", "1");
+            node.set("test2", "23.45");
+            node.set("test3", "true");
+            node.set("test4", "false");
+            await saveConfig("/test.xml", node);
+
+            expect(writeFsStub.callCount).to.equal(1);
+            expect(writeFsStub.lastCall.args).to.eql([
+                "/test.xml",
+                '<config>\n' +
+                '    <test1 type="string">1</test1>\n' +
+                '    <test2 type="string">23.45</test2>\n' +
+                '    <test3 type="string">true</test3>\n' +
+                '    <test4 type="string">false</test4>\n' +
                 '</config>', {
                     encoding: "utf8"
                 }
