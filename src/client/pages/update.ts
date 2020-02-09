@@ -23,6 +23,7 @@ function issueUpdateRequest() {
         return;
     }
 
+    tty.stdout("Requesting update...")
     connection.request({
         type: RequestType.LifeCycle,
         action: LifeCycleAction.update

@@ -25,6 +25,11 @@ import { updatePage } from "./pages/update";
                          connection,
                          "GWR 0-6-0",
                          2732, [0, 32, 64, 96]);
+        new TrainControl(trainControls,
+                         connection,
+                         "LMS 2-6-4",
+                         2328, [0, 32, 55, 80]);
+               
 
         const globalControls = document.getElementById("globalControls");
         new RequestButton<LifeCycleRequest>(globalControls, connection, "Shutdown", () => {
@@ -44,6 +49,11 @@ import { updatePage } from "./pages/update";
                 action: LifeCycleAction.restart
             };
         });
+
+        const updateLink = document.createElement("a");
+        updateLink.innerText = "Update";
+        updateLink.href = "update";
+        globalControls.appendChild(updateLink);
 
         new PublicUrlQrCode(document.getElementById("qrcodeContainer"), connection);
     }
