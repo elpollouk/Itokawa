@@ -7,6 +7,7 @@ import { Logger, LogLevel } from "./utils/logger";
 import { ConfigNode, loadConfig, saveConfig } from "./utils/config";
 import { applyLogLevel } from "./utils/commandLineArgs";
 import { execAsync } from "./utils/exec";
+import { ICommandStation } from "./devices/commandStations/commandStation"
 
 const log = new Logger("Application");
 
@@ -45,6 +46,9 @@ async function _getGitRevision() {
 
 class Application {
     onshtudown: ()=>Promise<void> = null;
+    commandStation: ICommandStation = null;
+    publicUrl: string = "";
+    
     get config() {
         return this._config;
     }
