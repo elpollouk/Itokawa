@@ -11,7 +11,7 @@ const UPDATE_COMMAND =  "npm run prod-update";
 
 let _updateInProgress = false;
 
-export async function updateApplication(send: (message: messages.CommandResponse)=>Promise<void>) {
+export async function updateApplication(send: (message: messages.CommandResponse)=>Promise<boolean>) {
     if (_updateInProgress) throw new Error("An update is already in progress");
     _updateInProgress = true;
 

@@ -28,14 +28,14 @@ let _commandStation: ICommandStation = null;
 let _publicUrl = null;
 const _seenLocos = new Set<number>();
 
-type Sender = (message: messages.CommandResponse)=>Promise<void>;
+type Sender = (message: messages.CommandResponse)=>Promise<boolean>;
 const messageHandlers = new Map<messages.RequestType, (msg: messages.CommandRequest, send: Sender)=>Promise<void>>();
 
-function ok(): messages.CommandResponse {
-    return {
+async function ok(sender: Sender): Promise<void> {
+    await sender({
         lastMessage: true,
         data: "OK"
-    };
+    });
 }
 
 messageHandlers.set(messages.RequestType.LifeCycle, async (msg, send): Promise<void> => {
@@ -55,12 +55,12 @@ messageHandlers.set(messages.RequestType.LifeCycle, async (msg, send): Promise<v
 
         case messages.LifeCycleAction.shutdown:
             await application.shutdown();
-            await send(ok());
+            await ok(send);
             break;
 
         case messages.LifeCycleAction.restart:
             await execRestart();
-            await send(ok());
+            await ok(send);
             break;
 
         case messages.LifeCycleAction.update:
@@ -83,7 +83,7 @@ messageHandlers.set(messages.RequestType.LocoSpeed, async (msg, send): Promise<v
 
     _seenLocos.add(request.locoId);
 
-    return send(ok());
+    await ok(send);
 });
 
 messageHandlers.set(messages.RequestType.EmergencyStop, async (msg, send): Promise<void> => {
@@ -97,7 +97,7 @@ messageHandlers.set(messages.RequestType.EmergencyStop, async (msg, send): Promi
     }
     await batch.commit();
 
-    return send(ok());
+    await ok(send);
 });
 
 async function main()
@@ -119,10 +119,21 @@ async function main()
     });*/
 
     app.ws("/control", (ws, req) => {
-        const send = (msg: messages.CommandResponse) => {
+        // We wrap WebSocket sending so that we can perform additional checks and augment the
+        // message with diagnostics data.
+        // It also protects us againsts accidental WebSocket misuse as we never provide handlers
+        // direct access to the socket.
+        const send = (msg: messages.CommandResponse): Promise<boolean> => {
+            if (ws.readyState !== 1) {
+                // We handle disconnections without throwing as it's not always possible to cancel
+                // in flight promises and we don't want an exception to fail an important operation
+                // such as updating just because no-one has the web page open.
+                log.warning("Attempt to send data to closed WebSocket");
+                return Promise.resolve(false);
+            }
             msg.responseTime = timestamp()
             ws.send(JSON.stringify(msg));
-            return Promise.resolve();
+            return Promise.resolve(true);
         };
 
         ws.on("message", async (msg) => {
@@ -133,6 +144,7 @@ async function main()
                 await messageHandlers.get(request.type)(request, send);
             }
             catch (ex) {
+                log.warning(() => `WebSocket request failed: ${ex.stack}`);
                 send({
                     lastMessage: true,
                     error: ex.message

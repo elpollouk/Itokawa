@@ -12,6 +12,10 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/dist/server/main.js",
+            "args": [
+                "-d", "NullCommandStation",
+                "--log-level", "debug"
+            ],
             //"preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
