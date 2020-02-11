@@ -1,27 +1,33 @@
+/*
+ * Element Defaults
+ */
 body {
     font-family: sans-serif;
+    top: 0;
+    margin: 0;
+    padding: 0;
 }
 
 button {
-    width: 12.5%;
+    width: calc(12.5% - 4px);
     height: 3em;
     margin-left: 2px;
     margin-right: 2px;
     font-size: large;
 }
 
-.flexContainer {
-    display: flex;
-    flex-flow: column;
-    height: 100%;
-}
 
-#statusBar {
-    background-color: lightgray;
-    margin: -8px -8px 2px -8px;
+/*
+ * General Purpose
+ */
+.container {
     padding: 2px;
 }
 
+
+/*
+ * Connection Status
+ */
 .connectionStatus {
     text-align: right;
 }
@@ -54,45 +60,78 @@ button {
     background-color: red;
 }
 
-.container {
+#statusBar {
+    width: 100vw;
+    background-color: lightgray;
     padding: 2px;
+    box-sizing: border-box;
 }
 
+
+/*
+ * Content Area
+ */
+#contentArea {
+    overflow-y: auto;
+    /*
+        #statusBar padding * 2 (4px)
+        .led border * 2 (4px)
+        .led margin * 2 (2px)
+        .lef height 1.5m
+     */
+    height: calc(100vh - (10px + 1.5em));
+    box-sizing: border-box;
+}
+
+
+/*
+ * System Controls
+ */
+#globalControls {
+    margin-top: 1em;
+}
+
+
+/*
+ * Train Controls
+ */
+
 #trainControls {
-    margin-top: 2em;
+    margin-top: 1em;
     margin-bottom: 1em;
 }
 
 .trainControl .title {
-    width: 35%;
+    width: 37.5%;
     display: inline-block;
     font-size: large;
 }
 
+
+/*
+ * QR Code Control
+ */
 .qrcode {
     text-align: center;
 }
 
-.qrcode image {
+.qrcode img {
     image-rendering: pixelated; 
-    width: 198px;
-    height: 198px;
+    width: 20em;
+    height: 20em;
 }
 
-#updateTty {
-    flex-grow : 1;
-    background-color: black;
-    margin-left: -6px;
-    margin-right: -6px;
-    margin-bottom: -6px;
-}
 
+/*
+ * TTY Control
+ */
 .tty {
     background-color: black;
     font-family: monospace;
     color: lightgray;
     padding: 4px;
     box-sizing: border-box;
+    overflow-y: auto;
 }
 
 .tty span {
@@ -103,10 +142,18 @@ button {
     color: red;
 }
 
+#updateTty .tty {
+    height: 100%;
+}
+
+
+/*
+ * Emergency Stop Button
+ */
 #emergencyStop {
     padding: 1em;
-    margin-bottom: 1em;
 }
+
 #emergencyStop button {
     width: 100%;
     height: 4em;

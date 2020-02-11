@@ -27,7 +27,7 @@ export class TtyControl {
         if (className) span.className = className;
         span.innerHTML = htmlEscape(text);
         this.element.appendChild(span);
-        window.scrollTo(0, document.body.scrollHeight);
+        span.scrollIntoView();
     }
 
     stdout(text: string) {
