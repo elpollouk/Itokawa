@@ -1,5 +1,6 @@
 import { CommandConnection, ConnectionState } from "../commandConnection";
 import { CommandStationState } from "../../devices/commandStations/commandStation";
+import * as protection from "./protectionControl";
 
 export class ConnectionStatus {
     readonly element: HTMLElement;
@@ -88,6 +89,23 @@ export class ConnectionStatus {
         this.commandStationStatus = createLed();
         this.activityStatus = createLed();
 
+        this.parent.onclick = () => {
+            if (this.parent.classList.contains("expanded"))
+                this._closePanel();
+            else
+                this._openPanel();
+        }
+
         return container;
+    }
+
+    _openPanel() {
+        this.parent.classList.add("expanded");
+        protection.enableProtection(() => this._closePanel());
+    }
+
+    _closePanel() {
+        this.parent.classList.remove("expanded");
+        protection.disableProtection();
     }
 }

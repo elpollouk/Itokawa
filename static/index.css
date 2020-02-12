@@ -29,7 +29,10 @@ button {
  * Connection Status
  */
 .connectionStatus {
-    text-align: right;
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    padding: 2px;
 }
 
 .connectionStatus .led {
@@ -61,24 +64,57 @@ button {
 }
 
 #statusBar {
+    position: absolute;
+    left: 0;
+    top: calc(-50vh + 1.5em + 10px);
+
     width: 100vw;
     background-color: lightgray;
     padding: 2px;
     box-sizing: border-box;
+
+    height: 50vh;
+
+    transition: top 0.5s ease-in-out;
 }
+
+#statusBar.expanded {
+    top: 0;
+}
+
+/*
+ * Content Area Protection
+ */
+ #protection {
+    position: absolute;
+    display: block;
+    visibility: hidden;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    opacity: 0;
+    background-color: black;
+    transition: opacity 0.3s;
+ }
+
+ #protection.active {
+    visibility: visible;
+    opacity: 0.6;
+ }
 
 
 /*
  * Content Area
+ * Depends on normal status bar height:
+ *     #statusBar padding * 2 (4px)
+ *     .led border * 2 (4px)
+ *     .led margin * 2 (2px)
+ *     .lef height 1.5m
  */
 #contentArea {
     overflow-y: auto;
-    /*
-        #statusBar padding * 2 (4px)
-        .led border * 2 (4px)
-        .led margin * 2 (2px)
-        .lef height 1.5m
-     */
+    margin-top: calc(10px + 1.5em);
     height: calc(100vh - (10px + 1.5em));
     box-sizing: border-box;
 }
