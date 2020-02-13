@@ -10,7 +10,7 @@ body {
 
 button {
     width: calc(12.5% - 4px);
-    height: 3em;
+    height: 2.5em;
     margin-left: 2px;
     margin-right: 2px;
     font-size: large;
@@ -126,6 +126,9 @@ button {
     margin-top: 1em;
 }
 
+#globalControls button {
+    width: calc(25% - 4px);;
+}
 
 /*
  * Train Controls
@@ -147,15 +150,26 @@ button {
  * QR Code Control
  */
 .qrcode {
+    margin-top: 1em;
     text-align: center;
 }
 
 .qrcode img {
     image-rendering: pixelated; 
-    width: 20em;
-    height: 20em;
+    width: 12em;
+    height: 12em;
+    border: black 4px solid;
+    margin: 0.5em;
 }
 
+.qrcode a {
+    color: black;
+    font-weight: bold;
+}
+
+.qrcode a:visited {
+    color: black;
+}
 
 /*
  * TTY Control

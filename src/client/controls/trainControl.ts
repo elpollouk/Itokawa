@@ -21,10 +21,10 @@ export class TrainControl {
         container.appendChild(span);
 
         const directionButton = document.createElement("button");
-        directionButton.innerText = "FWD";
+        directionButton.innerText = "F";
         directionButton.onclick = () => {
             this._reverse = !this._reverse;
-            directionButton.innerText = this._reverse ? "REV" : "FWD";
+            directionButton.innerText = this._reverse ? "R" : "F";
             this._sendRequest();
         };
         container.appendChild(directionButton);
@@ -40,10 +40,10 @@ export class TrainControl {
             container.appendChild(button);
         };
 
-        addSpeedButton("Stop", 0);
-        addSpeedButton("Low", 1);
-        addSpeedButton("Medium", 2);
-        addSpeedButton("Fast", 3);
+        addSpeedButton("0", 0);
+        addSpeedButton("1", 1);
+        addSpeedButton("2", 2);
+        addSpeedButton("3", 3);
 
         return container;
     }
