@@ -103,6 +103,44 @@ button {
  }
 
 
+ /*
+  * User Prompts
+  */
+#popupContainer {
+    position: absolute;
+    display: none;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+#popupContainer.active {
+    display: block;
+}
+
+.prompt {
+    position: absolute;
+    padding: 0.5em;
+    width: 20em;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: whitesmoke;
+    border: rgb(64, 64, 64) solid 4px;
+}
+
+.prompt .message {
+    margin-bottom: 1.0em;
+}
+
+.prompt .buttons {
+    width: 100%;
+    text-align: center;
+}
+.prompt button {
+    width: calc(16.7vw - 4px);;
+}
+
 /*
  * Content Area
  * Depends on normal status bar height:
@@ -130,6 +168,7 @@ button {
 #globalControls button {
     width: calc(25% - 4px);;
 }
+
 
 /*
  * Train Controls

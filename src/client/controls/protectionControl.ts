@@ -1,14 +1,21 @@
-export function enableProtection(onclick?: ()=>void) {
-    const element = document.getElementById("protection");
-    if (element.classList.contains("active")) throw new Error("Protection already active");
+let _protectionCount = 0;
 
-    element.classList.add("active");
-    element.onclick = onclick;
+export function enableProtection(onclick?: ()=>void) {
+    _protectionCount++;
+
+    if (_protectionCount === 1) {
+        const element = document.getElementById("protection");
+        element.classList.add("active");
+        element.onclick = onclick;
+    }
 }
 
 export function disableProtection() {
-    const element = document.getElementById("protection");
-    if (element.classList.contains("active")) {
+    if (_protectionCount === 0) throw new Error("Protection is not active");
+    _protectionCount--;
+
+    if (_protectionCount === 0) {
+        const element = document.getElementById("protection");
         element.classList.remove("active");
         element.onclick = null;
     }

@@ -1,8 +1,9 @@
-import { CommandConnection } from "./commandConnection";
+import { CommandConnection, ConnectionState } from "./commandConnection";
 import { ConnectionStatus } from "./controls/connectionStatus";
 import { TrainControl } from "./controls/trainControl";
 import { RequestButton } from "./controls/requestButton";
 import { PublicUrlQrCode } from "./controls/publicUrlQrCode";
+import * as promptControl from "./controls/promptControl";
 import { LifeCycleRequest, RequestType, LifeCycleAction, CommandRequest } from "../common/messages";
 import { updatePage } from "./pages/update";
 
@@ -37,31 +38,32 @@ import { updatePage } from "./pages/update";
         });
 
         const globalControls = document.getElementById("globalControls");
-        new RequestButton<LifeCycleRequest>(globalControls, connection, "Shutdown", () => {
-            const yes = confirm("Are you sure you want to shutdown device?");
-            if (!yes) return null;
-            return {
+        function createSystemButton(title: string, confirmation: string, onclick:()=>void) {
+            const button = document.createElement("button");
+            button.innerText = title;
+            button.onclick = () => { promptControl.confirm(confirmation, onclick); }
+            globalControls.appendChild(button);    
+        }
+
+        createSystemButton("Shutdown", "Are you sure you want to shutdown device?", () => {
+            if (connection.state !== ConnectionState.Idle) return;
+            connection.request({
                 type: RequestType.LifeCycle,
                 action: LifeCycleAction.shutdown
-            };
+            } as LifeCycleRequest);
         });
 
-        new RequestButton<LifeCycleRequest>(globalControls, connection, "Restart", () => {
-            const yes = confirm("Are you sure you want to restart device?");
-            if (!yes) return null;
-            return {
+        createSystemButton("Restart", "Are you sure you want to restart device?", () => {
+            if (connection.state !== ConnectionState.Idle) return;
+            connection.request({
                 type: RequestType.LifeCycle,
                 action: LifeCycleAction.restart
-            };
+            } as LifeCycleRequest);
         });
 
-        const updateButton = document.createElement("button");
-        updateButton.innerText = "Update";
-        updateButton.onclick = () => {
-            const yes = confirm("Are you sure you want to update device?");
-            if (yes) window.location.href = "update";
-        };
-        globalControls.appendChild(updateButton);
+        createSystemButton("Update", "Are you sure you want to update device?", () => {
+            window.location.href = "update";
+        });
 
         // TODO - Fix this to be diven by the full screen event
         let isFullcreen = false;
