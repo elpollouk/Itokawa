@@ -178,6 +178,7 @@ button {
 .tty {
     background-color: black;
     font-family: monospace;
+    white-space: pre-wrap;
     color: lightgray;
     padding: 4px;
     box-sizing: border-box;

@@ -2,7 +2,7 @@ function htmlEscape(text: string): string {
     return text
         .replace(/</g,"&lt;")
         .replace(/>/g,"&gt;")
-        .replace(/ /g, "&nbsp;")
+        /*.replace(/ /g, "&nbsp;")*/
         .replace(/\r\n/g, "<br/>")
         .replace(/\n/g, "<br/>")
         .replace(/\r/g, "<br/>");
