@@ -87,20 +87,19 @@ button {
  */
  #protection {
     position: absolute;
-    display: block;
-    visibility: hidden;
     top: 0;
-    left: 0;
+    visibility: hidden; /* NOTE: You can't transition on display */
     height: 100vh;
     width: 100vw;
     opacity: 0;
     background-color: black;
-    transition: opacity 0.3s;
+    transition: opacity 0.5s, visibility 0.5s step-end;
  }
 
  #protection.active {
     visibility: visible;
     opacity: 0.6;
+    transition-timing-function: linear, step-start;
  }
 
 
