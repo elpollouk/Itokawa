@@ -63,6 +63,24 @@ import { updatePage } from "./pages/update";
         };
         globalControls.appendChild(updateButton);
 
+        // TODO - Fix this to be diven by the full screen event
+        let isFullcreen = false;
+        const fullscreenButton = document.createElement("button");
+        fullscreenButton.innerText = "Maximise";
+        fullscreenButton.onclick = () => {
+            if (isFullcreen) {
+                document.exitFullscreen();
+                fullscreenButton.innerText = "Maximise";
+                isFullcreen = false;
+            }
+            else {
+                document.body.requestFullscreen();
+                fullscreenButton.innerText = "Minimise";
+                isFullcreen = true;
+            }
+        };
+        globalControls.appendChild(fullscreenButton);
+
         new PublicUrlQrCode(document.getElementById("qrcodeContainer"), connection);
     }
 

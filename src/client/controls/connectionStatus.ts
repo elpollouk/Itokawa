@@ -89,11 +89,16 @@ export class ConnectionStatus {
         this.commandStationStatus = createLed();
         this.activityStatus = createLed();
 
-        this.parent.onclick = () => {
-            if (this.parent.classList.contains("expanded"))
-                this._closePanel();
-            else
-                this._openPanel();
+        if (this.parent.childElementCount !== 0)
+        {
+            // If the system drawer doesn't contain any children, then don't bother enabling
+            // interactions with it
+            this.parent.onclick = () => {
+                if (this.parent.classList.contains("expanded"))
+                    this._closePanel();
+                else
+                    this._openPanel();
+            }
         }
 
         return container;
