@@ -6,7 +6,7 @@ import { LifeCycleRequest, RequestType, LifeCycleAction } from "../common/messag
 
 import { Navigator } from "./pages/page";
 import { IndexPageConstructor } from "./pages/index";
-import { UpdatePageConstructor } from "./pages/update";
+import { UpdatePageConstructor, UpdatePage } from "./pages/update";
 
 (function () {
     let connection: CommandConnection = null;
@@ -46,7 +46,8 @@ import { UpdatePageConstructor } from "./pages/update";
         });
 
         createSystemButton("Update", "Are you sure you want to update device?", () => {
-           Navigator.open(UpdatePageConstructor.path);
+            if (!(Navigator.currentPage instanceof UpdatePage))
+                Navigator.open(UpdatePageConstructor.path);
         });
 
         // TODO - Fix this to be diven by the full screen event

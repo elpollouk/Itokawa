@@ -4,7 +4,7 @@ import { CommandConnection, ConnectionState } from "../commandConnection";
 import { TtyControl } from "../controls/ttyControl";
 import { LifeCycleRequest, RequestType, LifeCycleAction } from "../../common/messages";
 
-class UpdatePage extends Page {
+export class UpdatePage extends Page {
     path: string = UpdatePageConstructor.path;
     content: HTMLElement;
     tty: TtyControl;
@@ -54,8 +54,5 @@ class UpdatePage extends Page {
 
 export const UpdatePageConstructor: IPageConstructor = {
     path: "/update.ts",
-    create: () => {
-        if (Navigator.currentPage instanceof UpdatePage) return null;
-        return new UpdatePage();
-    }
+    create: () => new UpdatePage()
 }

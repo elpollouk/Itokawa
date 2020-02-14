@@ -2,12 +2,11 @@ export abstract class Page {
     readonly abstract path: string;
     readonly abstract content: HTMLElement;
 
-    onenter(previousState: any): void {}
-    onleave(): any {}
+    onEnter(previousState: any): void {}
+    onLeave(): any {}
     close(): void {
         Navigator.back();
     }
-    destroy(): void {}
 };
 
 export interface IPageConstructor {
@@ -16,19 +15,16 @@ export interface IPageConstructor {
 }
 
 const _pages = new Map<string, IPageConstructor>();
-const _history: Page[] = [];
+let _currentPage: Page = null;
 
 window.onpopstate = (ev: PopStateEvent) => {
-    if (_history.length <= 1) throw new Error("Already at root page");
-    const oldPage = _history.pop();
-    const newPage = _history[_history.length - 1];
-    oldPage.onleave();
+    _currentPage.onLeave();
+    _currentPage.content.parentNode.removeChild(_currentPage.content);
 
-    oldPage.content.parentNode.removeChild(oldPage.content);
-    document.getElementById("contentArea").appendChild(newPage.content);
-    
-    newPage.onenter(ev.state);
-    oldPage.destroy();
+    const constructor = _pages.get(ev.state ? ev.state.path : "/index.ts");
+    _currentPage = constructor.create();
+    document.getElementById("contentArea").appendChild(_currentPage.content);
+    _currentPage.onEnter(ev.state ? ev.state.state : null);
 }
 
 export class Navigator {
@@ -38,22 +34,26 @@ export class Navigator {
 
     static open(path: string): Page {
         const constructor = _pages.get(path);
-        const page = constructor.create();
-        if (!page) return null;
 
-        if (_history.length !== 0) {
-            const oldPage = _history[_history.length - 1];
-            const state = oldPage.onleave();
-            history.pushState(state, document.title);
-            oldPage.content.parentNode.removeChild(oldPage.content);
+        if (_currentPage) {
+            const state = _currentPage.onLeave();
+            history.replaceState({
+                path: _currentPage.path,
+                state: state
+            }, document.title);
+            history.pushState({
+                path: path,
+                state: null
+            }, document.title);
+            _currentPage.content.parentNode.removeChild(_currentPage.content);
         }
-        _history.push(page);
+        _currentPage = constructor.create();
 
-        page.content.classList.add("page");
-        document.getElementById("contentArea").appendChild(page.content);
-        page.onenter(null);
+        _currentPage.content.classList.add("page");
+        document.getElementById("contentArea").appendChild(_currentPage.content);
+        _currentPage.onEnter(null);
 
-        return page;
+        return _currentPage;
     }
 
     static back() {
@@ -61,6 +61,6 @@ export class Navigator {
     }
 
     static get currentPage(): Page {
-        return _history[_history.length - 1];
+        return _currentPage;
     }
 }
