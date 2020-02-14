@@ -27,11 +27,16 @@ button {
 
 /*
  * System Drawer
+ * Visible statis bar height: 1.5em + 10px
+ *     #statusBar padding * 2 (4px)
+ *     .led border * 2 (4px)
+ *     .led margin * 2 (2px)
+ *     .lef height 1.5m
  */
  #statusBar {
     position: absolute;
     left: 0;
-    top: 0; /*calc(-50vh + 1.5em + 10px);*/
+    top: 0;
     transform: translateY(calc(-100% + 1.5em + 10px));
 
     width: 100vw;
