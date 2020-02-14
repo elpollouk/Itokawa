@@ -26,13 +26,39 @@ button {
 
 
 /*
- * Connection Status
+ * System Drawer
  */
-.connectionStatus {
+ #statusBar {
     position: absolute;
-    bottom: 0px;
-    right: 0px;
+    left: 0;
+    top: 0; /*calc(-50vh + 1.5em + 10px);*/
+    transform: translateY(calc(-100% + 1.5em + 10px));
+
+    width: 100vw;
+    background-color: lightgray;
     padding: 2px;
+    box-sizing: border-box;
+
+    transition: transform 0.5s ease-in-out;
+}
+
+#statusBar.expanded {
+    transform: translateY(0);
+}
+
+#globalControls {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+#globalControls button {
+    width: calc(25% - 4px);;
+}
+
+.connectionStatus {
+    text-align: right;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .connectionStatus .led {
@@ -63,24 +89,6 @@ button {
     background-color: red;
 }
 
-#statusBar {
-    position: absolute;
-    left: 0;
-    top: calc(-50vh + 1.5em + 10px);
-
-    width: 100vw;
-    background-color: lightgray;
-    padding: 2px;
-    box-sizing: border-box;
-
-    height: 50vh;
-
-    transition: top 0.5s ease-in-out;
-}
-
-#statusBar.expanded {
-    top: 0;
-}
 
 /*
  * Content Area Protection
@@ -155,18 +163,6 @@ button {
     height: calc(100vh - (10px + 1.5em));
     box-sizing: border-box;
     background-color: lightgoldenrodyellow;
-}
-
-
-/*
- * System Controls
- */
-#globalControls {
-    margin-top: 1em;
-}
-
-#globalControls button {
-    width: calc(25% - 4px);;
 }
 
 
