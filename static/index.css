@@ -31,7 +31,7 @@ button {
  *     #statusBar padding * 2 (4px)
  *     .led border * 2 (4px)
  *     .led margin * 2 (2px)
- *     .lef height 1.5m
+ *     .led height 1.5m
  */
  #statusBar {
     position: absolute;
@@ -151,7 +151,7 @@ button {
     text-align: center;
 }
 .prompt button {
-    width: calc(16.7vw - 4px);;
+    width: 6em;
 }
 
 /*
@@ -160,7 +160,7 @@ button {
  *     #statusBar padding * 2 (4px)
  *     .led border * 2 (4px)
  *     .led margin * 2 (2px)
- *     .lef height 1.5m
+ *     .led height 1.5m
  */
 #contentArea {
     overflow-y: auto;
