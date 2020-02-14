@@ -53,6 +53,6 @@ export class UpdatePage extends Page {
 }
 
 export const UpdatePageConstructor: IPageConstructor = {
-    path: "/update.ts",
+    path: "update",
     create: () => new UpdatePage()
 }

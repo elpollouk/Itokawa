@@ -50,6 +50,6 @@ class IndexPage extends Page {
 }
 
 export const IndexPageConstructor: IPageConstructor = {
-    path: "/index.ts",
+    path: "index",
     create: () => new IndexPage()
 }

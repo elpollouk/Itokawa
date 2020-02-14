@@ -20,11 +20,14 @@ let _currentPage: Page = null;
 window.onpopstate = (ev: PopStateEvent) => {
     _currentPage.onLeave();
     _currentPage.content.parentNode.removeChild(_currentPage.content);
+    const state = ev.state || {};
+    _openPage(state.path, state.state);
+}
 
-    const constructor = _pages.get(ev.state ? ev.state.path : "/index.ts");
-    _currentPage = constructor.create();
+function _openPage(path: string, state: any) {
+    _currentPage = _pages.get(path || "index").create();
     document.getElementById("contentArea").appendChild(_currentPage.content);
-    _currentPage.onEnter(ev.state ? ev.state.state : null);
+    _currentPage.onEnter(state);
 }
 
 export class Navigator {
@@ -33,9 +36,9 @@ export class Navigator {
     }
 
     static open(path: string): Page {
-        const constructor = _pages.get(path);
-
         if (_currentPage) {
+            if (path === _currentPage.path) return;
+
             const state = _currentPage.onLeave();
             history.replaceState({
                 path: _currentPage.path,
@@ -47,12 +50,8 @@ export class Navigator {
             }, document.title);
             _currentPage.content.parentNode.removeChild(_currentPage.content);
         }
-        _currentPage = constructor.create();
 
-        _currentPage.content.classList.add("page");
-        document.getElementById("contentArea").appendChild(_currentPage.content);
-        _currentPage.onEnter(null);
-
+        _openPage(path, null);
         return _currentPage;
     }
 
