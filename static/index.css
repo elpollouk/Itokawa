@@ -175,7 +175,7 @@ button {
  * Train Controls
  */
 
-#trainControls {
+.trainControls {
     margin-top: 1em;
     margin-bottom: 1em;
 }
@@ -233,7 +233,7 @@ button {
     color: red;
 }
 
-#updateTty .tty {
+.updateTty .tty {
     height: 100%;
 }
 
@@ -241,11 +241,11 @@ button {
 /*
  * Emergency Stop Button
  */
-#emergencyStop {
+.emergencyStop {
     padding: 1em;
 }
 
-#emergencyStop button {
+.emergencyStop button {
     width: 100%;
     height: 4em;
     background-color: red;

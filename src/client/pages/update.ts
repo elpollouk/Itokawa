@@ -1,43 +1,61 @@
+import { Page, IPageConstructor, Navigator } from "./page";
 import { CommandResponse } from "../../common/messages";
 import { CommandConnection, ConnectionState } from "../commandConnection";
-import { ConnectionStatus } from "../controls/connectionStatus";
 import { TtyControl } from "../controls/ttyControl";
 import { LifeCycleRequest, RequestType, LifeCycleAction } from "../../common/messages";
 
-let connection: CommandConnection = null;
-let tty: TtyControl = null;
+class UpdatePage extends Page {
+    path: string = UpdatePageConstructor.path;
+    content: HTMLElement;
+    tty: TtyControl;
+    readonly connection: CommandConnection;
 
-function onMessage(err: Error, response?: CommandResponse) {
-    if (err) {
-        tty.stderr(err.message);
-        return;
+
+    constructor () {
+        super();
+        this.connection = window["commandConnection"];
+        this.content = this._buildUI();
     }
 
-    if (response.data) tty.stdout(response.data);
-    if (response.error) tty.stderr(response.error);
-}
+    _buildUI(): HTMLElement {
+        const container = document.createElement("div");
+        container.className = "updateTty";
 
-function issueUpdateRequest() {
-    if (connection.state !== ConnectionState.Idle) {
-        setTimeout(issueUpdateRequest, 100);
-        return;
+        this.tty = new TtyControl(container);
+        this.issueUpdateRequest();
+
+        return container;
     }
 
-    tty.stdout("Requesting update...\n");
-    tty.stdout(`Current git revision: ${connection.gitRevision}\n`);
+    onMessage(err: Error, response?: CommandResponse) {
+        if (err) {
+            this.tty.stderr(err.message);
+            return;
+        }
+        if (response.data) this.tty.stdout(response.data);
+        if (response.error) this.tty.stderr(response.error);
+    }
 
-    connection.request({
-        type: RequestType.LifeCycle,
-        action: LifeCycleAction.update
-    } as LifeCycleRequest, onMessage);
+    issueUpdateRequest() {
+        if (this.connection.state !== ConnectionState.Idle) {
+            this.tty.stderr("Connection is busy. Try again later.");
+            return;
+        }
+    
+        this.tty.stdout("Requesting update...\n");
+        this.tty.stdout(`Current git revision: ${this.connection.gitRevision}\n`);
+    
+        this.connection.request({
+            type: RequestType.LifeCycle,
+            action: LifeCycleAction.update
+        } as LifeCycleRequest, (e, r) => this.onMessage(e, r));
+    }
 }
 
-export function updatePage() {
-    connection = new CommandConnection("/control");
-    window["commandConnection"] = connection;
-
-    new ConnectionStatus(document.getElementById("statusBar"), connection);
-    tty = new TtyControl(document.getElementById("updateTty"));
-
-    setTimeout(issueUpdateRequest, 100);
+export const UpdatePageConstructor: IPageConstructor = {
+    path: "/update.ts",
+    create: () => {
+        if (Navigator.currentPage instanceof UpdatePage) return null;
+        return new UpdatePage();
+    }
 }
