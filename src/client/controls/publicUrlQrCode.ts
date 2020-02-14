@@ -1,15 +1,15 @@
+import { ControlBase } from "./control";
 import { CommandConnection } from "../commandConnection";
 import * as qrcode from "qrcode";
 
-export class PublicUrlQrCode {
-    readonly element: HTMLElement;
+export class PublicUrlQrCode extends ControlBase {
 
     image: HTMLImageElement;
     url: HTMLAnchorElement;
 
-    constructor(readonly parent: HTMLElement, readonly connection: CommandConnection) {
-        this.element = this._buildUi();
-        this.parent.appendChild(this.element);
+    constructor(parent: HTMLElement, readonly connection: CommandConnection) {
+        super();
+        this._init(parent);
         connection.bind("publicUrl", (url: string) => {
             qrcode.toDataURL(url, (err, dataUrl) => {
                 if (err) {
@@ -23,7 +23,7 @@ export class PublicUrlQrCode {
         });
     }
 
-    private _buildUi(): HTMLElement {
+    protected _buildUi(): HTMLElement {
         const container = document.createElement("div");
         container.className = "qrcode";
 

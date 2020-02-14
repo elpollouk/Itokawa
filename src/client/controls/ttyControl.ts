@@ -1,3 +1,5 @@
+import { ControlBase } from "./control";
+
 function htmlEscape(text: string): string {
     return text
         .replace(/</g,"&lt;")
@@ -8,12 +10,11 @@ function htmlEscape(text: string): string {
         .replace(/\r/g, "<br/>");
 }
 
-export class TtyControl {
-    readonly element: HTMLElement;
+export class TtyControl extends ControlBase {
 
-    constructor(readonly parent: HTMLElement) {
-        this.element = this._buildUi();
-        this.parent.appendChild(this.element);
+    constructor(parent: HTMLElement) {
+        super();
+        this._init(parent);
     }
 
     _buildUi(): HTMLElement {

@@ -1,3 +1,4 @@
+import { ControlBase } from "./control";
 import * as protection from "./protectionControl";
 
 export interface PromptButton {
@@ -5,18 +6,17 @@ export interface PromptButton {
     onclick?: ()=>void;
 }
 
-class PromptControl {
-    readonly element: HTMLElement;
-
-    constructor(readonly parent: HTMLElement,
-                readonly message: string,
-                readonly buttons: PromptButton[],
-                readonly onclose?:()=>void) {
-        this.element = this._buildUi();
-        this.parent.appendChild(this.element);
+class PromptControl extends ControlBase {
+    constructor(parent: HTMLElement,
+                private message: string,
+                private buttons: PromptButton[],
+                onclose?:()=>void) {
+        super();
+        this._init(parent);
+        this.onclose = onclose;
     }
 
-    _buildUi(): HTMLElement {
+    protected _buildUi(): HTMLElement {
         const container = document.createElement("div");
         container.className = "prompt";
 
@@ -43,22 +43,6 @@ class PromptControl {
 
         return container;
     }
-
-    show() {
-        this.element.style.display = "";
-    }
-
-    hide() {
-        this.element.style.display = "none";
-    }
-
-    close() {
-        if (this.element.parentNode) {
-            this.onclose && this.onclose();
-            this.parent.removeChild(this.element);
-            _removePrompt(this);
-        }
-    }
 }
 
 let _prompts: PromptControl[] = [];
@@ -80,7 +64,10 @@ export function prompt(message: string, buttons: PromptButton[], onclose?:()=>vo
         };
     }
 
-    var prompt = new PromptControl(container, message, buttons, onclose);
+    var prompt = new PromptControl(container, message, buttons, () => {
+        onclose && onclose();
+        _removePrompt(prompt);
+    });
     _prompts.push(prompt);
 
     return prompt;

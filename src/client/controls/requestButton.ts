@@ -1,12 +1,12 @@
+import { ControlBase } from "./control";
 import { CommandConnection, ConnectionState } from "../commandConnection";
 import { CommandRequest } from "../../common/messages";
 
-export class RequestButton<T extends CommandRequest> {
-    readonly element: HTMLElement;
+export class RequestButton<T extends CommandRequest> extends ControlBase {
 
-    constructor(readonly parent: HTMLElement, readonly connection: CommandConnection, readonly title: string, readonly getMessage:()=>T) {
-        this.element = this._buildUi();
-        this.parent.appendChild(this.element);
+    constructor(parent: HTMLElement, readonly connection: CommandConnection, readonly title: string, readonly getMessage:()=>T) {
+        super();
+        this._init(parent);
     }
 
     _buildUi(): HTMLElement {

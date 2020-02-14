@@ -1,14 +1,14 @@
+import { ControlBase } from "./control";
 import { CommandConnection, ConnectionState } from "../commandConnection";
 import { RequestType, LocoSpeedRequest } from "../../common/messages";
 
-export class TrainControl {
-    readonly element: HTMLElement;
+export class TrainControl extends ControlBase {
     private _reverse = false;
     private _speed = 0;
 
-    constructor (readonly parent: HTMLElement, readonly connection: CommandConnection, readonly title: string, readonly locoId: number, readonly speeds: number[]) {
-        this.element = this._buildUi();
-        this.parent.appendChild(this.element);
+    constructor (parent: HTMLElement, readonly connection: CommandConnection, readonly title: string, readonly locoId: number, readonly speeds: number[]) {
+        super();
+        this._init(parent);
     }
 
     _buildUi() {
