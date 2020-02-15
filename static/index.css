@@ -197,7 +197,7 @@ button {
  *     .led margin * 2 (2px)
  *     .led height 1.5m
  */
-#contentArea {
+#contentParent {
     overflow-y: hidden;
     margin-top: calc(10px + 1.5em);
     height: calc(100vh - (10px + 1.5em));
@@ -205,10 +205,19 @@ button {
     background-color: lightgoldenrodyellow;
 }
 
+#contentArea {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
 .page {
+    position: absolute;
+    top: 0;
     overflow-y: auto;
     width: 100%;
     height: 100%;
+    transition: left 0.3s ease-out;
 }
 
 /*

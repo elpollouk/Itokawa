@@ -7,6 +7,10 @@ export abstract class Page {
     close(): void {
         Navigator.back();
     }
+    destroy(): void {
+        if (this.content.parentElement)
+            this.content.parentElement.removeChild(this.content);
+    }
 };
 
 export interface IPageConstructor {
@@ -16,18 +20,41 @@ export interface IPageConstructor {
 
 const _pages = new Map<string, IPageConstructor>();
 let _currentPage: Page = null;
+let _currentPageDepth = 0;
 
 window.onpopstate = (ev: PopStateEvent) => {
     _currentPage.onLeave();
-    _currentPage.content.parentNode.removeChild(_currentPage.content);
     const state = ev.state || {};
-    _openPage(state.path, state.state);
+    _openPage(state.path, state.state, state.depth);
 }
 
-function _openPage(path: string, state: any) {
-    _currentPage = _pages.get(path || "index").create();
-    document.getElementById("contentArea").appendChild(_currentPage.content);
-    _currentPage.onEnter(state);
+function _openPage(path: string, state: any, depth: number) {
+    const newPage = _pages.get(path || "index").create();
+    const content = newPage.content;
+    content.classList.add("page");
+    document.getElementById("contentArea").appendChild(content);
+    newPage.onEnter(state);
+
+    const oldPage = _currentPage;
+    if (oldPage) {
+        let startLeft = depth < _currentPageDepth ? "-100vw" : "100vw";
+        let endLeft = depth < _currentPageDepth ? "100vw" : "-100vw";
+
+        content.style.left = startLeft;
+        window.requestAnimationFrame(() => {
+            content.style.left = "0";
+            oldPage.content.style.left = endLeft;
+            oldPage.content.ontransitionend = () => oldPage.destroy();
+        });
+    }
+
+    if (depth == 0)
+        document.body.classList.add("rootPage");
+    else
+        document.body.classList.remove("rootPage");
+
+    _currentPageDepth = depth;
+    _currentPage = newPage;        
 }
 
 export class Navigator {
@@ -42,16 +69,18 @@ export class Navigator {
             const state = _currentPage.onLeave();
             history.replaceState({
                 path: _currentPage.path,
-                state: state
+                state: state,
+                depth: _currentPageDepth
             }, document.title);
+            _currentPageDepth++;
             history.pushState({
                 path: path,
-                state: null
+                state: null,
+                depth: _currentPageDepth
             }, document.title);
-            _currentPage.content.parentNode.removeChild(_currentPage.content);
         }
 
-        _openPage(path, null);
+        _openPage(path, null, _currentPageDepth);
         return _currentPage;
     }
 
