@@ -1,4 +1,5 @@
-import { CommandConnection, ConnectionState } from "../commandConnection";
+import { Client } from "../client";
+import { ConnectionState } from "../commandConnection";
 import { CommandStationState } from "../../devices/commandStations/commandStation";
 import * as protection from "./protectionControl";
 
@@ -8,11 +9,11 @@ export class ConnectionStatus {
     commandStationStatus: HTMLElement;
     activityStatus: HTMLElement;
 
-    constructor(readonly parent: HTMLElement, readonly connection: CommandConnection) {
+    constructor(readonly parent: HTMLElement) {
         this.element = this._buildUi();
         this.parent.appendChild(this.element);
 
-        connection.bind("state", (state: ConnectionState) => {
+        Client.instance.connection.bind("state", (state: ConnectionState) => {
             switch (state) {
                 case ConnectionState.Closed:
                     this.networkStatus.className = "led disconnected";
@@ -33,7 +34,7 @@ export class ConnectionStatus {
             }
         });
 
-        connection.bind("deviceState", (state: CommandStationState) => {
+        Client.instance.connection.bind("deviceState", (state: CommandStationState) => {
             switch (state) {
                 case CommandStationState.NOT_CONNECTED:
                 case CommandStationState.UNINITIALISED:
@@ -57,7 +58,7 @@ export class ConnectionStatus {
         });
 
         let timeoutToken: NodeJS.Timeout;
-        connection.bind("state", (state: ConnectionState) => {
+        Client.instance.connection.bind("state", (state: ConnectionState) => {
             if (timeoutToken) clearTimeout(timeoutToken);
             switch (state) {
                 case ConnectionState.Busy:

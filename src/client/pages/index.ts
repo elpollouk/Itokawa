@@ -1,8 +1,8 @@
+import { Client } from "../client";
 import { Page, IPageConstructor } from "./page";
 import { TrainControl } from "../controls/trainControl";
 import { RequestButton } from "../controls/requestButton";
 import { CommandRequest, RequestType } from "../../common/messages";
-import { CommandConnection } from "../commandConnection";
 
 class IndexPage extends Page {
     path: string = IndexPageConstructor.path;    
@@ -15,7 +15,7 @@ class IndexPage extends Page {
 
     _buildUi(): HTMLElement {
         const container = document.createElement("div");
-        const connection = window["commandConnection"] as CommandConnection;
+        const connection = Client.instance.connection;
 
         // Train controls
         let div = document.createElement("div");

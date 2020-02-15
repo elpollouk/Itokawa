@@ -7,20 +7,21 @@ import { LifeCycleRequest, RequestType, LifeCycleAction } from "../common/messag
 import { Navigator } from "./pages/page";
 import { IndexPageConstructor } from "./pages/index";
 import { UpdatePageConstructor, UpdatePage } from "./pages/update";
+import { Client } from "./client";
 
 (function () {
-    let connection: CommandConnection = null;
+    let client: Client = null;
 
     window["main"] = function () {
-        connection = new CommandConnection("/control");
-        window["commandConnection"] = connection;
+        client = new Client();
+        window["itokawa"] = client;
 
         //---------------------------------------------------------------------------------------//
         // System Drawer
         //---------------------------------------------------------------------------------------//
         const statusBar = document.getElementById("statusBar");
-        new PublicUrlQrCode(document.getElementById("qrcodeContainer"), connection);
-        new ConnectionStatus(statusBar, connection);
+        new PublicUrlQrCode(document.getElementById("qrcodeContainer"));
+        new ConnectionStatus(statusBar);
 
         const globalControls = document.getElementById("globalControls");
         function createSystemButton(title: string, confirmation: string, onclick:()=>void) {
@@ -31,16 +32,16 @@ import { UpdatePageConstructor, UpdatePage } from "./pages/update";
         }
 
         createSystemButton("Shutdown", "Are you sure you want to shutdown device?", () => {
-            if (connection.state !== ConnectionState.Idle) return;
-            connection.request({
+            if (client.connection.state !== ConnectionState.Idle) return;
+            client.connection.request({
                 type: RequestType.LifeCycle,
                 action: LifeCycleAction.shutdown
             } as LifeCycleRequest);
         });
 
         createSystemButton("Restart", "Are you sure you want to restart device?", () => {
-            if (connection.state !== ConnectionState.Idle) return;
-            connection.request({
+            if (client.connection.state !== ConnectionState.Idle) return;
+            client.connection.request({
                 type: RequestType.LifeCycle,
                 action: LifeCycleAction.restart
             } as LifeCycleRequest);

@@ -1,5 +1,5 @@
+import { Client } from "../client";
 import { ControlBase } from "./control";
-import { CommandConnection } from "../commandConnection";
 import * as qrcode from "qrcode";
 
 export class PublicUrlQrCode extends ControlBase {
@@ -7,10 +7,10 @@ export class PublicUrlQrCode extends ControlBase {
     image: HTMLImageElement;
     url: HTMLAnchorElement;
 
-    constructor(parent: HTMLElement, readonly connection: CommandConnection) {
+    constructor(parent: HTMLElement) {
         super();
         this._init(parent);
-        connection.bind("publicUrl", (url: string) => {
+        Client.instance.connection.bind("publicUrl", (url: string) => {
             qrcode.toDataURL(url, (err, dataUrl) => {
                 if (err) {
                     console.error(err);

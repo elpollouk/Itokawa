@@ -3,17 +3,18 @@ import { CommandResponse } from "../../common/messages";
 import { CommandConnection, ConnectionState } from "../commandConnection";
 import { TtyControl } from "../controls/ttyControl";
 import { LifeCycleRequest, RequestType, LifeCycleAction } from "../../common/messages";
+import { Client } from "../client";
 
 export class UpdatePage extends Page {
     path: string = UpdatePageConstructor.path;
     content: HTMLElement;
     tty: TtyControl;
-    readonly connection: CommandConnection;
+    private readonly _connection: CommandConnection;
 
 
     constructor () {
         super();
-        this.connection = window["commandConnection"];
+        this._connection = Client.instance.connection;
         this.content = this._buildUI();
     }
 
@@ -37,15 +38,15 @@ export class UpdatePage extends Page {
     }
 
     issueUpdateRequest() {
-        if (this.connection.state !== ConnectionState.Idle) {
+        if (this._connection.state !== ConnectionState.Idle) {
             this.tty.stderr("Connection is busy. Try again later.");
             return;
         }
     
         this.tty.stdout("Requesting update...\n");
-        this.tty.stdout(`Current git revision: ${this.connection.gitRevision}\n`);
+        this.tty.stdout(`Current git revision: ${this._connection.gitRevision}\n`);
     
-        this.connection.request({
+        this._connection.request({
             type: RequestType.LifeCycle,
             action: LifeCycleAction.update
         } as LifeCycleRequest, (e, r) => this.onMessage(e, r));

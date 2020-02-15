@@ -12,6 +12,7 @@ import { addCommonOptions,  openDevice } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
 import { execShutdown } from "./shutdown";
 import { ConfigNode } from "../utils/config";
+import { apiRouter } from "./routers/api";
 
 // WebSocket Message handlers
 import { getControlWebSocketRoute } from "./handlers/handlers";
@@ -43,7 +44,8 @@ async function main()
         res.send("<h1>Hello World</h1>");
     });*/
 
-    app.ws("/control", getControlWebSocketRoute());
+    app.ws("/control/v1", getControlWebSocketRoute());
+    app.use("/api/v1", apiRouter);
     app.use(express.static("static"));
 
     let port = program.port || application.config.get("server.port", 8080);
