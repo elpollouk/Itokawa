@@ -12,7 +12,7 @@ import { addCommonOptions,  openDevice } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
 import { execShutdown } from "./shutdown";
 import { ConfigNode } from "../utils/config";
-import { apiRouter } from "./routers/api";
+import { apiRouter } from "./routers/apiRouter";
 
 // WebSocket Message handlers
 import { getControlWebSocketRoute } from "./handlers/handlers";

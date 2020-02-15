@@ -1,3 +1,5 @@
+import * as api from "../common/api";
+
 function isSuccess(status: number) {
     return 200 <= status && status <= 299;
 }
@@ -55,7 +57,7 @@ export class ApiClient {
         if (this.isBusy) throw new Error("API client is currently busy");
     }
 
-    private registerAwaiter(resolve: (value:any)=>void, reject: (erro:Error)=>void) {
+    private registerAwaiter<T>(resolve: (value:T)=>void, reject: (erro:Error)=>void) {
         this._callback = (err, status, result) => {
             if (err)
                 reject(err);
@@ -66,17 +68,38 @@ export class ApiClient {
         };
     }
 
-    getLocos(): Promise<any> {
+    private request<T>(method: string, path: string, data?: any): Promise<T> {
+        this.ensureIdle();
         return new Promise((resolve, reject) => {
             try {
-                const path = this.getFullPath("/locos");
+                path = this.getFullPath(path);
                 this.registerAwaiter(resolve, reject);
-                this._client.open("GET", path);
-                this._client.send();
+                this._client.open(method, path);
+                this._client.setRequestHeader("content-type", "application/json; charset=utf-8");
+
+                if (data) data = JSON.stringify(data);
+                this._client.send(data);
             }
             catch (err) {
                 reject(err);
             }
         });
+    }
+
+    getLocos(): Promise<api.Locos> {
+        return this.request("GET", "/locos");
+    }
+
+    async addLoco(name: string, address: number, speeds: number[]): Promise<api.Loco> {
+        const request: api.Locos = {
+            locos: [{
+                id: 0,
+                name: name,
+                address: address,
+                speeds: speeds
+            }]
+        };
+        const response = await this.request<api.Locos>("POST", "/locos", request);
+        return response.locos[0];
     }
 }
