@@ -33,7 +33,7 @@ button {
  *     .led margin * 2 (2px)
  *     .led height 1.5m
  */
- #statusBar {
+#statusBar {
     position: absolute;
     left: 0;
     top: 0;
@@ -60,6 +60,41 @@ button {
     width: calc(25% - 4px);;
 }
 
+/* Back button */
+.backButton {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 1.5em;
+    height: 1.5em;
+    margin: 2px; /* Container padding + led margin */
+    border: 2px solid transparent;
+    outline: none;
+    padding: 0;
+    background-color: transparent;
+    text-align: center;
+    vertical-align: middle;
+
+    font-size: x-large;
+    font-family: monospace;
+    font-weight: bold;
+    color: rgb(64, 64, 64);
+}
+
+.rootPage .backButton,
+.expanded .backButton {
+    display: none;
+}
+
+.backButton:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.backButton:active {
+    background-color: rgba(0, 0, 0, 0.4)
+}
+
+/* Connection status LEDs */
 .connectionStatus {
     text-align: right;
     width: 100%;
@@ -98,7 +133,7 @@ button {
 /*
  * Content Area Protection
  */
- #protection {
+#protection {
     position: absolute;
     top: 0;
     visibility: hidden; /* NOTE: You can't transition on display */
@@ -107,18 +142,18 @@ button {
     opacity: 0;
     background-color: black;
     transition: opacity 0.5s, visibility 0.5s step-end;
- }
+}
 
- #protection.active {
+#protection.active {
     visibility: visible;
     opacity: 0.6;
     transition-timing-function: linear, step-start;
- }
+}
 
 
- /*
-  * User Prompts
-  */
+/*
+ * User Prompts
+ */
 #popupContainer {
     position: absolute;
     display: none;
@@ -163,13 +198,18 @@ button {
  *     .led height 1.5m
  */
 #contentArea {
-    overflow-y: auto;
+    overflow-y: hidden;
     margin-top: calc(10px + 1.5em);
     height: calc(100vh - (10px + 1.5em));
     box-sizing: border-box;
     background-color: lightgoldenrodyellow;
 }
 
+.page {
+    overflow-y: auto;
+    width: 100%;
+    height: 100%;
+}
 
 /*
  * Train Controls

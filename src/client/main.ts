@@ -18,8 +18,9 @@ import { UpdatePageConstructor, UpdatePage } from "./pages/update";
         //---------------------------------------------------------------------------------------//
         // System Drawer
         //---------------------------------------------------------------------------------------//
+        const statusBar = document.getElementById("statusBar");
         new PublicUrlQrCode(document.getElementById("qrcodeContainer"), connection);
-        new ConnectionStatus(document.getElementById("statusBar"), connection);
+        new ConnectionStatus(statusBar, connection);
 
         const globalControls = document.getElementById("globalControls");
         function createSystemButton(title: string, confirmation: string, onclick:()=>void) {
@@ -67,6 +68,17 @@ import { UpdatePageConstructor, UpdatePage } from "./pages/update";
             }
         };
         globalControls.appendChild(fullscreenButton);
+
+        // Back button
+        const backButton = document.createElement("button");
+        backButton.className = "backButton";
+        backButton.onclick = (ev: MouseEvent) => {
+            Navigator.back();
+            // We don't want the click to raise the containers event in this case
+            ev.stopPropagation();
+        };
+        backButton.innerText = "<";
+        statusBar.appendChild(backButton);
 
 
         //---------------------------------------------------------------------------------------//
