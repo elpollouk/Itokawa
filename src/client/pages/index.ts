@@ -3,10 +3,12 @@ import { Page, IPageConstructor } from "./page";
 import { TrainControl } from "../controls/trainControl";
 import { RequestButton } from "../controls/requestButton";
 import { CommandRequest, RequestType } from "../../common/messages";
+import { Locos } from "../../common/api";
 
 class IndexPage extends Page {
     path: string = IndexPageConstructor.path;    
     content: HTMLElement;
+    private _trainControls: HTMLElement;
 
     constructor() {
         super();
@@ -18,25 +20,12 @@ class IndexPage extends Page {
         const connection = Client.instance.connection;
 
         // Train controls
-        let div = document.createElement("div");
-        div.className = "trainControls";
-        new TrainControl(div,
-            connection,
-            "Class 43 HST",
-            4305, [0, 32, 64, 96]);
-        new TrainControl(div,
-            connection,
-            "GWR 0-6-0",
-            2732, [0, 32, 48, 64]);
-        new TrainControl(div,
-            connection,
-            "LMS 2-6-4",
-            2328, [0, 32, 56, 80]);
-
-        container.appendChild(div);
+        this._trainControls = document.createElement("div");
+        this._trainControls.className = "trainControls";
+        container.appendChild(this._trainControls);
 
         // Emergency stop button
-        div = document.createElement("div");
+        const div = document.createElement("div");
         div.className = "emergencyStop";
         new RequestButton<CommandRequest>(div, connection, "Emergency Stop", () => {
             return {
@@ -46,6 +35,20 @@ class IndexPage extends Page {
         container.appendChild(div);
 
         return container;
+    }
+
+    onEnter(state: any) {
+        Client.instance.api.getLocos().then((result: Locos) => {
+            this._trainControls.innerHTML = "";
+            for (const loco of result.locos) {
+                new TrainControl(this._trainControls,
+                    Client.instance.connection,
+                    loco.name,
+                    loco.address,
+                    [0].concat(loco.speeds)
+                );
+            }
+        });
     }
 }
 
