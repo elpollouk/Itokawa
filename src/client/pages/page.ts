@@ -2,8 +2,8 @@ export abstract class Page {
     readonly abstract path: string;
     readonly abstract content: HTMLElement;
 
-    onEnter(previousState: any): void {}
-    onLeave(): any {}
+    onEnter(): void {}
+    onLeave(): void {}
     close(): void {
         Navigator.back();
     }
@@ -15,7 +15,7 @@ export abstract class Page {
 
 export interface IPageConstructor {
     readonly path: string;
-    create(): Page;
+    create(params?: any): Page;
 }
 
 const _pages = new Map<string, IPageConstructor>();
@@ -25,20 +25,21 @@ let _currentPageDepth = 0;
 window.onpopstate = (ev: PopStateEvent) => {
     _currentPage.onLeave();
     const state = ev.state || {};
-    _openPage(state.path, state.state, state.depth);
+    _openPage(state.path, state.params, state.depth);
 }
 
-function _openPage(path: string, state: any, depth: number) {
-    const newPage = _pages.get(path || "index").create();
+function _openPage(path: string, params: any, depth: number) {
+    depth = depth || 0;
+    const newPage = _pages.get(path || "index").create(params);
     const content = newPage.content;
     content.classList.add("page");
     document.getElementById("contentArea").appendChild(content);
-    newPage.onEnter(state);
+    newPage.onEnter();
 
     const oldPage = _currentPage;
     if (oldPage) {
-        let startLeft = depth < _currentPageDepth ? "-100vw" : "100vw";
-        let endLeft = depth < _currentPageDepth ? "100vw" : "-100vw";
+        let startLeft = depth < _currentPageDepth ? "-120vw" : "120vw";
+        let endLeft = depth < _currentPageDepth ? "120vw" : "-120vw";
 
         content.style.left = startLeft;
         window.requestAnimationFrame(() => {
@@ -64,26 +65,26 @@ export class Navigator {
         _pages.set(pageConstructor.path, pageConstructor);
     }
 
-    static open(path: string): Page {
+    static open(path: string, params?: any): Page {
         if (path[0] === "#") path = path.substr(1);
         if (_currentPage) {
             if (path === _currentPage.path) return;
 
-            const state = _currentPage.onLeave();
-            history.replaceState({
+            _currentPage.onLeave();
+            /*history.replaceState({
                 path: _currentPage.path,
                 state: state,
                 depth: _currentPageDepth
-            }, document.title, "#" + _currentPage.path);
+            }, document.title, "#" + _currentPage.path);*/
             _currentPageDepth++;
             history.pushState({
                 path: path,
-                state: null,
+                params: params,
                 depth: _currentPageDepth
             }, document.title, "#" + path);
         }
 
-        _openPage(path, null, _currentPageDepth);
+        _openPage(path, params, _currentPageDepth);
         return _currentPage;
     }
 

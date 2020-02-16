@@ -37,7 +37,7 @@ class IndexPage extends Page {
         return container;
     }
 
-    onEnter(state: any) {
+    onEnter() {
         Client.instance.api.getLocos().then((result: Locos) => {
             this._trainControls.innerHTML = "";
             for (const loco of result.locos) {

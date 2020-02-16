@@ -1,23 +1,22 @@
-import { Page, IPageConstructor } from "./page";
+import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { Client } from "../client";
 import { ApiClient } from "../apiClient";
 import { Loco } from "../../common/api";
 import { createElement } from "../utils/dom";
-import { create } from "qrcode";
+import { TrainEditConstructor } from "./trainEditor";
 
 export class TrainRosterPage extends Page {
     path: string = TrainRosterConstructor.path;
     content: HTMLElement;
+    
+    private _trains: HTMLElement;
     private readonly _api: ApiClient;
 
-    _trains: HTMLElement;
     
     constructor () {
         super();
         this._api = Client.instance.api;
         this.content = this._buildUi();
-
-        this._getTrains();
     }
 
     private _buildUi(): HTMLElement {
@@ -25,16 +24,17 @@ export class TrainRosterPage extends Page {
         container.className = "trainRoster container";
 
         createElement(container, "div", "title").innerText = "Manage Trains";
-        this._trains = createElement(container, "div", "trains");
+        this._trains = createElement(container, "div", "trains pageContent");
         const buttons = createElement(container, "div", "buttons");
 
         let button = createElement(buttons, "button");
         button.innerText = "New...";
+        button.onclick = () => nav.open(TrainEditConstructor.path);
 
         return container;
     }
 
-    private _getTrains() {
+    onEnter() {
         this._api.getLocos().then((locos) => {
             this._trains.innerHTML = "";
 

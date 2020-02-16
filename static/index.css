@@ -32,6 +32,10 @@ button {
     margin-bottom: 0.2em;
 }
 
+.pageContent {
+    padding-left: 0.5em;
+}
+
 /*
  * System Drawer
  * Visible statis bar height: 1.5em + 10px
@@ -345,7 +349,6 @@ button {
 .trainRoster .trains {
     margin-top: 1.0em;
     margin-bottom: 1.0em;
-    padding-left: 0.5em;
 }
 
 .trainRoster .train {
@@ -356,5 +359,40 @@ button {
 }
 
 .trainRoster .buttons {
+    text-align: right;
+}
+
+
+/*
+ * Train Editor
+ */
+.trainEditor .pageContent {
+    font-size: large;
+    font-weight: bold;
+}
+
+.trainEditor .setting {
+    margin-top: 1.0em;
+    margin-bottom: 1.0em;
+}
+
+.trainEditor .label {
+    margin-bottom: 0.2em;
+}
+
+.trainEditor .setting input {
+    width: calc(100% - 4px);
+    margin-left: 2px;
+    margin-right: 2px;
+    height: 2.0em;
+}
+
+.trainEditor .setting.speed input {
+    width: calc(33.33% - 4px);
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+.trainEditor .buttons {
     text-align: right;
 }
