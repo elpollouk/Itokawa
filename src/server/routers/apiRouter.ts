@@ -77,6 +77,7 @@ apiRouter.route("/locos/:id")
             if (id === locos[i].id) {
                 data.id = id;
                 locos[i] = data;
+                res.send();
                 return;
             }
         }

@@ -142,8 +142,6 @@ export class CommandConnection extends Bindable {
     }
 
     private _onMessage(message: MessageEvent) {
-        console.log(`WebSocket message received: ${message.data}`);
-
         if (this.state === ConnectionState.Busy) {
             const data = JSON.parse(message.data) as messages.CommandResponse;
             const cb = this._callback;
