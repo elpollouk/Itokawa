@@ -360,17 +360,19 @@ button {
 
 .trainRoster .train > div {
     display: inline-block;
+    width: calc(100% - 2.5em);
     margin-top: 0.5em;
     margin-bottom: 0.5em;
 }
 
-.trainRoster .train:hover {
+.trainRoster .train:hover, .trainRoster .train:active {
     background-color: rgba(196, 196, 196, 0.3);
 }
 
 .trainRoster .train button {
-    position: absolute;
-    right: 0;
+    /*position: absolute;
+    right: 0;*/
+    margin-left: 0;
     margin-right: 0.5em;
     width: 2.0em;
     height: 2.0em;
