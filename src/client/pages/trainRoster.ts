@@ -1,4 +1,5 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
+import * as prompt from "../controls/promptControl";
 import { Client } from "../client";
 import { ApiClient } from "../apiClient";
 import { Loco } from "../../common/api";
@@ -35,16 +36,34 @@ export class TrainRosterPage extends Page {
     }
 
     onEnter() {
-        this._api.getLocos().then((locos) => {
+        this._refreshTrains();
+    }
+
+    private _refreshTrains(): Promise<void> {
+        return this._api.getLocos().then((locos) => {
             this._trains.innerHTML = "";
 
             const addTrain = (loco: Loco) => {
-                const title = createElement(this._trains, "div", "train");
+                const div = createElement(this._trains, "div", "train");
+                const title = createElement(div, "div");
                 title.innerText = `${loco.address} - ${loco.name}`;
+                title.onclick = (ev) => nav.open(TrainEditConstructor.path, { id: loco.id });
+
+                const deleteButton = createElement(div, "button");
+                deleteButton.innerText = "X";
+                deleteButton.onclick = () => this._deleteTrain(loco.id, loco.name);
+
             };
 
             for (const loco of locos.locos) 
                 addTrain(loco);
+        });
+    }
+
+    private _deleteTrain(id: number, name: string) {
+        prompt.confirm(`Are you sure you want to delete ${name}`, () => {
+            this._api.deleteLoco(id)
+                .then(() => this._refreshTrains());
         });
     }
 }

@@ -22,7 +22,7 @@ export class ApiClient {
 
             try {
                 ensureSucces(this._client.status);
-                const json = JSON.parse(this._client.responseText);
+                const json = this._client.responseText ? JSON.parse(this._client.responseText) : {};
                 this._callback(null, this._client.status, json);
             }
             catch (err) {

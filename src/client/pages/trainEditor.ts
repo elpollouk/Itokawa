@@ -1,7 +1,6 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { Client } from "../client";
 import { ApiClient } from "../apiClient";
-import { Loco } from "../../common/api";
 import { createElement } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
 
@@ -79,29 +78,35 @@ export class TrainEditPage extends Page {
     }
 
     onEnter() {
-        /*this._api.getLocos().then((locos) => {
-            this._trains.innerHTML = "";
-
-            const addTrain = (loco: Loco) => {
-                const title = createElement(this._trains, "div", "train");
-                title.innerText = `${loco.address} - ${loco.name}`;
-            };
-
-            for (const loco of locos.locos) 
-                addTrain(loco);
-        });*/
+        if (this._id) this._api.getLoco(this._id).then((loco) => {
+            this._nameElement.value = loco.name;
+            this._addressElement.value = `${loco.address}`;
+            this._slowElement.value = `${loco.speeds[0]}`;
+            this._mediumElement.value = `${loco.speeds[1]}`;
+            this._fastElement.value = `${loco.speeds[2]}`;
+        });
     }
 
     _save() {
+        // TODO - Add protections against overlapped actions
+        // TODO - Validate input
         prompt.confirm("Are you sure you want to save this train?", () => {
-            this._api.addLoco(
-                this._nameElement.value,
-                parseInt(this._addressElement.value), [
-                    parseInt(this._slowElement.value),
-                    parseInt(this._mediumElement.value),
-                    parseInt(this._fastElement.value)
-                ]
-            ).then(() => {
+            const name = this._nameElement.value;
+            const address = parseInt(this._addressElement.value);
+            const speeds = [
+                parseInt(this._slowElement.value),
+                parseInt(this._mediumElement.value),
+                parseInt(this._fastElement.value)
+            ];
+
+            let promise: Promise<any>;
+            if (this._id) {
+                promise = this._api.updateLoco(this._id, name, address, speeds);
+            }
+            else {
+                promise = this._api.addLoco(name, address, speeds);
+            }
+            promise.then(() => {
                 nav.back();
             });
         });
