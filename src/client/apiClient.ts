@@ -8,6 +8,10 @@ function  isNotSuccess(status: number) {
     return !isSuccess(status);
 }
 
+function ensureSucces(status: number) {
+    if (isNotSuccess(status)) throw new Error(`HTTP request failed ${status}`);
+}
+
 export class ApiClient {
     private _client = new XMLHttpRequest();
     private _callback: (err: Error, status?: number, result?: any)=>void = null;
@@ -17,6 +21,7 @@ export class ApiClient {
             if (!this._callback) return;
 
             try {
+                ensureSucces(this._client.status);
                 const json = JSON.parse(this._client.responseText);
                 this._callback(null, this._client.status, json);
             }
@@ -101,5 +106,23 @@ export class ApiClient {
         };
         const response = await this.request<api.Locos>("POST", "/locos", request);
         return response.locos[0];
+    }
+
+    getLoco(id: number): Promise<api.Loco> {
+        return this.request("GET", `/locos/${id}`);
+    }
+
+    deleteLoco(id: number): Promise<void> {
+        return this.request("DELETE", `/locos/${id}`);
+    }
+
+    updateLoco(id: number, name: string, address: number, speeds: number[]): Promise<void> {
+        const request: api.Loco = {
+            id: id,
+            name: name,
+            address: address,
+            speeds: speeds
+        };
+        return this.request("POST", `/locos/${id}`, request);
     }
 }

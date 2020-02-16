@@ -24,7 +24,8 @@ const _locos: api.Locos = {
     }]
 };
 
-apiRouter.route("/locos").get((req, res, next) => {
+apiRouter.route("/locos")
+.get((_req, res, next) => {
     try {
         res.json(_locos);
     }
@@ -42,6 +43,62 @@ apiRouter.route("/locos").get((req, res, next) => {
         }
 
         res.json(locos);
+    }
+    catch (err) {
+        next(err);
+    }
+});
+
+apiRouter.route("/locos/:id")
+.get((req, res, next) => {
+    try {
+        const id = parseInt(req.params.id);
+        const locos = _locos.locos;
+        for (let i = 0; i < locos.length; i++) {
+            if (id === locos[i].id) {
+                res.json(locos[i]);
+                return;
+            }
+        }
+
+        res.statusCode = 404;
+        res.send();
+    }
+    catch (err) {
+        next(err);
+    }   
+})
+.post((req, res, next) => {
+    try {
+        const id = parseInt(req.params.id);
+        const data: api.Loco = req.body;
+        const locos = _locos.locos;
+        for (let i = 0; i < locos.length; i++) {
+            if (id === locos[i].id) {
+                data.id = id;
+                locos[i] = data;
+                return;
+            }
+        }
+
+        res.statusCode = 404;
+        res.send();
+    }
+    catch (err) {
+        next(err);
+    }   
+})
+.delete((req, res, next) => {
+    try {
+        const id = parseInt(req.params.id);
+        const locos = _locos.locos;
+        for (let i = 0; i < locos.length; i++) {
+            if (id === locos[i].id) {
+                locos.splice(i, 1);
+                break;
+            }
+        }
+        res.send();
     }
     catch (err) {
         next(err);
