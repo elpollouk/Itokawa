@@ -28,11 +28,21 @@ class PromptControl extends ControlBase {
         buttons.className = "buttons";
         container.appendChild(buttons);
 
-        function createButton(config: PromptButton) {
+        const createButton = (config: PromptButton) => {
             const button = document.createElement("button");
             button.innerText = config.caption;
-            if (config.onclick) button.onclick = () => {
-                config.onclick();
+            button.onclick = (ev) => {
+                config.onclick && config.onclick();
+
+                // Clear out the close handler so that it doesn't fire as a result of us directly closing
+                // the prompt
+                this.onclose = null;
+                this.close();
+                popup.remove(this);
+
+                // We need to stop propagation so that the click doesn't make its way back to the protection
+                // level cancelling any newly created popups
+                ev.stopImmediatePropagation();
             }
             buttons.appendChild(button);
         }
@@ -45,11 +55,6 @@ class PromptControl extends ControlBase {
     
     hide() {
         this.close();
-    }
-
-    close() {
-        this.onclose && this.onclose();
-        super.close();
     }
 }
 

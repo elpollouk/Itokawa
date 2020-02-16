@@ -55,12 +55,12 @@ button {
     transform: translateY(0);
 }
 
-#globalControls {
+.globalControls {
     margin-top: 1em;
     margin-bottom: 1em;
 }
 
-#globalControls button {
+.globalControls button {
     width: calc(25% - 4px);;
 }
 
@@ -195,6 +195,18 @@ button {
 }
 .prompt button {
     width: 6em;
+}
+
+.prompt.stacked .message {
+    font-weight: bold;
+    font-size: x-large;
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+}
+
+.prompt.stacked button {
+    width: 100%;
+    margin-top: 0.5em;
 }
 
 /*
