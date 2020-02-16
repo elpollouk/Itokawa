@@ -52,18 +52,24 @@ export class TrainRosterPage extends Page {
                 const deleteButton = createElement(div, "button");
                 deleteButton.innerText = "X";
                 deleteButton.onclick = () => this._deleteTrain(loco.id, loco.name);
-
             };
 
             for (const loco of locos.locos) 
                 addTrain(loco);
+        }).catch((err) => {
+            console.error(err);
+            prompt.error("Failed to load train list.");
         });
     }
 
     private _deleteTrain(id: number, name: string) {
         prompt.confirm(`Are you sure you want to delete ${name}`, () => {
             this._api.deleteLoco(id)
-                .then(() => this._refreshTrains());
+                .then(() => this._refreshTrains())
+                .catch((err) => {
+                    console.error(err);
+                    prompt.error("Failed to delete train.");
+                });
         });
     }
 }

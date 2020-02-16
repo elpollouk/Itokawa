@@ -1,5 +1,6 @@
 import { Client } from "../client";
 import { Page, IPageConstructor } from "./page";
+import * as prompt from "../controls/promptControl";
 import { TrainControl } from "../controls/trainControl";
 import { RequestButton } from "../controls/requestButton";
 import { CommandRequest, RequestType } from "../../common/messages";
@@ -48,6 +49,9 @@ class IndexPage extends Page {
                     [0].concat(loco.speeds)
                 );
             }
+        }).catch((err) => {
+            console.error(err);
+            prompt.error("Failed to load train list.");
         });
     }
 }

@@ -198,6 +198,12 @@ button {
 
 .prompt .message {
     margin-bottom: 1.0em;
+    white-space: pre-line;
+}
+
+.prompt.error .message {
+    color: darkred;
+    font-weight: bold;
 }
 
 .prompt .buttons {

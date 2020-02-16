@@ -84,7 +84,10 @@ export class TrainEditPage extends Page {
             this._slowElement.value = `${loco.speeds[0]}`;
             this._mediumElement.value = `${loco.speeds[1]}`;
             this._fastElement.value = `${loco.speeds[2]}`;
-        });
+        }).catch((err) => {
+            console.error(err);
+            prompt.error("Failed to load train details.");
+        })
     }
 
     _save() {
@@ -108,6 +111,9 @@ export class TrainEditPage extends Page {
             }
             promise.then(() => {
                 nav.back();
+            }).catch((err) => {
+                console.error(err);
+                prompt.error("Failed to save train details.");
             });
         });
     }
