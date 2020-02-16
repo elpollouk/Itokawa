@@ -33,6 +33,11 @@ export class SystemDrawControl extends ControlBase {
         const globalControls = createControlContainer(container);
         globalControls.classList.add("globalControls");
 
+        const trainsButton = document.createElement("button");
+        trainsButton.innerText = "Trains";
+        trainsButton.onclick = () => nav.open("trains");
+        globalControls.appendChild(trainsButton);
+
         const serverButton = document.createElement("button");
         serverButton.innerText = "Server";
         serverButton.onclick = () => this.openServerPopup();

@@ -65,6 +65,7 @@ export class Navigator {
     }
 
     static open(path: string): Page {
+        if (path[0] === "#") path = path.substr(1);
         if (_currentPage) {
             if (path === _currentPage.path) return;
 
@@ -73,13 +74,13 @@ export class Navigator {
                 path: _currentPage.path,
                 state: state,
                 depth: _currentPageDepth
-            }, document.title);
+            }, document.title, "#" + _currentPage.path);
             _currentPageDepth++;
             history.pushState({
                 path: path,
                 state: null,
                 depth: _currentPageDepth
-            }, document.title);
+            }, document.title, "#" + path);
         }
 
         _openPage(path, null, _currentPageDepth);

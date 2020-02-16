@@ -3,6 +3,7 @@ import { IndexPageConstructor } from "./pages/index";
 import { UpdatePageConstructor, UpdatePage } from "./pages/update";
 import { Client } from "./client";
 import { SystemDrawControl } from "./controls/systemDrawer";
+import { TrainRosterConstructor } from "./pages/trainRoster";
 
 window["main"] = function () {
     window["itokawa"] = new Client();
@@ -19,5 +20,8 @@ window["main"] = function () {
     //---------------------------------------------------------------------------------------//
     Navigator.registerPage(IndexPageConstructor);
     Navigator.registerPage(UpdatePageConstructor);
-    Navigator.open(IndexPageConstructor.path);
+    Navigator.registerPage(TrainRosterConstructor);
+
+    const path = location.hash || IndexPageConstructor.path;
+    Navigator.open(path);
 }
