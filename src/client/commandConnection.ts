@@ -144,6 +144,7 @@ export class CommandConnection extends Bindable {
     private _onMessage(message: MessageEvent) {
         if (this.state === ConnectionState.Busy) {
             const data = JSON.parse(message.data) as messages.CommandResponse;
+            if (data.error) console.error(data.error);
             const cb = this._callback;
 
             // We want to clear state out before firing the callback so that the callback has the option
