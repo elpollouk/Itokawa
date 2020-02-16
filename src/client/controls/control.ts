@@ -1,6 +1,7 @@
 export interface IControl {
-    readonly parent: HTMLElement;
+    parent: HTMLElement;
     readonly element: HTMLElement;
+
 
     onclose: ()=>void;
 
@@ -10,17 +11,23 @@ export interface IControl {
 }
 
 export abstract class ControlBase implements IControl {
-    private _parent: HTMLElement;
+    private _parent: HTMLElement = null;
     private _element: HTMLElement;
 
     get parent() { return this._parent; }
+    set parent(value: HTMLElement) {
+        this._parent && this._parent.removeChild(this._element);
+        this._parent = value;
+        value && value.appendChild(this._element);
+    }
+
     get element() { return this._element; }
     onclose: ()=>void;
     
-    _init( parent: HTMLElement) {
+    _init(parent?: HTMLElement) {
         this._element = this._buildUi();
         this._parent = parent;
-        this._parent.appendChild(this.element);
+        parent && parent.appendChild(this.element);
     }
 
     protected abstract _buildUi(): HTMLElement;
@@ -36,8 +43,7 @@ export abstract class ControlBase implements IControl {
     close(): void {
         if (this._element.parentNode) {
             this.onclose && this.onclose();
-            this._parent.removeChild(this._element);
-            this._parent = null;
+            this.parent = null;
         }
     }
 }

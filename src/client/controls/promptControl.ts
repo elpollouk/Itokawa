@@ -1,4 +1,4 @@
-import { ControlBase } from "./control";
+import { ControlBase, IControl } from "./control";
 import * as protection from "./protectionControl";
 
 export interface PromptButton {
@@ -7,12 +7,11 @@ export interface PromptButton {
 }
 
 class PromptControl extends ControlBase {
-    constructor(parent: HTMLElement,
-                private message: string,
+    constructor(private message: string,
                 private buttons: PromptButton[],
                 onclose?:()=>void) {
         super();
-        this._init(parent);
+        this._init();
         this.onclose = onclose;
     }
 
@@ -43,53 +42,72 @@ class PromptControl extends ControlBase {
 
         return container;
     }
+    
+    hide() {
+        this.close();
+    }
+
+    close() {
+        this.onclose && this.onclose();
+        super.close();
+    }
 }
 
-let _prompts: PromptControl[] = [];
+let _popups: IControl[] = [];
 
-export function prompt(message: string, buttons: PromptButton[], onclose?:()=>void): PromptControl {
-    const container = document.getElementById("popupContainer");
+function popupContainer() {
+    return document.getElementById("popupContainer");
+}
 
-    if (_prompts.length !== 0) {
+export function addPopop(popup: IControl) {
+    const container = popupContainer();
+
+    if (_popups.length !== 0) {
         // If there is already a popup visible, hide the top most
-        _prompts[_prompts.length-1].hide();
+        _popups[_popups.length-1].hide();
     }
-    else {
+
+    // We need to different checks as calling a control's .hide() method could modify the popups list
+    if (_popups.length === 0) {
         // If this is the first popup, then we  need to set up protections
         protection.enableProtection();
         container.classList.add("active");
         container.onclick = () => {
-            const prompt = _prompts[_prompts.length-1];
-            prompt.close();
+            const control = _popups[_popups.length-1];
+            control.close();
         };
     }
 
-    var prompt = new PromptControl(container, message, buttons, () => {
-        onclose && onclose();
-        _removePrompt(prompt);
-    });
-    _prompts.push(prompt);
-
-    return prompt;
+    popup.parent = container;
+    _popups.push(popup);
 }
 
-function _removePrompt(prompt: PromptControl) {
-    const container = document.getElementById("popupContainer");
-
-    for (let i = 0; i < _prompts.length; i++) {
-        if (_prompts[i] == prompt) {
-            _prompts.splice(i, 1);
+export function removePopup(popup: IControl) {
+    for (let i = 0; i < _popups.length; i++) {
+        if (_popups[i] == popup) {
+            popup.parent = null;
+            _popups.splice(i, 1);
             break;
         }
     }
 
-    if (_prompts.length === 0) {
+    if (_popups.length === 0) {
         protection.disableProtection();
-        container.classList.remove("active");
+        popupContainer().classList.remove("active");
     }
     else {
-        _prompts[_prompts.length-1].show();
+        _popups[_popups.length-1].show();
     }
+}
+
+export function prompt(message: string, buttons: PromptButton[], onclose?:()=>void): PromptControl {
+    var prompt = new PromptControl(message, buttons, () => {
+        onclose && onclose();
+        removePopup(prompt);
+    });
+    addPopop(prompt);
+
+    return prompt;
 }
 
 export function confirm(message: string, onYes:()=>void, onNo?:()=>void): PromptControl {
