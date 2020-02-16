@@ -44,7 +44,9 @@ function _openPage(path: string, state: any, depth: number) {
         window.requestAnimationFrame(() => {
             content.style.left = "0";
             oldPage.content.style.left = endLeft;
-            oldPage.content.ontransitionend = () => oldPage.destroy();
+            // We have to wait on the transition on the new content as for some
+            // reason, it doesn't fire for the old page.
+            content.ontransitionend = () => oldPage.destroy();
         });
     }
 

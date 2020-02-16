@@ -47,6 +47,10 @@ button {
     transition: transform 0.5s ease-in-out;
 }
 
+.debug #statusBar {
+    transition: transform 1.5s ease-in-out;
+}
+
 #statusBar.expanded {
     transform: translateY(0);
 }
@@ -144,6 +148,10 @@ button {
     transition: opacity 0.5s, visibility 0.5s step-end;
 }
 
+.debug #protection {
+    transition: opacity 1.5s, visibility 1.5s step-end;
+}
+
 #protection.active {
     visibility: visible;
     opacity: 0.6;
@@ -218,6 +226,10 @@ button {
     width: 100%;
     height: 100%;
     transition: left 0.3s ease-out;
+}
+
+.debug .page {
+    transition: left 1.5s ease-out;
 }
 
 /*
