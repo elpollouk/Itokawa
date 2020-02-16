@@ -68,6 +68,16 @@ export function prompt(message: string, buttons: PromptButton[], onclose?:()=>vo
     return prompt;
 }
 
+export function stackedPrompt(message: string, buttons: PromptButton[], onclose?:()=>void): PromptControl {
+    var prompt = new PromptControl(message, buttons, () => {
+        onclose && onclose();
+        popup.remove(prompt);
+    });
+    popup.add(prompt);
+    prompt.element.classList.add("stacked");
+    return prompt;
+}
+
 export function confirm(message: string, onYes:()=>void, onNo?:()=>void): PromptControl {
     return prompt(message, [{
         caption: "Yes",

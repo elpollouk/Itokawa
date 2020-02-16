@@ -102,7 +102,7 @@ export class SystemDrawControl extends ControlBase {
             }
         }
 
-        const popup = prompt.prompt(
+        prompt.stackedPrompt(
             "Server Control",[
                 action("Shutdown", "Are you sure you want to shutdown server?", () => {
                     if (client.connection.state !== ConnectionState.Idle) return;
@@ -125,6 +125,5 @@ export class SystemDrawControl extends ControlBase {
                 { caption: "Cancel" }
             ]
         );
-        popup.element.classList.add("stacked");
     }
 }
