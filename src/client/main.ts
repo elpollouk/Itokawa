@@ -24,6 +24,5 @@ window["main"] = function () {
     Navigator.registerPage(TrainRosterConstructor);
     Navigator.registerPage(TrainEditConstructor);
 
-    const path = location.hash || IndexPageConstructor.path;
-    Navigator.open(path);
+    Navigator.initalOpen();
 }

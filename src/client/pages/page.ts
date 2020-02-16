@@ -18,6 +18,7 @@ export interface IPageConstructor {
     create(params?: any): Page;
 }
 
+const ROOT_PAGE = "index";
 const _pages = new Map<string, IPageConstructor>();
 let _currentPage: Page = null;
 let _currentPageDepth = 0;
@@ -30,7 +31,7 @@ window.onpopstate = (ev: PopStateEvent) => {
 
 function _openPage(path: string, params: any, depth: number) {
     depth = depth || 0;
-    const newPage = _pages.get(path || "index").create(params);
+    const newPage = _pages.get(path || ROOT_PAGE).create(params);
     const content = newPage.content;
     content.classList.add("page");
     document.getElementById("contentArea").appendChild(content);
@@ -42,13 +43,13 @@ function _openPage(path: string, params: any, depth: number) {
         let endLeft = depth < _currentPageDepth ? "120vw" : "-120vw";
 
         content.style.left = startLeft;
-        window.requestAnimationFrame(() => {
+        setTimeout(() => {
             content.style.left = "0";
             oldPage.content.style.left = endLeft;
             // We have to wait on the transition on the new content as for some
             // reason, it doesn't fire for the old page.
             content.ontransitionend = () => oldPage.destroy();
-        });
+        }, 34);
     }
 
     if (depth == 0)
@@ -71,21 +72,36 @@ export class Navigator {
             if (path === _currentPage.path) return;
 
             _currentPage.onLeave();
-            /*history.replaceState({
-                path: _currentPage.path,
-                state: state,
-                depth: _currentPageDepth
-            }, document.title, "#" + _currentPage.path);*/
             _currentPageDepth++;
             history.pushState({
                 path: path,
                 params: params,
                 depth: _currentPageDepth
-            }, document.title, "#" + path);
+            }, document.title/*, "#" + path*/);
         }
 
         _openPage(path, params, _currentPageDepth);
         return _currentPage;
+    }
+
+    static replaceParams(params: any) {
+        history.replaceState({
+            path: _currentPage.path,
+            params: params,
+            depth: _currentPageDepth
+        }, document.title/*, "#" + _currentPage.path*/);
+    }
+
+    static initalOpen() {
+        const state = history.state;
+        if (!state) {
+            // There's no state held in the history, so open the root page as if it's a fresh boot
+            //const path = location.hash || ROOT_PAGE;
+            this.open(ROOT_PAGE);
+            return;
+        }
+        // We found some state, so assume it's from a previous boot
+        _openPage(state.path, state.params, state.depth);
     }
 
     static back() {

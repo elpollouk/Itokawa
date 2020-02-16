@@ -12,7 +12,7 @@ export class TrainEditPage extends Page {
     path: string = TrainEditConstructor.path;
     content: HTMLElement;
 
-    private readonly _id: number;
+    private _id: number;
     private readonly _api: ApiClient;
 
     private _nameElement: HTMLInputElement;
@@ -107,7 +107,12 @@ export class TrainEditPage extends Page {
                 promise = this._api.updateLoco(this._id, name, address, speeds);
             }
             else {
-                promise = this._api.addLoco(name, address, speeds);
+                promise = this._api.addLoco(name, address, speeds).then((loco) => {
+                    this._id = loco.id;
+                    nav.replaceParams({
+                        id: loco.id
+                    });
+                });
             }
             promise.then(() => {
                 nav.back();
