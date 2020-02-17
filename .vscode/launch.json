@@ -16,10 +16,6 @@
                 "-d", "NullCommandStation",
                 "--log-level", "debug"
             ],
-            //"preLaunchTask": "tsc: build - tsconfig.json",
-            "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
-            ]
         },
         {
             "type": "node",
@@ -37,9 +33,6 @@
                 "-x",
                 ".test.txt"
             ],
-            "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
-            ]
         },
         {
             "type": "node",
