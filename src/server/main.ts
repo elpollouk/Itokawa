@@ -12,7 +12,7 @@ import { addCommonOptions,  openDevice } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
 import { execShutdown } from "./shutdown";
 import { ConfigNode } from "../utils/config";
-import { apiRouter } from "./routers/apiRouter";
+import { getRouter } from "./routers/apiRouter";
 
 // WebSocket Message handlers
 import { getControlWebSocketRoute } from "./handlers/handlers";
@@ -45,7 +45,7 @@ async function main()
     });*/
 
     app.ws("/control/v1", getControlWebSocketRoute());
-    app.use("/api/v1", apiRouter);
+    app.use("/api/v1", (await getRouter()));
     app.use(express.static("static"));
 
     let port = program.port || application.config.get("server.port", 8080);

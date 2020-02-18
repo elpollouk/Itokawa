@@ -8,8 +8,11 @@ import { ConfigNode, loadConfig, saveConfig } from "./utils/config";
 import { applyLogLevel } from "./utils/commandLineArgs";
 import { execAsync } from "./utils/exec";
 import { ICommandStation } from "./devices/commandStations/commandStation"
+import { Database } from "./model/database";
 
 const log = new Logger("Application");
+
+const DATABASE_FILE = "data.100.sqlite3";
 
 function _initDataDirectory(dataPath: string) {
     dataPath = dataPath || pathMod.join(os.homedir(), ".itokawa");
@@ -46,6 +49,7 @@ async function _getGitRevision() {
 
 class Application {
     onshtudown: ()=>Promise<void> = null;
+    onrestart: ()=>Promise<void> = null;
     commandStation: ICommandStation = null;
     publicUrl: string = "";
     
@@ -61,10 +65,15 @@ class Application {
         return this._gitrev;
     }
 
+    get database() {
+        return this._db;
+    }
+
     private _config: ConfigNode = new ConfigNode();
     private _configPath: string;
     private _gitrev: string = "";
     private _dataPath: string;
+    private _db: Database;
 
     constructor() {
 
@@ -76,6 +85,7 @@ class Application {
     //  * Configure logging
     //  * Fetch the current git revision
     //  * Write a pid file to the data directory
+    //  * Open the local database
     start(args: CommanderStatic, savepid: boolean = false): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
@@ -98,6 +108,9 @@ class Application {
                     fs.writeFileSync(pidPath, `${pid}`);
                 }
 
+                const dbPath = this.getDataPath(DATABASE_FILE);
+                this._db = await Database.open(dbPath);
+
                 resolve();
             }
             catch (ex) {
@@ -118,7 +131,14 @@ class Application {
     }
 
     async shutdown() {
+        await this._db.close();
         if (this.onshtudown) await this.onshtudown();
+        process.exit(0);
+    }
+
+    async restart() {
+        await this._db.close();
+        if (this.onrestart) await this.onrestart();
         process.exit(0);
     }
 }

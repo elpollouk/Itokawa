@@ -43,6 +43,7 @@ function _openPage(path: string, params: any, depth: number) {
         let endLeft = depth < _currentPageDepth ? "120vw" : "-120vw";
 
         content.style.left = startLeft;
+        oldPage.content.style.left = "0";
         setTimeout(() => {
             content.style.left = "0";
             oldPage.content.style.left = endLeft;
