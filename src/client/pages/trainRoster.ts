@@ -3,8 +3,9 @@ import * as prompt from "../controls/promptControl";
 import { Client } from "../client";
 import { ApiClient } from "../apiClient";
 import { Loco } from "../../common/api";
-import { createElement } from "../utils/dom";
+import { createElement, parseHtml, getById } from "../utils/dom";
 import { TrainEditConstructor } from "./trainEditor";
+const html = require("./trainRoster.html");
 
 function pad(address: number) {
     const addr = `${address}`;
@@ -26,18 +27,12 @@ export class TrainRosterPage extends Page {
     }
 
     private _buildUi(): HTMLElement {
-        const container = document.createElement("div");
-        container.className = "trainRoster container";
+        const page = parseHtml(html);
 
-        createElement(container, "div", "title").innerText = "Manage Trains";
-        this._trains = createElement(container, "div", "trains pageContent");
-        const buttons = createElement(container, "div", "buttons");
+        this._trains = getById(page, "trains");
+        getById(page, "new").onclick = () => nav.open(TrainEditConstructor.path);
 
-        let button = createElement(buttons, "button");
-        button.innerText = "New...";
-        button.onclick = () => nav.open(TrainEditConstructor.path);
-
-        return container;
+        return page;
     }
 
     onEnter() {

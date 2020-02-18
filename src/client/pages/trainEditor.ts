@@ -1,7 +1,7 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { Client } from "../client";
 import { ApiClient } from "../apiClient";
-import { parse, getById, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
+import { parseHtml, getById, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
 const content = require("./trainEditor.html");
 
@@ -32,7 +32,7 @@ export class TrainEditPage extends Page {
     }
 
     private _buildUi(): HTMLElement {
-        const page = parse(content);
+        const page = parseHtml(content);
 
         this._nameElement = getById(page, "name");
         this._addressElement = getById(page, "address");
@@ -42,8 +42,8 @@ export class TrainEditPage extends Page {
         this._deleteButton = getById(page, "delete");
         this._deleteButton.onclick = () => this._delete();
 
-        getById<HTMLButtonElement>(page, "save").onclick = () => this._save();
-        getById<HTMLButtonElement>(page, "cancel").onclick = () => nav.back();
+        getById(page, "save").onclick = () => this._save();
+        getById(page, "cancel").onclick = () => nav.back();
 
         return page;
     }

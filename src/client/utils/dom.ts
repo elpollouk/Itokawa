@@ -7,7 +7,7 @@ export function createElement<T extends HTMLElement>(parent: HTMLElement, tagNam
     return element as T;
 }
 
-export function parse(content: string): HTMLElement {
+export function parseHtml(content: string): HTMLElement {
     const parser = document.createElement("div");
     parser.innerHTML = content;
     return parser.children.item(0) as HTMLElement;
