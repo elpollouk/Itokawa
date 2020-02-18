@@ -31,11 +31,6 @@ export abstract class Repository<T> {
 
     async init(): Promise<void> {
         await this._prepareStatements();
-        if (!this._list) throw new Error("List statement not prepared");
-        if (!this._get) throw new Error("Get statement not prepared");
-        if (!this._insert) throw new Error("Insert statement not prepared");
-        if (!this._update) throw new Error("Update statement not prepared");
-        if (!this._delete) throw new Error("Delete statement not prepared");
     }
 
     abstract async release(): Promise<void>;
