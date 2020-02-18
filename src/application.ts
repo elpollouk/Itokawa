@@ -12,7 +12,7 @@ import { Database } from "./model/database";
 
 const log = new Logger("Application");
 
-const DATABASE_FILE = "data.100.sqlite3";
+const DATABASE_FILE = "data.000.sqlite3";
 
 function _initDataDirectory(dataPath: string) {
     dataPath = dataPath || pathMod.join(os.homedir(), ".itokawa");
