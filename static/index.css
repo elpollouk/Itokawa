@@ -96,6 +96,16 @@ button {
     color: rgb(64, 64, 64);
 }
 
+.handle {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: xx-large;
+    font-weight: bold;
+    margin-bottom: 0.2em;
+}
+
 .rootPage .backButton,
 .expanded .backButton {
     display: none;
@@ -235,7 +245,7 @@ button {
  *     .led height 1.5m
  */
 #contentParent {
-    overflow-y: hidden;
+    overflow: hidden;
     margin-top: calc(10px + 1.5em);
     height: calc(100vh - (10px + 1.5em));
     box-sizing: border-box;
@@ -364,11 +374,20 @@ button {
     margin-bottom: 0.5em;
     padding-top: 0.5em;
     padding-bottom: 0.5em;
+    cursor: pointer;
+}
+
+.trainRoster .train::after {
+    color: gray;
+    font-family: monospace;
+    font-size: x-large;
+    vertical-align: middle;
+    content: ">";
+    margin-left: 1.0em;
 }
 
 .trainRoster .train:hover, .trainRoster .train:active {
     background-color: rgba(196, 196, 196, 0.3);
-    text-decoration: underline;
 }
 
 .trainRoster .buttons {

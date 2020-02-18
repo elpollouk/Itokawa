@@ -7,8 +7,8 @@ const log = new Logger("Database");
 const SCHEMA_VERSION_KEY = "schemaVersion";
 const SCHEMA_VERSION = 100;
 
-interface RepositoryConstructable<T> {
-    new(db: Database): Repository<T>;
+interface RepositoryConstructable<ItemType, RepositoryType extends Repository<ItemType>> {
+    new(db: Database): RepositoryType;
 }
 
 function _open(path: string): Promise<sqlite3.Database> {
@@ -35,7 +35,7 @@ export class Database {
         return db;
     }
 
-    private _repositories: Map<RepositoryConstructable<any>, Repository<any>>
+    private _repositories: Map<RepositoryConstructable<unknown, Repository<unknown>>, Repository<unknown>>
     private _schemaVersion: number;
     get schemaVersion() {
         return this._schemaVersion;
@@ -46,7 +46,7 @@ export class Database {
     }
 
     private constructor(private readonly _db: sqlite3.Database) {
-        this._repositories = new Map<RepositoryConstructable<any>, Repository<any>>();
+        this._repositories = new Map<RepositoryConstructable<any, Repository<any>>, Repository<any>>();
     }
 
     private async _init() {
@@ -137,11 +137,14 @@ export class Database {
         });
     }
 
-    async openRepository<T>(repoType: RepositoryConstructable<T>): Promise<Repository<T>> {
-        if (this._repositories.has(repoType)) return this._repositories.get(repoType);
+    async openRepository<ItemType, RepositoryType extends Repository<ItemType> = Repository<ItemType>>(repoType: RepositoryConstructable<ItemType, RepositoryType>): Promise<RepositoryType> {
+        if (this._repositories.has(repoType))
+            return this._repositories.get(repoType) as RepositoryType;
+
         const repo = new repoType(this);
         await repo.init();
         this._repositories.set(repoType, repo);
+
         return repo;
     }
 }

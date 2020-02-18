@@ -98,6 +98,6 @@ _apiRouter.route("/locos/:id")
 });
 
 export async function getRouter(): Promise<expressWs.Router> {
-    _locoRepo = (await application.database.openRepository(LocoRepository)) as LocoRepository;
+    _locoRepo = await application.database.openRepository(LocoRepository);
     return _apiRouter;
 }

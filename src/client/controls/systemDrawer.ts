@@ -11,6 +11,7 @@ import { ConnectionStatus } from "./connectionStatus";
 import { ConnectionState } from "../commandConnection";
 import { UpdatePage, UpdatePageConstructor } from "../pages/update";
 import { PromptButton } from "../controls/promptControl";
+import { createElement } from "../utils/dom";
 
 function createControlContainer(parent: HTMLElement) {
     const div = document.createElement("div");
@@ -71,6 +72,9 @@ export class SystemDrawControl extends ControlBase {
         };
         backButton.innerText = "<";
         container.appendChild(backButton);
+
+        const handle = createElement(container, "div", "handle");
+        handle.innerText = "...";
 
         new ConnectionStatus(container);
 

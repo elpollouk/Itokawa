@@ -6,6 +6,11 @@ import { Loco } from "../../common/api";
 import { createElement } from "../utils/dom";
 import { TrainEditConstructor } from "./trainEditor";
 
+function pad(address: number) {
+    const addr = `${address}`;
+    return "0000".substr(addr.length) + addr;
+}
+
 export class TrainRosterPage extends Page {
     path: string = TrainRosterConstructor.path;
     content: HTMLElement;
@@ -45,7 +50,7 @@ export class TrainRosterPage extends Page {
 
             const addTrain = (loco: Loco) => {
                 const title = createElement(this._trains, "div", "train");
-                title.innerText = `${loco.address} - ${loco.name}`;
+                title.innerText = `${pad(loco.address)} - ${loco.name}`;
                 title.onclick = (ev) => nav.open(TrainEditConstructor.path, { id: loco.id });
             };
 

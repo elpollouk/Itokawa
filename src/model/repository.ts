@@ -25,7 +25,7 @@ export abstract class Repository<T> {
     protected _update: sqlite3.Statement;
     protected _delete: sqlite3.Statement;
 
-    constructor(protected readonly _db: Database, protected readonly _dataColumn: string) {
+    constructor(protected readonly _db: Database) {
 
     }
 
@@ -46,7 +46,7 @@ export abstract class Repository<T> {
                     reject(err);
                 }
                 else {
-                    const item = JSON.parse(row[this._dataColumn]);
+                    const item = JSON.parse(row.item);
                     item.id = row.id;
                     results.push(item);
                 }
@@ -95,7 +95,7 @@ export abstract class Repository<T> {
                         resolve();
                     }
                     else {
-                        const data = row[this._dataColumn];
+                        const data = row.item;
                         const item = JSON.parse(data);
                         item["id"] = id;
                         resolve(item);
@@ -145,8 +145,8 @@ export abstract class Repository<T> {
 }
 
 export class SqliteRepository<T> extends Repository<T> {   
-    constructor(db: Database, private readonly _table: string, dataColumn: string) {
-        super(db, dataColumn);
+    constructor(db: Database, private readonly _table: string, private readonly _dataColumn: string) {
+        super(db);
     }
 
     async _finalizeAndNull(statement: string) {
@@ -167,8 +167,8 @@ export class SqliteRepository<T> extends Repository<T> {
 
     async _prepareStatements(): Promise<void> {
         await this._db.run(`CREATE TABLE IF NOT EXISTS ${this._table} (${this._dataColumn} JSON);`);
-        this._list = await this._prepare(`SELECT rowid as id, ${this._dataColumn} FROM ${this._table};`)
-        this._get = await this._prepare(`SELECT rowid as id, ${this._dataColumn} FROM ${this._table} where id = $id;`);
+        this._list = await this._prepare(`SELECT rowid as id, ${this._dataColumn} AS item FROM ${this._table};`);
+        this._get = await this._prepare(`SELECT rowid as id, ${this._dataColumn} AS item FROM ${this._table} where id = $id;`);
         this._insert = await this._prepare(`INSERT INTO ${this._table} (${this._dataColumn}) VALUES (json($item));`);
         this._update = await this._prepare(`UPDATE ${this._table} SET ${this._dataColumn} = json($item) WHERE rowid = $id;`);
         this._delete = await this._prepare(`DELETE FROM ${this._table} WHERE rowid = $id;`);
