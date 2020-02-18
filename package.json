@@ -29,6 +29,7 @@
     "@types/xml2js": "^0.4.5",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
+    "html-loader": "^0.5.5",
     "mocha": "^7.0.0",
     "nyc": "^15.0.0",
     "sinon": "^8.1.1",

@@ -1,0 +1,26 @@
+<div class="trainEditor container">
+    <div class="title">Edit Train</div>
+    <div class="pageContent">
+        <div class="setting">
+            <div class="label">Name</div>
+            <input data-id="name" type="text" placeholder="e.g. GWR 0-6-0 Tank Engine"/>
+        </div>
+        <div class="setting">
+            <div class="label">Address</div>
+            <input data-id="address" type="number" min="1" max="9999" placeholder="1-9999"/>
+        </div>
+        <div class="setting speed">
+            <div class="label">Speed settings</div>
+            <div><input
+                data-id="slow" type="number" min="1" max="127" placeholder="1-127"/><input
+                data-id="medium" type="number" min="1" max="127" placeholder="1-127"/><input
+                data-id="fast" type="number" min="1" max="127" placeholder="1-127"/>
+            </div>
+        </div>
+        <div class="buttons"><button
+            data-id="delete" style="visibility: hidden;">Delete</button><button
+            data-id="save">Save</button><button
+            data-id="cancel">Cancel</button>
+        </div>
+    </div>
+</div>

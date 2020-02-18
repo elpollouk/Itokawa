@@ -7,6 +7,16 @@ export function createElement<T extends HTMLElement>(parent: HTMLElement, tagNam
     return element as T;
 }
 
+export function parse(content: string): HTMLElement {
+    const parser = document.createElement("div");
+    parser.innerHTML = content;
+    return parser.children.item(0) as HTMLElement;
+}
+
+export function getById<T extends HTMLElement>(element: HTMLElement, id: string): T {
+    return element.querySelector(`[data-id="${id}"]`);
+}
+
 export function vaildateNotEmptyInput(input: HTMLInputElement, message: string) {
     let value = input.value;
     if (!value) {

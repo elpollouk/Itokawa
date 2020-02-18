@@ -1,8 +1,9 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { Client } from "../client";
 import { ApiClient } from "../apiClient";
-import { createElement, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
+import { parse, getById, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
+const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
     id?: number
@@ -31,58 +32,20 @@ export class TrainEditPage extends Page {
     }
 
     private _buildUi(): HTMLElement {
-        const container = document.createElement("div");
-        container.className = "trainEditor container";
-        createElement(container, "div", "title").innerText = "Edit Train";
-        const editor = createElement(container, "div", "pageContent");
-        
-        // Human readable name
-        let div = createElement(editor, "div", "setting");
-        createElement(div, "div", "label").innerText = "Name";
-        this._nameElement = createElement(div, "input");
-        this._nameElement.type = "text";
-        this._nameElement.placeholder = "e.g. GWR 0-6-0 Tank Engine"
+        const page = parse(content);
 
-        // Loco Address
-        div = createElement(editor, "div", "setting");
-        createElement(div, "div", "label").innerText = "Address";
-        this._addressElement = createElement(div, "input");
-        this._addressElement.type = "number";
-        this._addressElement.min = "1";
-        this._addressElement.max = "9999";
-        this._addressElement.placeholder = "1-9999";
-
-        // Speed settings
-        div = createElement(editor, "div", "setting speed");
-        createElement(div, "div", "label").innerText = "Speed settings";
-        div = createElement(div, "div");
-
-        const speedInput = () => {
-            const el = createElement<HTMLInputElement>(div, "input");
-            el.type = "number";
-            el.min = "1";
-            el.max = "127";
-            el.placeholder = "1-127";
-            return el;
-        }
-        this._slowElement = speedInput();
-        this._mediumElement = speedInput();
-        this._fastElement = speedInput();
-
-        // Buttons
-        const buttons = createElement(editor, "div", "buttons");
-        this._deleteButton = createElement(buttons, "button");
-        this._deleteButton.innerText = "Delete";
-        this._deleteButton.style.visibility = "hidden";
+        this._nameElement = getById(page, "name");
+        this._addressElement = getById(page, "address");
+        this._slowElement = getById(page, "slow");
+        this._mediumElement = getById(page, "medium");
+        this._fastElement = getById(page, "fast");
+        this._deleteButton = getById(page, "delete");
         this._deleteButton.onclick = () => this._delete();
-        let button = createElement(buttons, "button");
-        button.innerText = "Save";
-        button.onclick = () => this._save();
-        button = createElement(buttons, "button");
-        button.innerText = "Cancel";
-        button.onclick = () => nav.back();
 
-        return container;
+        getById<HTMLButtonElement>(page, "save").onclick = () => this._save();
+        getById<HTMLButtonElement>(page, "cancel").onclick = () => nav.back();
+
+        return page;
     }
 
     onEnter() {
