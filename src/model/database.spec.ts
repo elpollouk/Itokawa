@@ -2,6 +2,7 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
 import { Database } from "./database";
+import * as sqlite3 from "sqlite3";
 import * as fs from "fs";
 
 const TEST_DB_FILE = ".test.sqlite3";
@@ -40,6 +41,7 @@ describe("Database", () => {
     describe("open", () => {
         it("should open if path is valid", async () => {
             expect(_db).to.not.be.null;
+            expect(_db.sqlite3).to.be.instanceOf(sqlite3.Database);
             expect(_db.schemaVersion).to.equal(100);
         })
 

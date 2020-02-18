@@ -1,10 +1,15 @@
 import { Logger } from "../utils/logger";
 import * as sqlite3 from "sqlite3";
+import { Repository } from "./repository";
 
 const log = new Logger("Database");
 
 const SCHEMA_VERSION_KEY = "schemaVersion";
 const SCHEMA_VERSION = 100;
+
+interface RepositoryConstructable<T> {
+    new(db: Database): Repository<T>;
+}
 
 function _open(path: string): Promise<sqlite3.Database> {
     return new Promise<sqlite3.Database>((resolve, reject) => {
@@ -30,13 +35,18 @@ export class Database {
         return db;
     }
 
+    private _repositories: Map<RepositoryConstructable<any>, Repository<any>>
     private _schemaVersion: number;
     get schemaVersion() {
         return this._schemaVersion;
     }
 
-    private constructor(private readonly _db: sqlite3.Database) {
+    get sqlite3() {
+        return this._db;
+    }
 
+    private constructor(private readonly _db: sqlite3.Database) {
+        this._repositories = new Map<RepositoryConstructable<any>, Repository<any>>();
     }
 
     private async _init() {
@@ -56,7 +66,14 @@ export class Database {
         }
     }
 
-    close(): Promise<void> {
+    async close(): Promise<void> {
+        for (const repo of this._repositories.values())
+            await repo.release();
+
+        await this._close();
+    }
+
+    private _close(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             this._db.close((err) => {
                 if (err) reject(err);
@@ -120,4 +137,11 @@ export class Database {
         });
     }
 
+    async openRepository<T>(repoType: RepositoryConstructable<T>): Promise<Repository<T>> {
+        if (this._repositories.has(repoType)) return this._repositories.get(repoType);
+        const repo = new repoType(this);
+        await repo.init();
+        this._repositories.set(repoType, repo);
+        return repo;
+    }
 }
