@@ -44,14 +44,9 @@ export class TrainRosterPage extends Page {
             this._trains.innerHTML = "";
 
             const addTrain = (loco: Loco) => {
-                const div = createElement(this._trains, "div", "train");
-                const title = createElement(div, "div");
+                const title = createElement(this._trains, "div", "train");
                 title.innerText = `${loco.address} - ${loco.name}`;
                 title.onclick = (ev) => nav.open(TrainEditConstructor.path, { id: loco.id });
-
-                const deleteButton = createElement(div, "button");
-                deleteButton.innerText = "X";
-                deleteButton.onclick = () => this._deleteTrain(loco.id, loco.name);
             };
 
             for (const loco of locos.locos) 
@@ -59,17 +54,6 @@ export class TrainRosterPage extends Page {
         }).catch((err) => {
             console.error(err);
             prompt.error("Failed to load train list.");
-        });
-    }
-
-    private _deleteTrain(id: number, name: string) {
-        prompt.confirm(`Are you sure you want to delete ${name}`, () => {
-            this._api.deleteLoco(id)
-                .then(() => this._refreshTrains())
-                .catch((err) => {
-                    console.error(err);
-                    prompt.error("Failed to delete train.");
-                });
         });
     }
 }

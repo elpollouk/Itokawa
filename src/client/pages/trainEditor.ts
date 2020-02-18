@@ -1,7 +1,7 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { Client } from "../client";
 import { ApiClient } from "../apiClient";
-import { createElement } from "../utils/dom";
+import { createElement, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
 
 export interface TrainEditParams {
@@ -20,6 +20,7 @@ export class TrainEditPage extends Page {
     private _slowElement: HTMLInputElement;
     private _mediumElement: HTMLInputElement;
     private _fastElement: HTMLInputElement;
+    private _deleteButton: HTMLButtonElement;
   
     constructor (params: TrainEditParams) {
         super();
@@ -40,6 +41,7 @@ export class TrainEditPage extends Page {
         createElement(div, "div", "label").innerText = "Name";
         this._nameElement = createElement(div, "input");
         this._nameElement.type = "text";
+        this._nameElement.placeholder = "e.g. GWR 0-6-0 Tank Engine"
 
         // Loco Address
         div = createElement(editor, "div", "setting");
@@ -48,6 +50,7 @@ export class TrainEditPage extends Page {
         this._addressElement.type = "number";
         this._addressElement.min = "1";
         this._addressElement.max = "9999";
+        this._addressElement.placeholder = "1-9999";
 
         // Speed settings
         div = createElement(editor, "div", "setting speed");
@@ -59,6 +62,7 @@ export class TrainEditPage extends Page {
             el.type = "number";
             el.min = "1";
             el.max = "127";
+            el.placeholder = "1-127";
             return el;
         }
         this._slowElement = speedInput();
@@ -67,6 +71,10 @@ export class TrainEditPage extends Page {
 
         // Buttons
         const buttons = createElement(editor, "div", "buttons");
+        this._deleteButton = createElement(buttons, "button");
+        this._deleteButton.innerText = "Delete";
+        this._deleteButton.style.visibility = "hidden";
+        this._deleteButton.onclick = () => this._delete();
         let button = createElement(buttons, "button");
         button.innerText = "Save";
         button.onclick = () => this._save();
@@ -84,15 +92,39 @@ export class TrainEditPage extends Page {
             this._slowElement.value = `${loco.speeds[0]}`;
             this._mediumElement.value = `${loco.speeds[1]}`;
             this._fastElement.value = `${loco.speeds[2]}`;
+            this._deleteButton.style.visibility = "";
         }).catch((err) => {
             console.error(err);
             prompt.error("Failed to load train details.");
         })
     }
 
+    _delete() {
+        prompt.confirm("Are you sure you want to delete this train?", async () => {
+            try {
+                await this._api.deleteLoco(this._id);
+                nav.back();
+            }
+            catch (err) {
+                prompt.error(`Failed to delete train:\n${err.message}`);
+            }
+        });
+    }
+
+    _validate(): boolean {
+        if (!vaildateNotEmptyInput(this._nameElement, "Name must be set.")) return false;
+        if (!vaildateIntInput(this._addressElement, 1, 9999, "Address must be in the rane 1-9999.")) return false;
+        if (!vaildateIntInput(this._slowElement, 1, 127, "Speed 1 must be in the rane 1-127.")) return false;
+        if (!vaildateIntInput(this._mediumElement, 1, 127, "Speed 2 must be in the rane 1-127.")) return false;
+        if (!vaildateIntInput(this._fastElement, 1, 127, "Speed 3 must be in the rane 1-127.")) return false;
+
+        return true;
+    }
+
     _save() {
         // TODO - Add protections against overlapped actions
-        // TODO - Validate input
+        if (!this._validate()) return;
+
         prompt.confirm("Are you sure you want to save this train?", () => {
             const name = this._nameElement.value;
             const address = parseInt(this._addressElement.value);

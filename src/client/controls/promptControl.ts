@@ -88,16 +88,21 @@ export function confirm(message: string, onYes:()=>void, onNo?:()=>void): Prompt
     }], onNo);
 }
 
-export function message(message: string): PromptControl {
-    return prompt(message, [{
-        caption: "OK"
-    }]);
+export function message(message: string): Promise<void> {
+    return new Promise<void>((resolve) => {
+        prompt(message, [{
+            caption: "OK",
+            onclick: resolve
+        }], resolve);
+    });
 }
 
-export function error(message: string): PromptControl {
-    const p = prompt(message, [{
-        caption: "OK"
-    }]);
-    p.element.classList.add("error");
-    return p;
+export function error(message: string): Promise<void> {
+    return new Promise((resolve) => {
+        const p = prompt(message, [{
+            caption: "OK",
+            onclick: resolve
+        }], resolve);
+        p.element.classList.add("error");
+    });
 }
