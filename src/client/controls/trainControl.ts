@@ -21,7 +21,7 @@ export class TrainControl extends ControlBase {
         const directionButton = getById(control, "direction");
         directionButton.onclick = () => {
             this._reverse = !this._reverse;
-            directionButton.innerText = this._reverse ? "R" : "F";
+            directionButton.innerText = this._reverse ? "REV" : "FWD";
             this._sendRequest();
         };
 

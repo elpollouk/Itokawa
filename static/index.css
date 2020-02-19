@@ -282,13 +282,11 @@ button {
 }
 
 .trainControl .title {
-    width: 37.5%;
-    display: inline-block;
     font-size: large;
 }
 
 .trainControl button {
-    width: calc(12.5% - 4px);
+    width: calc(20% - 4px);
 }
 
 /*
@@ -350,7 +348,7 @@ button {
 }
 
 .emergencyStop button {
-    width: 100%;
+    width: calc(100% - 4px);
     height: 4em;
     background-color: red;
     color: white;
