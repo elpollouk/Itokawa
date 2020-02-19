@@ -272,10 +272,58 @@ button {
     transition: left 1.5s ease-out;
 }
 
+
+/*
+ * Index page
+ */
+.noTrainsContainer {
+    display: none;
+    position: absolute; 
+    top: 30%;
+    transform: translateY(-50%);
+    text-align: center;
+    width: 100%;
+}
+
+.noTrainsContainer .message {
+    font-size: x-large;
+    font-style: italic;
+    margin-top: 1.0em;
+    margin-bottom: 1.0em;
+}
+
+.noTrainsContainer button {
+    width: 50%;
+}
+
+.noTrains .noTrainsContainer {
+    display: unset;
+}
+
+.emergencyStop {
+    padding: 1em;
+}
+
+.emergencyStop button {
+    width: calc(100% - 4px);
+    height: 4em;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    font-size: x-large;
+}
+
+.emergencyStop button:active {
+    background-color: darkred;
+}
+
+.noTrains .emergencyStop, .loading .emergencyStop {
+    display: none;
+}
+
 /*
  * Train Controls
  */
-
 .trainControls {
     margin-top: 1em;
     margin-bottom: 1em;
@@ -359,26 +407,6 @@ button {
 
 
 /*
- * Emergency Stop Button
- */
-.emergencyStop {
-    padding: 1em;
-}
-
-.emergencyStop button {
-    width: calc(100% - 4px);
-    height: 4em;
-    background-color: red;
-    color: white;
-    font-weight: bold;
-    font-size: x-large;
-}
-
-.emergencyStop button:active {
-    background-color: darkred;
-}
-
-/*
  * Train Roster
  */
 .trainRoster .trains {
@@ -400,7 +428,7 @@ button {
     color: gray;
     font-family: monospace;
     font-size: x-large;
-    vertical-align: middle;
+    /* vertical-align: middle; */
     content: ">";
     margin-left: 1.0em;
 }

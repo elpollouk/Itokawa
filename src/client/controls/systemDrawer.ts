@@ -101,7 +101,7 @@ export class SystemDrawControl extends ControlBase {
                         type: RequestType.LifeCycle,
                         action: LifeCycleAction.shutdown
                     } as LifeCycleRequest, (err) => {
-                        if (err) prompt.error(`Shutdown failed:\n${err.message}`);
+                        if (err) prompt.error(err.message);
                     });
                 }),
                 action("Restart", "Are you sure you want to restart server?", () => {
@@ -110,7 +110,7 @@ export class SystemDrawControl extends ControlBase {
                         type: RequestType.LifeCycle,
                         action: LifeCycleAction.restart
                     } as LifeCycleRequest, (err) => {
-                        if (err) prompt.error(`Restart failed:\n${err.message}`);
+                        if (err) prompt.error(err.message);
                     });
                 }),
                 action("Update", "Are you sure you want to update server?", () => {
