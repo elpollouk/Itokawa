@@ -57,6 +57,9 @@ export class TrainControl extends ControlBase {
     }
 
     private _updateSpeed() {
+        const slider = this._speedSlider;
+        if (!slider) return;
+
         const uiSpeed = parseInt(this._speedSlider.value);
         if (uiSpeed != this._speed)
             this._speedSlider.value = `${this._speed}`;
