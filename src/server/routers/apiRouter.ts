@@ -15,10 +15,7 @@ _apiRouter.route("/locos")
 .get(async (_req, res, next) => {
     try {
         const locos = await _locoRepo.list();
-        const response: api.Locos = {
-            locos: locos
-        }
-        res.json(response);
+        res.json(locos);
     }
     catch (err) {
         log.error("GET /locos failed")
@@ -28,13 +25,10 @@ _apiRouter.route("/locos")
     }
 }).post(async (req, res, next) => {
     try {
-        const locos: api.Locos = req.body;
+        const loco: api.Loco = req.body;
+        await _locoRepo.insert(loco);
 
-        for (const loco of locos.locos) {
-            await _locoRepo.insert(loco);
-        }
-
-        res.json(locos);
+        res.json(loco);
     }
     catch (err) {
         log.error("POST /locos failed")

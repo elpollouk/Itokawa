@@ -49,7 +49,7 @@ export class TrainRosterPage extends Page {
                 title.onclick = (ev) => nav.open(TrainEditConstructor.path, { id: loco.id });
             };
 
-            for (const loco of locos.locos) 
+            for (const loco of locos) 
                 addTrain(loco);
         }).catch((err) => {
             console.error(err);

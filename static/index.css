@@ -464,12 +464,8 @@ button {
     display: none;
 }
 
-.trainEditor .nonDiscreteSettings {
-    display: block;
-}
-
 .trainEditor.discrete .discreteSettings {
-    display: block;
+    display: unset;
 }
 
 .trainEditor.discrete .nonDiscreteSettings {

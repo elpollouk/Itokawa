@@ -91,28 +91,26 @@ export class ApiClient {
         });
     }
 
-    getLocos(): Promise<api.Locos> {
+    getLocos(): Promise<api.Loco[]> {
         return this.request("GET", "/locos");
     }
 
     async addLoco(name: string, address: number, speed: number[] | number): Promise<api.Loco> {
-        const request: api.Locos = {
-            locos: [{
-                name: name,
-                address: address,
-                discrete: Array.isArray(speed),
-            }]
+        const request: api.Loco = {
+            name: name,
+            address: address,
+            discrete: Array.isArray(speed),
         };
 
         if (Array.isArray(speed)) {
-            request.locos[0].speeds = speed;
+            request.speeds = speed;
         }
         else {
-            request.locos[0].maxSpeed = speed;
+            request.maxSpeed = speed;
         }
 
-        const response = await this.request<api.Locos>("POST", "/locos", request);
-        return response.locos[0];
+        const response = await this.request<api.Loco>("POST", "/locos", request);
+        return response;
     }
 
     getLoco(id: number): Promise<api.Loco> {

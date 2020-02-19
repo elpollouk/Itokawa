@@ -6,7 +6,3 @@ export interface Loco {
     speeds?: number[];
     maxSpeed?: number;
 }
-
-export interface Locos {
-    locos: Loco[];
-}

@@ -3,7 +3,7 @@ import { Page, IPageConstructor } from "./page";
 import * as prompt from "../controls/promptControl";
 import { TrainControl } from "../controls/trainControl";
 import { RequestType } from "../../common/messages";
-import { Locos } from "../../common/api";
+import { Loco } from "../../common/api";
 import { parseHtml, getById } from "../utils/dom";
 import { ConnectionState } from "../commandConnection";
 const html = require("./index.html");
@@ -28,9 +28,9 @@ class IndexPage extends Page {
     }
 
     onEnter() {
-        Client.instance.api.getLocos().then((result: Locos) => {
+        Client.instance.api.getLocos().then((result: Loco[]) => {
             this._trainControls.innerHTML = "";
-            for (const loco of result.locos) {
+            for (const loco of result) {
                 new TrainControl(this._trainControls, loco);
             }
         }).catch((err) => {
