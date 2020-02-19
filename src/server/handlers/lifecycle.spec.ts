@@ -6,7 +6,6 @@ import { registerHandlers } from "./lifecycle";
 import { RequestType, CommandRequest, LifeCycleRequest, LifeCycleAction } from "../../common/messages";
 import * as handlers from "./handlers";
 import { application } from "../../application";
-import * as shutdown from "../shutdown";
 import * as applicationUpdate from "../updateApplication";
 
 function createHandlerMap(): handlers.HandlerMap {
@@ -74,7 +73,7 @@ describe("Life Cycle Handler", () => {
         let restartStub: SinonStub;
 
         beforeEach(() => {
-            restartStub = stub(shutdown, "execRestart").returns(Promise.resolve());
+            restartStub = stub(application, "restart").returns(Promise.resolve());
         })
 
         afterEach(() => {
