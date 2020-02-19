@@ -358,6 +358,9 @@ button {
     font-size: x-large;
 }
 
+.emergencyStop button:active {
+    background-color: darkred;
+}
 
 /*
  * Train Roster

@@ -2,9 +2,11 @@ import { Client } from "../client";
 import { Page, IPageConstructor } from "./page";
 import * as prompt from "../controls/promptControl";
 import { TrainControl } from "../controls/trainControl";
-import { RequestButton } from "../controls/requestButton";
-import { CommandRequest, RequestType } from "../../common/messages";
+import { RequestType } from "../../common/messages";
 import { Locos } from "../../common/api";
+import { parseHtml, getById } from "../utils/dom";
+import { ConnectionState } from "../commandConnection";
+const html = require("./index.html");
 
 class IndexPage extends Page {
     path: string = IndexPageConstructor.path;    
@@ -17,25 +19,12 @@ class IndexPage extends Page {
     }
 
     _buildUi(): HTMLElement {
-        const container = document.createElement("div");
-        const connection = Client.instance.connection;
+        const page = parseHtml(html);
 
-        // Train controls
-        this._trainControls = document.createElement("div");
-        this._trainControls.className = "trainControls";
-        container.appendChild(this._trainControls);
+        this._trainControls = getById(page, "trains");
+        getById(page, "emergencyStop").onclick = () => this._emergencyStop();
 
-        // Emergency stop button
-        const div = document.createElement("div");
-        div.className = "emergencyStop";
-        new RequestButton<CommandRequest>(div, connection, "Emergency Stop", () => {
-            return {
-                type: RequestType.EmergencyStop
-            };
-        });
-        container.appendChild(div);
-
-        return container;
+        return page;
     }
 
     onEnter() {
@@ -52,6 +41,18 @@ class IndexPage extends Page {
         }).catch((err) => {
             console.error(err);
             prompt.error("Failed to load train list.");
+        });
+    }
+
+    private _emergencyStop() {
+        const connection = Client.instance.connection;
+        if (connection.state !== ConnectionState.Idle) {
+            setTimeout(() => this._emergencyStop(), 100);
+            return;
+        }
+
+        connection.request({
+            type: RequestType.EmergencyStop
         });
     }
 }
