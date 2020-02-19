@@ -1,7 +1,6 @@
 import { HandlerMap, Sender, ok } from "./handlers"
 import { application } from "../../application";
 import { CommandRequest, LifeCycleRequest, LifeCycleAction, LifeCyclePingResponse, RequestType } from "../../common/messages";
-import { execRestart } from "../shutdown";
 import { updateApplication } from "../updateApplication";
 
 async function onLifeCycleMessage(msg: CommandRequest, send: Sender): Promise<void> {
@@ -25,7 +24,7 @@ async function onLifeCycleMessage(msg: CommandRequest, send: Sender): Promise<vo
             break;
 
         case LifeCycleAction.restart:
-            await execRestart();
+            await application.restart();
             await ok(send);
             break;
 

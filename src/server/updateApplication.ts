@@ -2,7 +2,6 @@ import { Logger, LogLevel } from "../utils/logger";
 
 import { application } from "../application";
 import { spawnAsync } from "../utils/exec";
-import { execRestart } from "./shutdown";
 import * as messages from "../common/messages";
 
 const log = new Logger("Updater");
@@ -36,7 +35,7 @@ export async function updateApplication(send: (message: messages.CommandResponse
 
         setTimeout(() => {
             _updateInProgress = false;
-            execRestart().catch((err: Error) => {
+            application.restart().catch((err: Error) => {
                 log.error(`Failed to execute restart: ${err.message}`);
                 log.error(err.stack);
             });

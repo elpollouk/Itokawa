@@ -144,7 +144,11 @@ export class CommandConnection extends Bindable {
     private _onMessage(message: MessageEvent) {
         if (this.state === ConnectionState.Busy) {
             const data = JSON.parse(message.data) as messages.CommandResponse;
-            if (data.error) console.error(data.error);
+            let error: Error;
+            if (data.error) {
+                console.error(data.error);
+                error = new Error(data.error);
+            }
             const cb = this._callback;
 
             // We want to clear state out before firing the callback so that the callback has the option
@@ -155,7 +159,7 @@ export class CommandConnection extends Bindable {
                 this._scheduleHeartbeat();
             }
 
-            if (cb) cb(null, data);
+            if (cb) cb(error, data);
         }
     }
 

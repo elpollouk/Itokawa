@@ -10,7 +10,7 @@ import * as ngrok from "../publishers/ngrok";
 import { application } from "../application";
 import { addCommonOptions,  openDevice } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
-import { execShutdown } from "./shutdown";
+import { execShutdown, execRestart, shutdownCheck, restartCheck } from "./shutdown";
 import { ConfigNode } from "../utils/config";
 import { getRouter } from "./routers/apiRouter";
 
@@ -31,7 +31,10 @@ async function main()
     program.parse(process.argv);
 
     await application.start(program, true);
-    application.onshtudown = execShutdown;
+    application.onshutdownbegin = shutdownCheck;
+    application.onshutdown = execShutdown;
+    application.onrestartbegin = restartCheck;
+    application.onrestart = execRestart;
 
     application.commandStation = await openDevice(program);
     if (!application.commandStation) log.error("No devices found");

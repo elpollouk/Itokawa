@@ -59,6 +59,7 @@ export class DeviceEnumerator {
     }
 
     static openDevice(deviceId: string | ICommandStationConstructable, connectionString?: string): Promise<ICommandStation> {
+        connectionString = connectionString || "";
         let device: ICommandStationConstructable;
         if (typeof deviceId === "string") {
             device = deviceIdMap.get(deviceId);
@@ -68,7 +69,7 @@ export class DeviceEnumerator {
             device = deviceId;
         }
 
-        log.info(() => `Requesting open of devive ${device.deviceId} with connection string "${connectionString}"`);
+        log.info(() => `Requesting open of device ${device.deviceId} with connection string "${connectionString}"`);
         return device.open(connectionString);
     }
 }

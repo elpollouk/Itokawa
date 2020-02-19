@@ -44,24 +44,6 @@ export class SystemDrawControl extends ControlBase {
         serverButton.onclick = () => this.openServerPopup();
         globalControls.appendChild(serverButton);
 
-        // TODO - Fix this to be diven by the full screen event
-        let isFullcreen = false;
-        const fullscreenButton = document.createElement("button");
-        fullscreenButton.innerText = "Maximise";
-        fullscreenButton.onclick = () => {
-            if (isFullcreen) {
-                document.exitFullscreen();
-                fullscreenButton.innerText = "Maximise";
-                isFullcreen = false;
-            }
-            else {
-                document.body.requestFullscreen();
-                fullscreenButton.innerText = "Minimise";
-                isFullcreen = true;
-            }
-        };
-        globalControls.appendChild(fullscreenButton);
-
         // Back button
         const backButton = document.createElement("button");
         backButton.className = "backButton";
@@ -118,14 +100,18 @@ export class SystemDrawControl extends ControlBase {
                     client.connection.request({
                         type: RequestType.LifeCycle,
                         action: LifeCycleAction.shutdown
-                    } as LifeCycleRequest);
+                    } as LifeCycleRequest, (err) => {
+                        if (err) prompt.error(`Shutdown failed:\n${err.message}`);
+                    });
                 }),
                 action("Restart", "Are you sure you want to restart server?", () => {
                     if (client.connection.state !== ConnectionState.Idle) return;
                     client.connection.request({
                         type: RequestType.LifeCycle,
                         action: LifeCycleAction.restart
-                    } as LifeCycleRequest);
+                    } as LifeCycleRequest, (err) => {
+                        if (err) prompt.error(`Restart failed:\n${err.message}`);
+                    });
                 }),
                 action("Update", "Are you sure you want to update server?", () => {
                     if (!(nav.currentPage instanceof UpdatePage))

@@ -48,7 +48,11 @@ async function _getGitRevision() {
 }
 
 class Application {
-    onshtudown: ()=>Promise<void> = null;
+    // The begin events fire before the DB is closed. This allows the application an opportunity to either abort
+    // the shutdown/restart or perform cirtical tasks that require DB access.
+    onshutdownbegin: ()=>Promise<void> = null;
+    onrestartbegin: ()=>Promise<void> = null;
+    onshutdown: ()=>Promise<void> = null;
     onrestart: ()=>Promise<void> = null;
     commandStation: ICommandStation = null;
     publicUrl: string = "";
@@ -131,12 +135,14 @@ class Application {
     }
 
     async shutdown() {
+        if (this.onshutdownbegin) await this.onshutdownbegin();
         await this._db.close();
-        if (this.onshtudown) await this.onshtudown();
+        if (this.onshutdown) await this.onshutdown();
         process.exit(0);
     }
 
     async restart() {
+        if (this.onrestartbegin) await this.onrestartbegin();
         await this._db.close();
         if (this.onrestart) await this.onrestart();
         process.exit(0);
