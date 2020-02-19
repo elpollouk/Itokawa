@@ -289,6 +289,12 @@ button {
     width: calc(20% - 4px);
 }
 
+.trainControl input {
+    margin-left: 2px;
+    margin-right: 2px;
+    width: calc(60% - 1em);
+}
+
 /*
  * QR Code Control
  */
@@ -420,10 +426,52 @@ button {
     height: 2.0em;
 }
 
-.trainEditor .setting.speed input {
+.trainEditor .setting.speed .options {
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+}
+
+.trainEditor .setting.speed span {
+    font-size: medium;
+    display: inline-block;
+}
+
+.trainEditor .setting.speed input[type="checkbox"] {
+    font-size: medium;
+    width: 1.0em;
+    height: 1.0em;
+    margin-left: 0.5em;
+    margin-top: 0;
+    margin-bottom: 0;
+    /* Forcing the checkbox to line up with its label */
+    position: relative;
+    top: 0.1em;
+}
+
+.trainEditor .discreteSettings {
+    display: none;
+}
+
+.trainEditor .nonDiscreteSettings {
+    display: none;
+}
+
+.discrete.trainEditor .discreteSettings {
+    display: block;
+}
+
+.discreteSettings .trainEditor .nonDiscreteSettings {
+    display: block;
+}
+
+.trainEditor .discreteSettings input[type="number"] {
     width: calc(33.33% - 4px);
     margin-left: 2px;
     margin-right: 2px;
+}
+
+.trainEditor .nonDiscreteSettings span {
+    margin-bottom: 0.5em;
 }
 
 .trainEditor .buttons {

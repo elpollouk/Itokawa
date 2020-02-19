@@ -1,7 +1,8 @@
 export interface Loco {
-    id: number;
+    id?: number;
     address: number;
     name: string;
+    discrete: boolean;
     speeds?: number[];
     maxSpeed?: number;
 }

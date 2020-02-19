@@ -101,6 +101,7 @@ export class ApiClient {
                 id: 0,
                 name: name,
                 address: address,
+                discrete: true,
                 speeds: speeds
             }]
         };
@@ -121,6 +122,7 @@ export class ApiClient {
             id: id,
             name: name,
             address: address,
+            discrete: true,
             speeds: speeds
         };
         return this.request("POST", `/locos/${id}`, request);
