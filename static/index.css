@@ -285,6 +285,18 @@ button {
     font-size: large;
 }
 
+.trainControl .discreteButtons {
+    display: none;
+}
+
+.trainControl.discrete .discreteButtons {
+    display: unset;
+}
+
+.trainControl.discrete input[type="range"] {
+    display: none;
+}
+
 .trainControl button {
     width: calc(20% - 4px);
 }
@@ -453,15 +465,15 @@ button {
 }
 
 .trainEditor .nonDiscreteSettings {
+    display: block;
+}
+
+.trainEditor.discrete .discreteSettings {
+    display: block;
+}
+
+.trainEditor.discrete .nonDiscreteSettings {
     display: none;
-}
-
-.discrete.trainEditor .discreteSettings {
-    display: block;
-}
-
-.discreteSettings .trainEditor .nonDiscreteSettings {
-    display: block;
 }
 
 .trainEditor .discreteSettings input[type="number"] {

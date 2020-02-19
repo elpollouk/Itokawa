@@ -31,12 +31,7 @@ class IndexPage extends Page {
         Client.instance.api.getLocos().then((result: Locos) => {
             this._trainControls.innerHTML = "";
             for (const loco of result.locos) {
-                new TrainControl(this._trainControls,
-                    Client.instance.connection,
-                    loco.name,
-                    loco.address,
-                    [0].concat(loco.speeds)
-                );
+                new TrainControl(this._trainControls, loco);
             }
         }).catch((err) => {
             console.error(err);

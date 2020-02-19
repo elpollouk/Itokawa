@@ -1,14 +1,18 @@
 import { ControlBase } from "./control";
-import { CommandConnection, ConnectionState } from "../commandConnection";
+import { ConnectionState } from "../commandConnection";
 import { RequestType, LocoSpeedRequest } from "../../common/messages";
 import { parseHtml, getById } from "../utils/dom";
+import { Loco } from "../../common/api";
+import { Client } from "../client";
 const html = require("./trainControl.html");
 
 export class TrainControl extends ControlBase {
     private _reverse = false;
     private _speed = 0;
 
-    constructor (parent: HTMLElement, readonly connection: CommandConnection, readonly title: string, readonly locoId: number, readonly speeds: number[]) {
+    private _speedSlider: HTMLInputElement;
+
+    constructor (parent: HTMLElement, readonly loco: Loco) {
         super();
         this._init(parent);
     }
@@ -16,7 +20,7 @@ export class TrainControl extends ControlBase {
     _buildUi() {
         const control = parseHtml(html);
 
-        getById(control, "title").innerText = this.title;
+        getById(control, "title").innerText = this.loco.name;
 
         const directionButton = getById(control, "direction");
         directionButton.onclick = () => {
@@ -25,30 +29,48 @@ export class TrainControl extends ControlBase {
             this._sendRequest();
         };
 
-        const setupButton = (id: string, speedIndex: number) => {
+        const setupButton = (id: string, speed: number) => {
             const button = getById(control, id);
             button.onclick = () => {
-                this._speed = this.speeds[speedIndex];
+                this._speed = speed;
                 this._sendRequest();
             };
         };
 
         setupButton("stop", 0);
-        setupButton("slow", 1);
-        setupButton("medium", 2);
-        setupButton("fast", 3);
+        if (this.loco.discrete) {
+            control.classList.add("discrete");
+            setupButton("slow", this.loco.speeds[0]);
+            setupButton("medium", this.loco.speeds[1]);
+            setupButton("fast", this.loco.speeds[2]);
+        }
+        else {
+            this._speedSlider = getById<HTMLInputElement>(control, "speed");
+            this._speedSlider.max = `${this.loco.maxSpeed}`;
+            this._speedSlider.onchange = () => {
+                this._speed = parseInt(this._speedSlider.value);
+                this._sendRequest();
+            }
+        }
 
         return control;
     }
 
+    private _updateSpeed() {
+        const uiSpeed = parseInt(this._speedSlider.value);
+        if (uiSpeed != this._speed)
+            this._speedSlider.value = `${this._speed}`;
+    }
+
     private _sendRequest() {
-        if (this.connection.state !== ConnectionState.Idle) return;
+        if (Client.instance.connection.state !== ConnectionState.Idle) return;
+        this._updateSpeed();
         const request: LocoSpeedRequest = {
             type: RequestType.LocoSpeed,
-            locoId: this.locoId,
+            locoId: this.loco.id,
             speed: this._speed,
             reverse: this._reverse
         };
-        this.connection.request(request);
+        Client.instance.connection.request(request);
     }
 }
