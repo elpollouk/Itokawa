@@ -44,12 +44,17 @@ function _openPage(path: string, params: any, depth: number) {
 
         content.style.left = startLeft;
         oldPage.content.style.left = "0";
+        // I've tried using requestAnimation frame for this, but it seems like we need at least two
+        // frames in order for the transitions to take effect. 34ms is just over this time at 60fps.
         setTimeout(() => {
             content.style.left = "0";
             oldPage.content.style.left = endLeft;
             // We have to wait on the transition on the new content as for some
             // reason, it doesn't fire for the old page.
-            content.ontransitionend = () => oldPage.destroy();
+            content.ontransitionend = () => {
+                oldPage.destroy();
+                content.ontransitionend = null;
+            }
         }, 34);
     }
 

@@ -12,7 +12,8 @@ const html = require("./index.html");
 class IndexPage extends Page {
     path: string = IndexPageConstructor.path;    
     content: HTMLElement;
-    private _trainControls: HTMLElement;
+    private _trainControlsContainer: HTMLElement;
+    private _trainControls: TrainControl[] = [];
 
     constructor() {
         super();
@@ -22,7 +23,7 @@ class IndexPage extends Page {
     _buildUi(): HTMLElement {
         const page = parseHtml(html);
 
-        this._trainControls = getById(page, "trains");
+        this._trainControlsContainer = getById(page, "trains");
         getById(page, "emergencyStop").onclick = () => this._emergencyStop();
         getById(page, "add").onclick = () => nav.open(TrainRosterConstructor.path);
         
@@ -31,10 +32,12 @@ class IndexPage extends Page {
 
     onEnter() {
         Client.instance.api.getLocos().then((result: Loco[]) => {
-            this._trainControls.innerHTML = "";
+            this._trainControlsContainer.innerHTML = "";
             if (result.length) {
                 for (const loco of result) {
-                    new TrainControl(this._trainControls, loco);
+                    this._trainControls.push(
+                        new TrainControl(this._trainControlsContainer, loco)
+                    );
                 }
             }
             else {
@@ -57,6 +60,11 @@ class IndexPage extends Page {
         connection.request({
             type: RequestType.EmergencyStop
         });
+    }
+
+    destroy() {
+        for (const control of this._trainControls)
+            control.close();
     }
 }
 
