@@ -39,7 +39,7 @@ export async function updateApplication(send: (message: messages.CommandResponse
                 log.error(`Failed to execute restart: ${err.message}`);
                 log.error(err.stack);
             });
-        })
+        }, 3000);
     }
     catch (ex) {
         log.error("Update failed");
