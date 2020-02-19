@@ -67,7 +67,7 @@ export class TrainControl extends ControlBase {
         this._updateSpeed();
         const request: LocoSpeedRequest = {
             type: RequestType.LocoSpeed,
-            locoId: this.loco.id,
+            locoId: this.loco.address,
             speed: this._speed,
             reverse: this._reverse
         };
