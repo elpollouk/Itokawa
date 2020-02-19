@@ -1,6 +1,8 @@
 import { ControlBase } from "./control";
 import { CommandConnection, ConnectionState } from "../commandConnection";
 import { RequestType, LocoSpeedRequest } from "../../common/messages";
+import { parseHtml, getById } from "../utils/dom";
+const html = require("./trainControl.html");
 
 export class TrainControl extends ControlBase {
     private _reverse = false;
@@ -12,40 +14,31 @@ export class TrainControl extends ControlBase {
     }
 
     _buildUi() {
-        const container = document.createElement("div");
-        container.className = "trainControl container";
+        const control = parseHtml(html);
 
-        const span = document.createElement("span");
-        span.innerText = this.title;
-        span.className = "title";
-        container.appendChild(span);
+        getById(control, "title").innerText = this.title;
 
-        const directionButton = document.createElement("button");
-        directionButton.innerText = "F";
+        const directionButton = getById(control, "direction");
         directionButton.onclick = () => {
             this._reverse = !this._reverse;
             directionButton.innerText = this._reverse ? "R" : "F";
             this._sendRequest();
         };
-        container.appendChild(directionButton);
 
-        const addSpeedButton = (title: string, speedIndex: number) => {
-            const button = document.createElement("button");
-            button.innerText = title;
+        const setupButton = (id: string, speedIndex: number) => {
+            const button = getById(control, id);
             button.onclick = () => {
                 this._speed = this.speeds[speedIndex];
                 this._sendRequest();
             };
-
-            container.appendChild(button);
         };
 
-        addSpeedButton("0", 0);
-        addSpeedButton("1", 1);
-        addSpeedButton("2", 2);
-        addSpeedButton("3", 3);
+        setupButton("stop", 0);
+        setupButton("slow", 1);
+        setupButton("medium", 2);
+        setupButton("fast", 3);
 
-        return container;
+        return control;
     }
 
     private _sendRequest() {
