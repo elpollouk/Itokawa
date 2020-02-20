@@ -6,4 +6,8 @@ export class LocoRepository extends SqliteRepository<Loco> {
     constructor(db: Database) {
         super(db, "locos", "data");
     }
+
+    _indexItemForSearch(item: Loco): string {
+        return `${item.name} ${item.address}`;
+    }
 };

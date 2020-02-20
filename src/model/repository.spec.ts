@@ -16,6 +16,15 @@ class TestRepository extends SqliteRepository<DataItem> {
     constructor(db: Database) {
         super(db, "test", "item");
     }
+
+    _indexItemForSearch(item: DataItem): string {
+        if (!item.field2 || item.field2.length < 2) {
+            return `${item.field1 || ""}`;
+        }
+        else {
+            return `${item.field1} ${item.field2[1]}`;
+        }
+    }
 }
 
 describe("Repository", () => {
@@ -124,11 +133,37 @@ describe("Repository", () => {
             }]);
         })
 
+        it("should return a list of items if they match query", async () => {
+            const repo = await _db.openRepository(TestRepository);
+            await repo.insert({
+                field1: "Foo",
+                field2: [1, 2, 3]
+            });
+            await repo.insert({
+                field1: "Bar",
+                field2: [4, 5, 6]
+            });
+
+            let items = await repo.list("o");
+            expect(items).to.eql([{
+                id: 1,
+                field1: "Foo",
+                field2: [1, 2, 3]
+            }]);
+
+            items = await repo.list("5");
+            expect(items).to.eql([{
+                id: 2,
+                field1: "Bar",
+                field2: [4, 5, 6]
+            }]);
+        })
+
         it("should reject with error if execution fails for a row", async () => {
             const repo = await _db.openRepository(TestRepository);
 
             const functionStub = stub(sqlite3.Statement.prototype, "each").callsFake((...args: any[]) => {
-                args[0](new Error("Row Error"));
+                args[1](new Error("Row Error"));
                 return {} as sqlite3.Statement;
             });
 
@@ -167,6 +202,27 @@ describe("Repository", () => {
             await repo.insert(item);
             
             expect(item.id).to.equal(1);
+        });
+
+        it("should correctly index the item", async () => {
+            const indexStub = stub(TestRepository.prototype, "_indexItemForSearch").returns("index");
+
+            try {
+                const repo = await _db.openRepository(TestRepository);
+                const item: DataItem = {
+                    field1: "Foo",
+                    field2: [1, 2, 3]
+                };
+                await repo.insert(item);
+                
+                expect(indexStub.callCount).to.equal(1);
+                expect(indexStub.lastCall.args).to.eql([
+                    item
+                ]);
+            }
+            finally {
+                indexStub.restore();
+            }
         });
 
         it("should reject with error if execution of insert fails", async () => {
@@ -262,6 +318,29 @@ describe("Repository", () => {
                 field2: [19, 23, 39]
             }]);
         })
+
+        it("should correctly index the item", async () => {
+            const repo = await _db.openRepository(TestRepository);
+            const item: DataItem = {
+                field1: "Foo",
+                field2: [1, 2, 3]
+            };
+            await repo.insert(item);
+
+            const indexStub = stub(TestRepository.prototype, "_indexItemForSearch").returns("index");
+
+            try {
+                await repo.update(item);
+
+                expect(indexStub.callCount).to.equal(1);
+                expect(indexStub.lastCall.args).to.eql([
+                    item
+                ]);
+            }
+            finally {
+                indexStub.restore();
+            }
+        });
 
         it("should fail for non-existing items", async () => {
             const repo = await _db.openRepository(TestRepository);

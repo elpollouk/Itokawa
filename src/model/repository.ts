@@ -20,6 +20,7 @@ function _finalize(statement: sqlite3.Statement): Promise<void> {
 
 export abstract class Repository<T> {
     protected _list: sqlite3.Statement;
+    protected _search: sqlite3.Statement;
     protected _get: sqlite3.Statement;
     protected _insert: sqlite3.Statement;
     protected _update: sqlite3.Statement;
@@ -36,11 +37,15 @@ export abstract class Repository<T> {
     abstract async release(): Promise<void>;
 
     abstract _prepareStatements(): Promise<void>;
+    abstract _indexItemForSearch(item: T): string;
 
-    list(): Promise<T[]> {
+    list(query?: string): Promise<T[]> {
         return new Promise<T[]>((resolve, reject) => {
             const results: T[] = [];
-            this._list.each((err, row) => {
+            const statement = query ? this._search : this._list;
+            statement.each({
+                $query: query
+            }, (err, row) => {
                 if (err) {
                     log.error(`List failed: ${err.message}`);
                     reject(err);
@@ -66,6 +71,7 @@ export abstract class Repository<T> {
         return new Promise<void>((resolve, reject) => {
             const data = JSON.stringify(item);
             this._insert.run({
+                $index: this._indexItemForSearch(item),
                 $item: data
             }, function (err) {
                 if (err) {
@@ -111,6 +117,7 @@ export abstract class Repository<T> {
             const data = JSON.stringify(item);
             this._update.run({
                 $id: id,
+                $index: this._indexItemForSearch(item),
                 $item: data
             }, function (err: Error) {
                 if (err) {
@@ -144,7 +151,7 @@ export abstract class Repository<T> {
     }
 }
 
-export class SqliteRepository<T> extends Repository<T> {   
+export abstract class SqliteRepository<T> extends Repository<T> {   
     constructor(db: Database, private readonly _table: string, private readonly _dataColumn: string) {
         super(db);
     }
@@ -158,6 +165,7 @@ export class SqliteRepository<T> extends Repository<T> {
     async release() {
         if (this._list) {
             await this._finalizeAndNull("_list");
+            await this._finalizeAndNull("_search");
             await this._finalizeAndNull("_insert");
             await this._finalizeAndNull("_get");
             await this._finalizeAndNull("_update");
@@ -166,12 +174,61 @@ export class SqliteRepository<T> extends Repository<T> {
     }
 
     async _prepareStatements(): Promise<void> {
-        await this._db.run(`CREATE TABLE IF NOT EXISTS ${this._table} (${this._dataColumn} JSON);`);
-        this._list = await this._prepare(`SELECT rowid as id, ${this._dataColumn} AS item FROM ${this._table};`);
-        this._get = await this._prepare(`SELECT rowid as id, ${this._dataColumn} AS item FROM ${this._table} where id = $id;`);
-        this._insert = await this._prepare(`INSERT INTO ${this._table} (${this._dataColumn}) VALUES (json($item));`);
-        this._update = await this._prepare(`UPDATE ${this._table} SET ${this._dataColumn} = json($item) WHERE rowid = $id;`);
-        this._delete = await this._prepare(`DELETE FROM ${this._table} WHERE rowid = $id;`);
+        await this._db.run(`
+            CREATE TABLE IF NOT EXISTS  ${this._table} (
+                search_index VARCHAR,
+                ${this._dataColumn} JSON
+            );`);
+
+        this._list = await this._prepare(`
+            SELECT
+                rowid AS id,
+                ${this._dataColumn} AS item
+            FROM
+                ${this._table};`);
+
+        this._search = await this._prepare(`
+            SELECT
+                rowid AS id,
+                ${this._dataColumn} AS item
+            FROM
+                ${this._table}
+            WHERE
+                instr(search_index, $query);`);
+
+        this._get = await this._prepare(`
+            SELECT
+                rowid AS id,
+                ${this._dataColumn} AS item
+            FROM
+                ${this._table}
+            WHERE
+                id = $id;`);
+
+        this._insert = await this._prepare(`
+            INSERT INTO ${this._table} (
+                search_index,
+                ${this._dataColumn}
+            )
+            VALUES (
+                $index,
+                json($item)
+            );`);
+
+        this._update = await this._prepare(`
+            UPDATE
+                ${this._table}
+            SET
+                search_index = $index,
+                ${this._dataColumn} = json($item)
+            WHERE
+                rowid = $id;`);
+
+        this._delete = await this._prepare(`
+            DELETE FROM
+                ${this._table}
+            WHERE
+                rowid = $id;`);
     }
 
     protected _prepare(sql: string): Promise<sqlite3.Statement> {
