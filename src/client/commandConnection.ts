@@ -78,13 +78,26 @@ export class CommandConnection extends Bindable {
                 tag: messages.generateMessageTag(),
                 data: data
             };
-            this._socket.send(JSON.stringify(message));
+            this._send(message);
             this._callback = callback;
             this._callbackTag = message.tag;
         }
         catch (ex) {
             if (callback) callback(ex);
         }
+    }
+
+    sendResponse(tag: string, data?: any) {
+        this._send({
+            type: messages.RequestType.CommandResponse,
+            requestTime: timestamp(),
+            tag: tag,
+            data: data
+        });
+    }
+
+    _send(message: messages.TransportMessage) {
+        this._socket.send(JSON.stringify(message));
     }
 
     retry() {
@@ -169,6 +182,9 @@ export class CommandConnection extends Bindable {
                 }
 
                 if (cb) cb(error, data);
+            }
+            else {
+                this.emit("message", message);
             }
         }
     }

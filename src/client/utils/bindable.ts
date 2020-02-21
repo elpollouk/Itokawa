@@ -9,15 +9,24 @@ export class Bindable {
     }
 
     bind<T>(name: string, cb: ValueCallback<T>): ValueCallback<T> {
-        if (!cb) throw new Error(`No callback provided while attempting to bind to ${name}`);
-        const set = this._bindings[name] || new Set<ValueCallback<T>>();
-        set.add(cb);
-        this._bindings[name] = set;
+        cb = this.on(name, cb);
         cb(this[name]);
         return cb;
     }
 
+    on<T>(name: string, cb: ValueCallback<T>): ValueCallback<T> {
+        if (!cb) throw new Error(`No callback provided while attempting to bind to ${name}`);
+        const set = this._bindings[name] || new Set<ValueCallback<T>>();
+        set.add(cb);
+        this._bindings[name] = set;
+        return cb;
+    }
+
     unbind<T>(name: string, cb: ValueCallback<T>) {
+        this.off(name, cb);
+    }
+
+    off<T>(name: string, cb: ValueCallback<T>) {
         const set = this._bindings[name];
         if (!set || !set.has(cb)) throw new Error(`Callback was not bound to ${name}`);
         set.delete(cb);
@@ -37,14 +46,17 @@ export class Bindable {
                     const oldValue = this._backingStore[name];
                     if (value === oldValue) return;
                     this._backingStore[name] = value;
-                    const set = this._bindings[name];
-                    if (set) {
-                        for (const cb of set) {
-                            cb(value, oldValue);
-                        }
-                    }
+                    this.emit(name, value, oldValue);
                 },
             });
         }
+    }
+
+    emit(name: string, value: any, oldValue?: any) {
+        const set = this._bindings[name];
+        if (!set) return;
+
+        for (const cb of set)
+            cb(value, oldValue);
     }
 }
