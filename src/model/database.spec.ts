@@ -1,6 +1,7 @@
 import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
+import { stub } from "sinon";
 import { Database } from "./database";
 import * as sqlite3 from "sqlite3";
 import * as fs from "fs";
@@ -13,8 +14,13 @@ function cleanupTestDb() {
     }
 }
 
+function copyForTest(path: string) {
+    cleanupTestDb();
+    fs.copyFileSync(path, TEST_DB_FILE);
+}
+
 async function createTestTable(db: Database) {
-    return db.run("CREATE TABLE test (key VARCHAR, value ANY); CREATE INDEX test_index ON test (key);");
+    return db.run("CREATE TABLE test (key VARCHAR, value ANY);");
 }
 
 describe("Database", () => {
@@ -42,7 +48,7 @@ describe("Database", () => {
         it("should open if path is valid", async () => {
             expect(_db).to.not.be.null;
             expect(_db.sqlite3).to.be.instanceOf(sqlite3.Database);
-            expect(_db.schemaVersion).to.equal(100);
+            expect(_db.schemaVersion).to.equal(1);
         })
 
         it("should reopen existing databases", async () => {
@@ -52,7 +58,7 @@ describe("Database", () => {
 
             const db2 = await Database.open(TEST_DB_FILE);
             try {
-                expect(db2.schemaVersion).to.equal(100);
+                expect(db2.schemaVersion).to.equal(1);
                 const value = await db2.getValue("Test");
                 expect(value).to.equal("Foo Bar Baz");
             }
@@ -61,8 +67,32 @@ describe("Database", () => {
             }
         })
 
+        it("should recreate schema if neccessary", async () => {
+            // The old schema is set to 99999, so this should force a delete of the old DB file
+            // and rerun of all the schema scripts as we have no idea what this file is.
+            // In the future, we'll backup the file first and let the user know what we did.
+            copyForTest("./testdata/schema_99999.sqlite3");
+            const db2 = await Database.open(TEST_DB_FILE);
+            try {
+                expect(db2.schemaVersion).to.equal(1);
+            }
+            finally {
+                await db2.close();
+            }
+        })
+
         it("should fail if path is invalid", async () => {
             await expect(Database.open(":invalid:")).to.be.eventually.rejected;
+        })
+
+        it("should raise an error if we've messed up the schema scripts path", async () => {
+            const readdirStub = stub(fs, "readdirSync").returns([]);
+            try {
+                await expect(Database.open(":memory:")).to.be.eventually.rejectedWith("No schema scripts found");
+            }
+            finally {
+                readdirStub.restore();
+            }
         })
     })
 
@@ -75,6 +105,27 @@ describe("Database", () => {
         it("should fail if already closed", async () => {
             await _db.close();
             await expect(_db.close()).to.be.eventually.rejectedWith("SQLITE_MISUSE: Database is closed");
+        })
+    })
+
+    describe("exec", () => {
+        it("should execute multiple valid SQL statements", async () => {
+            await createTestTable(_db);
+            await _db.exec(`
+                CREATE TABLE test2 (key VARCHAR, value ANY);
+                CREATE INDEX test2_idx ON test (key);
+                INSERT INTO test2 (key, value) VALUES ("test", 12345);
+            `);
+            
+            const result = await _db.get('SELECT * FROM test2 WHERE key="test"');
+            expect(result).to.eql({
+                key: "test",
+                value: 12345
+            });
+        })
+
+        it ("should fail for invalid statements", async () => {
+            await expect(_db.exec('INSERT INTO test (key, value) VALUES ("foo", "bar");')).to.be.eventually.rejected;
         })
     })
 

@@ -1,11 +1,12 @@
 import { Logger } from "../utils/logger";
 import * as sqlite3 from "sqlite3";
+import * as fs from "fs";
 import { Repository } from "./repository";
 
 const log = new Logger("Database");
 
 const SCHEMA_VERSION_KEY = "schemaVersion";
-const SCHEMA_VERSION = 100;
+const SCHEMA_VERSION = 1;
 
 interface RepositoryConstructable<ItemType, RepositoryType extends Repository<ItemType>> {
     new(db: Database): RepositoryType;
@@ -29,14 +30,15 @@ function _open(path: string): Promise<sqlite3.Database> {
 
 export class Database {
     static async open(path: string): Promise<Database> {
-        const sqldb = await _open(path);
-        const db = new Database(sqldb);
-        await db._init();
+        const db = new Database();
+        await db._init(path);
         return db;
     }
 
+    private _db: sqlite3.Database;
     private _repositories: Map<RepositoryConstructable<unknown, Repository<unknown>>, Repository<unknown>>
     private _schemaVersion: number;
+
     get schemaVersion() {
         return this._schemaVersion;
     }
@@ -45,24 +47,62 @@ export class Database {
         return this._db;
     }
 
-    private constructor(private readonly _db: sqlite3.Database) {
+    private constructor() {
         this._repositories = new Map<RepositoryConstructable<any, Repository<any>>, Repository<any>>();
     }
 
-    private async _init() {
-        await this.run(`
-            CREATE TABLE IF NOT EXISTS _kv_store (key VARCHAR PRIMARY KEY, value ANY);
-        `);
+    private async _init(filename: string) {
+        this._db = await _open(filename);
 
-        const schemaVersion = await this.getValue(SCHEMA_VERSION_KEY);
-        if (!schemaVersion) {
-            this.setValue(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
-            log.debug(() => `Setting schema version to ${SCHEMA_VERSION} for new database`);
-            this._schemaVersion = SCHEMA_VERSION;
+        try {
+            // We want to explicitly create this table so that we have the store available before running
+            // any schema scripts.
+            await this.run(`
+                CREATE TABLE IF NOT EXISTS _kv_store (key VARCHAR PRIMARY KEY, value ANY);
+            `);
+
+            const schemaVersion = await this.getValue(SCHEMA_VERSION_KEY);
+            if (!schemaVersion) {
+                // A fresh database, run the schema setup scripts
+                await this._runSchemaScripts();
+                this.setValue(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
+                log.debug(() => `Setting schema version to ${SCHEMA_VERSION} for new database`);
+                this._schemaVersion = SCHEMA_VERSION;
+            }
+            else {
+                log.debug(() => `Reopening DB with schema ${schemaVersion}`);
+                if (schemaVersion != SCHEMA_VERSION) {
+                    // Reset DB, in the future this will perform a chema upgrade if possible
+                    log.warning("Rebuilding database due to schema change")
+                    await this.close();
+                    fs.unlinkSync(filename);
+                    await this._init(filename);
+                }
+                else {
+                    this._schemaVersion = schemaVersion as number;
+                }
+            }
         }
-        else {
-            log.debug(() => `Reopening DB with schema ${schemaVersion}`);
-            this._schemaVersion = schemaVersion as number;
+        catch (ex)
+        {
+            await this.close();
+            throw ex;
+        }
+    }
+
+    private async _runSchemaScripts() {
+        let scripts = fs.readdirSync("./schema");
+        scripts = scripts.filter((entry) => entry.endsWith(".sql"));
+        scripts = scripts.sort();
+
+        if (scripts.length === 0) throw new Error("No schema scripts found");
+
+        for (const script of scripts) {
+            log.info(() => `Running schema script ${script}...`);
+            const content = fs.readFileSync(`./schema/${script}`, {
+                encoding: "utf8"
+            });
+            await this.exec(content);
         }
     }
 
@@ -105,9 +145,25 @@ export class Database {
             return pair.value;
     }
 
+    exec(sql: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            log.debug(() => `Directly executing: ${sql}`);
+            this._db.exec(sql, function (err) {
+                if (err) {
+                    log.error(`Execution failed: ${err.message}`);
+                    log.error(`Statement: ${sql}`);
+                    reject(err);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+    }
+
     run(sql: string, params?: any): Promise<sqlite3.RunResult> {
         return new Promise<sqlite3.RunResult>((resolve, reject) => {
-            log.debug(() => `Directly executing: ${sql}`);
+            log.debug(() => `Directly running: ${sql}`);
             this._db.run(sql, params, function (err) {
                 if (err) {
                     log.error(`Execution failed: ${err.message}`);

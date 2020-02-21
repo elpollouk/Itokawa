@@ -4,28 +4,9 @@ import "mocha";
 import { stub } from "sinon";
 import { Database } from "./database";
 import * as sqlite3 from "sqlite3";
-import { SqliteRepository } from "./repository";
+import { LocoRepository } from "./locoRepository";
+import { Loco } from "../common/api";
 
-interface DataItem {
-    id?: number,
-    field1: string,
-    field2: number[],
-}
-
-class TestRepository extends SqliteRepository<DataItem> {
-    constructor(db: Database) {
-        super(db, "test", "item");
-    }
-
-    _indexItemForSearch(item: DataItem): string {
-        if (!item.field2 || item.field2.length < 2) {
-            return `${item.field1 || ""}`;
-        }
-        else {
-            return `${item.field1} ${item.field2[1]}`;
-        }
-    }
-}
 
 describe("Repository", () => {
     let _db: Database = null;
@@ -47,13 +28,13 @@ describe("Repository", () => {
 
     describe("openRepository", () => {
         it("should return a valid repository", async () => {
-            const repo = await _db.openRepository(TestRepository);
-            expect(repo).to.be.instanceOf(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
+            expect(repo).to.be.instanceOf(LocoRepository);
         })
 
         it("should reused cached repositories that already exist", async () => {
-            const repo1 = await _db.openRepository(TestRepository);
-            const repo2 = await _db.openRepository(TestRepository);
+            const repo1 = await _db.openRepository(LocoRepository);
+            const repo2 = await _db.openRepository(LocoRepository);
             expect(repo1).to.equal(repo2);
         })
 
@@ -64,7 +45,7 @@ describe("Repository", () => {
             });
 
             try {
-                await expect(_db.openRepository(TestRepository)).to.eventually.be.rejectedWith("Prepare Error");
+                await expect(_db.openRepository(LocoRepository)).to.eventually.be.rejectedWith("Prepare Error");
             }
             finally {
                 functionStub.restore();
@@ -74,20 +55,20 @@ describe("Repository", () => {
 
     describe("Database.close", () => {
         it("should release any repositories that it created", async () => {
-            await _db.openRepository(TestRepository);
+            await _db.openRepository(LocoRepository);
             await _db.close();
         })
     })
 
     describe("release", () => {
         it("should be safe to double release", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
             await repo.release();
             await repo.release();
         })
 
         it("should reject with error if low level finalize fails", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
 
             const functionStub = stub(sqlite3.Statement.prototype, "finalize").callsFake((cb) => {
                 cb(new Error("Test Error"));
@@ -105,62 +86,97 @@ describe("Repository", () => {
 
     describe("list", () => {
         it("should return an empty list if there are no entries", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
             const items = await repo.list();
             expect(items).to.eql([]);
         })
 
         it("should return a list of items if they exist", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
             await repo.insert({
-                field1: "Foo",
-                field2: [1, 2, 3]
+                name: "Foo",
+                address: 3,
+                discrete: true,
+                speeds: [1, 2, 3]
             });
             await repo.insert({
-                field1: "Bar",
-                field2: [4, 5, 6]
+                name: "Bar",
+                address: 4,
+                discrete: false,
+                maxSpeed: 80
             });
 
             const items = await repo.list();
             expect(items).to.eql([{
                 id: 1,
-                field1: "Foo",
-                field2: [1, 2, 3]
+                name: "Foo",
+                address: 3,
+                discrete: true,
+                speeds: [1, 2, 3]
             }, {
                 id: 2,
-                field1: "Bar",
-                field2: [4, 5, 6]
+                name: "Bar",
+                address: 4,
+                discrete: false,
+                maxSpeed: 80
             }]);
         })
 
         it("should return a list of items if they match query", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
             await repo.insert({
-                field1: "Foo",
-                field2: [1, 2, 3]
+                name: "Foo",
+                address: 3,
+                discrete: true,
+                speeds: [1, 2, 3]
             });
             await repo.insert({
-                field1: "Bar",
-                field2: [4, 5, 6]
+                name: "Bar",
+                address: 4,
+                discrete: false,
+                maxSpeed: 80
             });
 
-            let items = await repo.list("o");
+            let items = await repo.list("Fo*");
             expect(items).to.eql([{
                 id: 1,
-                field1: "Foo",
-                field2: [1, 2, 3]
+                name: "Foo",
+                address: 3,
+                discrete: true,
+                speeds: [1, 2, 3]
             }]);
 
-            items = await repo.list("5");
+            items = await repo.list("4");
             expect(items).to.eql([{
                 id: 2,
-                field1: "Bar",
-                field2: [4, 5, 6]
+                name: "Bar",
+                address: 4,
+                discrete: false,
+                maxSpeed: 80
             }]);
         })
 
+        it("should return an empty list no items match query", async () => {
+            const repo = await _db.openRepository(LocoRepository);
+            await repo.insert({
+                name: "Foo",
+                address: 3,
+                discrete: true,
+                speeds: [1, 2, 3]
+            });
+            await repo.insert({
+                name: "Bar",
+                address: 4,
+                discrete: false,
+                maxSpeed: 80
+            });
+
+            let items = await repo.list("Missing");
+            expect(items).to.eql([]);
+        })
+
         it("should reject with error if execution fails for a row", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
 
             const functionStub = stub(sqlite3.Statement.prototype, "each").callsFake((...args: any[]) => {
                 args[1](new Error("Row Error"));
@@ -176,10 +192,10 @@ describe("Repository", () => {
         })
 
         it("should reject with error if execution fails for the statement", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
 
             const functionStub = stub(sqlite3.Statement.prototype, "each").callsFake((...args: any[]) => {
-                args[1](new Error("Statement Error"));
+                args[2](new Error("Statement Error"));
                 return {} as sqlite3.Statement;
             });
 
@@ -194,10 +210,12 @@ describe("Repository", () => {
 
     describe("insert", () => {
         it("should correctly update inserted item", async () => {
-            const repo = await _db.openRepository(TestRepository);
-            const item: DataItem = {
-                field1: "Foo",
-                field2: [1, 2, 3]
+            const repo = await _db.openRepository(LocoRepository);
+            const item: Loco = {
+                name: "Foo",
+                address: 9,
+                discrete: false,
+                maxSpeed: 10
             };
             await repo.insert(item);
             
@@ -205,13 +223,15 @@ describe("Repository", () => {
         });
 
         it("should correctly index the item", async () => {
-            const indexStub = stub(TestRepository.prototype, "_indexItemForSearch").returns("index");
+            const indexStub = stub(LocoRepository.prototype, "_indexItemForSearch").returns("index");
 
             try {
-                const repo = await _db.openRepository(TestRepository);
-                const item: DataItem = {
-                    field1: "Foo",
-                    field2: [1, 2, 3]
+                const repo = await _db.openRepository(LocoRepository);
+                const item: Loco = {
+                    name: "Foo",
+                    address: 9,
+                    discrete: false,
+                    maxSpeed: 10
                 };
                 await repo.insert(item);
                 
@@ -226,7 +246,7 @@ describe("Repository", () => {
         });
 
         it("should reject with error if execution of insert fails", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
 
             const functionStub = stub(sqlite3.Statement.prototype, "run").callsFake((params, cb) => {
                 cb(new Error("Insert Error"));
@@ -234,7 +254,7 @@ describe("Repository", () => {
             });
 
             try {
-                await expect(repo.insert({} as DataItem)).to.eventually.be.rejectedWith("Insert Error");
+                await expect(repo.insert({} as Loco)).to.eventually.be.rejectedWith("Insert Error");
             }
             finally {
                 functionStub.restore();
@@ -244,36 +264,44 @@ describe("Repository", () => {
 
     describe("get", () => {
         it("should fetch existing item", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
             await repo.insert({
-                field1: "Item 1",
-                field2: []
+                name: "Item 1",
+                address: 10,
+                discrete: true,
+                speeds: []
             });
             await repo.insert({
-                field1: "Item 2",
-                field2: [11, 13, 17]
+                name: "Item 2",
+                address: 20,
+                discrete: true,
+                speeds: [11, 13, 17]
             });
             await repo.insert({
-                field1: "Item 3",
-                field2: []
+                name: "Item 3",
+                address: 30,
+                discrete: false,
+                maxSpeed: 90
             });
 
             const item = await repo.get(2);
             expect(item).to.eql({
                 id: 2,
-                field1: "Item 2",
-                field2: [11, 13, 17]
+                name: "Item 2",
+                address: 20,
+                discrete: true,
+                speeds: [11, 13, 17]
             });
         })
 
         it("should return undefined for non-existing item", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
             const item = await repo.get(123);
             expect(item).to.be.undefined;
         })
 
         it("should reject with error if execution of get fails", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
 
             const functionStub = stub(sqlite3.Statement.prototype, "get").callsFake((params, cb) => {
                 cb(new Error("Get Error"));
@@ -291,43 +319,55 @@ describe("Repository", () => {
 
     describe("update", () => {
         it("should correctly update existing item", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
             await repo.insert({
-                field1: "Item 1",
-                field2: [3, 5, 7]
+                name: "Item 1",
+                address: 1234,
+                discrete: true,
+                speeds: [3, 5, 7]
             });
             await repo.insert({
-                field1: "Item 2",
-                field2: [11, 13, 17]
+                name: "Item 2",
+                address: 432,
+                discrete: true,
+                speeds: [11, 13, 17]
             });
 
             await repo.update({
                 id: 2,
-                field1: "Test",
-                field2: [19, 23, 39]
+                name: "Test",
+                address: 432,
+                discrete: false,
+                maxSpeed: 80
             });
 
             const items = await repo.list();
             expect(items).to.eql([{
                 id: 1,
-                field1: "Item 1",
-                field2: [3, 5, 7]
+                name: "Item 1",
+                address: 1234,
+                discrete: true,
+                speeds: [3, 5, 7]
             }, {
                 id: 2,
-                field1: "Test",
-                field2: [19, 23, 39]
+                name: "Test",
+                address: 432,
+                discrete: false,
+                maxSpeed: 80
             }]);
         })
 
         it("should correctly index the item", async () => {
-            const repo = await _db.openRepository(TestRepository);
-            const item: DataItem = {
-                field1: "Foo",
-                field2: [1, 2, 3]
+            const repo = await _db.openRepository(LocoRepository);
+            const item: Loco = {
+                name: "Foo",
+                address: 1,
+                discrete: true,
+                speeds: [1, 2, 3]
             };
             await repo.insert(item);
 
-            const indexStub = stub(TestRepository.prototype, "_indexItemForSearch").returns("index");
+            const indexStub = stub(LocoRepository.prototype, "_indexItemForSearch").returns("index");
 
             try {
                 await repo.update(item);
@@ -343,18 +383,20 @@ describe("Repository", () => {
         });
 
         it("should fail for non-existing items", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
 
             const promise = repo.update({
                 id: 2,
-                field1: "Test",
-                field2: [19, 23, 39]
+                name: "Test",
+                address: 3,
+                discrete: true,
+                speeds: [19, 23, 39]
             });
             await expect(promise).to.eventually.be.rejectedWith("Unexpected number of updates: 0");
         })
 
         it("should reject with error if execution of update fails", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
 
             const functionStub = stub(sqlite3.Statement.prototype, "run").callsFake((params, cb) => {
                 cb(new Error("Update Error"));
@@ -364,7 +406,7 @@ describe("Repository", () => {
             try {
                 await expect(repo.update({
                     id: 1
-                } as DataItem)).to.eventually.be.rejectedWith("Update Error");
+                } as Loco)).to.eventually.be.rejectedWith("Update Error");
             }
             finally {
                 functionStub.restore();
@@ -374,14 +416,18 @@ describe("Repository", () => {
 
     describe("delete", () => {
         it("should remove existing item", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
             await repo.insert({
-                field1: "Item 1",
-                field2: [3, 5, 7]
+                name: "Item 1",
+                address: 1,
+                discrete: true,
+                speeds: [3, 5, 7]
             });
             await repo.insert({
-                field1: "Item 2",
-                field2: [11, 13, 17]
+                name: "Item 2",
+                address: 2,
+                discrete: true,
+                speeds: [11, 13, 17]
             });
 
             await repo.delete(1);
@@ -389,16 +435,20 @@ describe("Repository", () => {
             const items = await repo.list();
             expect(items).to.eql([{
                 id: 2,
-                field1: "Item 2",
-                field2: [11, 13, 17]
+                name: "Item 2",
+                address: 2,
+                discrete: true,
+                speeds: [11, 13, 17]
             }]);
         })
 
         it("should be idempotent (i.e. you can delete things that have already been deleted)", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
             await repo.insert({
-                field1: "Item 1",
-                field2: [3, 5, 7]
+                name: "Item 1",
+                address: 1,
+                discrete: true,
+                speeds: [3, 5, 7]
             });
 
             await repo.delete(1);
@@ -409,7 +459,7 @@ describe("Repository", () => {
         })
 
         it("should reject with error if execution of delete fails", async () => {
-            const repo = await _db.openRepository(TestRepository);
+            const repo = await _db.openRepository(LocoRepository);
 
             const functionStub = stub(sqlite3.Statement.prototype, "run").callsFake((params, cb) => {
                 cb(new Error("Delete Error"));

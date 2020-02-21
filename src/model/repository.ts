@@ -174,31 +174,29 @@ export abstract class SqliteRepository<T> extends Repository<T> {
     }
 
     async _prepareStatements(): Promise<void> {
-        await this._db.run(`
-            CREATE TABLE IF NOT EXISTS  ${this._table} (
-                search_index VARCHAR,
-                ${this._dataColumn} JSON
-            );`);
-
         this._list = await this._prepare(`
             SELECT
-                rowid AS id,
+                id,
                 ${this._dataColumn} AS item
             FROM
                 ${this._table};`);
 
         this._search = await this._prepare(`
             SELECT
-                rowid AS id,
+                ${this._table}.id AS id,
                 ${this._dataColumn} AS item
             FROM
                 ${this._table}
+            JOIN
+                ${this._table}_fts
+            ON
+                ${this._table}.id = ${this._table}_fts.id
             WHERE
-                instr(search_index, $query);`);
+                ${this._table}_fts MATCH $query ORDER BY rank;`);
 
         this._get = await this._prepare(`
             SELECT
-                rowid AS id,
+                id,
                 ${this._dataColumn} AS item
             FROM
                 ${this._table}
@@ -207,7 +205,7 @@ export abstract class SqliteRepository<T> extends Repository<T> {
 
         this._insert = await this._prepare(`
             INSERT INTO ${this._table} (
-                search_index,
+                search_text,
                 ${this._dataColumn}
             )
             VALUES (
@@ -219,16 +217,16 @@ export abstract class SqliteRepository<T> extends Repository<T> {
             UPDATE
                 ${this._table}
             SET
-                search_index = $index,
+                search_text = $index,
                 ${this._dataColumn} = json($item)
             WHERE
-                rowid = $id;`);
+                id = $id;`);
 
         this._delete = await this._prepare(`
             DELETE FROM
                 ${this._table}
             WHERE
-                rowid = $id;`);
+                id = $id;`);
     }
 
     protected _prepare(sql: string): Promise<sqlite3.Statement> {
