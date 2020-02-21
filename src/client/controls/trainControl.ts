@@ -10,6 +10,7 @@ export class TrainControl extends ControlBase {
     private _reverse = false;
     private _speed = 0;
 
+    private _directionButton: HTMLButtonElement;
     private _speedSlider: HTMLInputElement;
 
     constructor (parent: HTMLElement, readonly loco: Loco) {
@@ -22,10 +23,10 @@ export class TrainControl extends ControlBase {
 
         getById(control, "title").innerText = this.loco.name;
 
-        const directionButton = getById(control, "direction");
-        directionButton.onclick = () => {
+        this._directionButton = getById(control, "direction");
+        this._directionButton.onclick = () => {
             this._reverse = !this._reverse;
-            directionButton.innerText = this._reverse ? "REV" : "FWD";
+            this._directionButton.innerText = this._reverse ? "REV" : "FWD";
             this._sendRequest();
         };
 
@@ -56,6 +57,12 @@ export class TrainControl extends ControlBase {
         return control;
     }
 
+    updateSpeed(speed: number, reverse: boolean) {
+        this._speed = speed;
+        this._reverse = reverse;
+        this._updateSpeed();
+    }
+
     private _updateSpeed() {
         const slider = this._speedSlider;
         if (!slider) return;
@@ -63,6 +70,8 @@ export class TrainControl extends ControlBase {
         const uiSpeed = parseInt(this._speedSlider.value);
         if (uiSpeed != this._speed)
             this._speedSlider.value = `${this._speed}`;
+
+        this._directionButton.innerText = this._reverse ? "REV" : "FWD";        
     }
 
     private _sendRequest() {

@@ -2,7 +2,7 @@ import { Client } from "../client";
 import { Page, IPageConstructor, Navigator as nav } from "./page";
 import * as prompt from "../controls/promptControl";
 import { TrainControl } from "../controls/trainControl";
-import { RequestType } from "../../common/messages";
+import { RequestType, TransportMessage, LocoSpeedRequest } from "../../common/messages";
 import { Loco } from "../../common/api";
 import { parseHtml, getById } from "../utils/dom";
 import { ConnectionState } from "../commandConnection";
@@ -20,8 +20,8 @@ class IndexPage extends Page {
         super();
         this.content = this._buildUi();
 
-        this._messageHandlerToken = Client.instance.connection.on("message", (data) => {
-            console.log(data);
+        this._messageHandlerToken = Client.instance.connection.on("message", (data: TransportMessage) => {
+            this._onMessage(data);
         });
     }
 
@@ -63,6 +63,16 @@ class IndexPage extends Page {
         }
 
         connection.request(RequestType.EmergencyStop, null);
+    }
+
+    private _onMessage(message: TransportMessage) {
+        if (message.type !== RequestType.LocoSpeed) return;
+        const request = message.data as LocoSpeedRequest;
+        for (const control of this._trainControls) {
+            if (control.loco.address === request.locoId) {
+                control.updateSpeed(request.speed, request.reverse);
+            }
+        }
     }
 
     destroy() {
