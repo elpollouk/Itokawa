@@ -49,6 +49,18 @@ class IndexPage extends Page {
                 this.content.classList.add("noTrains");
             }
             this.content.classList.remove("loading");
+        }).then(() => {
+            // We want to request the latest loco states as another client may have changed them while we
+            // were off this page.
+            Client.instance.connection.request(RequestType.LocoSpeedRefresh, null, (err, response) => {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+                if (response.lastMessage) return; // The last message is just "OK"
+                const data = response.data as LocoSpeedRequest;
+                this._updateSpeed(data);
+            });
         }).catch((err) => {
             console.error(err);
             prompt.error("Failed to load train list.");
@@ -65,14 +77,18 @@ class IndexPage extends Page {
         connection.request(RequestType.EmergencyStop, null);
     }
 
-    private _onMessage(message: TransportMessage) {
-        if (message.type !== RequestType.LocoSpeed) return;
-        const request = message.data as LocoSpeedRequest;
+    private _updateSpeed(request: LocoSpeedRequest) {
         for (const control of this._trainControls) {
             if (control.loco.address === request.locoId) {
                 control.updateSpeed(request.speed, request.reverse);
             }
         }
+    }
+
+    private _onMessage(message: TransportMessage) {
+        if (message.type !== RequestType.LocoSpeed) return;
+        const request = message.data as LocoSpeedRequest;
+        this._updateSpeed(request);
     }
 
     destroy() {

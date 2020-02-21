@@ -68,7 +68,12 @@ export class CommandConnection extends Bindable {
 
     request<T>(type: messages.RequestType, data: T, callback?: RequestCallback) {
         try {
-            if (!this.isIdle) throw new Error("Request already in progress");
+            if (!this.isIdle) {
+                // The connection is busy, so wait a frame and try again
+                window.requestAnimationFrame(() => this.request<T>(type, data, callback));
+                return;
+            }
+
             this.state = ConnectionState.Busy;
             this._cancelHeartbeat();
 

@@ -2,6 +2,7 @@ export enum RequestType {
     LifeCycle = 1,
     LocoSpeed = 2,
     EmergencyStop = 3,
+    LocoSpeedRefresh = 4,
     CommandResponse = 1000,
 }
 
