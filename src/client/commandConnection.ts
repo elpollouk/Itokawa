@@ -162,30 +162,28 @@ export class CommandConnection extends Bindable {
     }
 
     private _onMessage(ev: MessageEvent) {
-        if (this.state === ConnectionState.Busy) {
-            const message = JSON.parse(ev.data) as messages.TransportMessage;
-            if (message.type === messages.RequestType.CommandResponse) {
-                const data = message.data as messages.CommandResponse;
-                let error: Error;
-                if (data.error) {
-                    console.error(data.error);
-                    error = new Error(data.error);
-                }
-                const cb = this._callbackTag === message.tag ? this._callback : null;
-
-                // We want to clear state out before firing the callback so that the callback has the option
-                // to issue a new request immediately
-                if (data.lastMessage) {
-                    this.state = ConnectionState.Idle;
-                    this._callback = null;
-                    this._scheduleHeartbeat();
-                }
-
-                if (cb) cb(error, data);
+        const message = JSON.parse(ev.data) as messages.TransportMessage;
+        if (message.type === messages.RequestType.CommandResponse) {
+            const data = message.data as messages.CommandResponse;
+            let error: Error;
+            if (data.error) {
+                console.error(data.error);
+                error = new Error(data.error);
             }
-            else {
-                this.emit("message", message);
+            const cb = this._callbackTag === message.tag ? this._callback : null;
+
+            // We want to clear state out before firing the callback so that the callback has the option
+            // to issue a new request immediately
+            if (data.lastMessage) {
+                this.state = ConnectionState.Idle;
+                this._callback = null;
+                this._scheduleHeartbeat();
             }
+
+            if (cb) cb(error, data);
+        }
+        else {
+            this.emit("message", message);
         }
     }
 

@@ -14,10 +14,15 @@ class IndexPage extends Page {
     content: HTMLElement;
     private _trainControlsContainer: HTMLElement;
     private _trainControls: TrainControl[] = [];
+    private _messageHandlerToken: any;
 
     constructor() {
         super();
         this.content = this._buildUi();
+
+        this._messageHandlerToken = Client.instance.connection.on("message", (data) => {
+            console.log(data);
+        });
     }
 
     _buildUi(): HTMLElement {
@@ -61,8 +66,7 @@ class IndexPage extends Page {
     }
 
     destroy() {
-        for (const control of this._trainControls)
-            control.close();
+        Client.instance.connection.off("message", this._messageHandlerToken);
     }
 }
 
