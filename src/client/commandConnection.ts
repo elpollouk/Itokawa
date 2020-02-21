@@ -38,6 +38,7 @@ export class CommandConnection extends Bindable {
 
     private _socket: WebSocket;
     private _callback: RequestCallback = null;
+    private _callbackTag: string = null;
     private _heartbeartToken: any = null;
     private _lastHeatbeatResponse: messages.LifeCyclePingResponse = null;
 
@@ -65,15 +66,21 @@ export class CommandConnection extends Bindable {
         this.retry();
     }
 
-    request(message: messages.CommandRequest, callback?: RequestCallback) {
+    request<T>(type: messages.RequestType, data: T, callback?: RequestCallback) {
         try {
             if (!this.isIdle) throw new Error("Request already in progress");
             this.state = ConnectionState.Busy;
             this._cancelHeartbeat();
 
-            message.requestTime = timestamp();
+            const message: messages.TransportMessage = {
+                type: type,
+                requestTime: timestamp(),
+                tag: messages.generateMessageTag(),
+                data: data
+            };
             this._socket.send(JSON.stringify(message));
             this._callback = callback;
+            this._callbackTag = message.tag;
         }
         catch (ex) {
             if (callback) callback(ex);
@@ -141,15 +148,18 @@ export class CommandConnection extends Bindable {
         this._scheduleHeartbeat();
     }
 
-    private _onMessage(message: MessageEvent) {
+    private _onMessage(ev: MessageEvent) {
         if (this.state === ConnectionState.Busy) {
-            const data = JSON.parse(message.data) as messages.CommandResponse;
+            const message = JSON.parse(ev.data) as messages.TransportMessage;
+            const data = message.data as messages.CommandResponse;
             let error: Error;
             if (data.error) {
                 console.error(data.error);
                 error = new Error(data.error);
             }
-            const cb = this._callback;
+            const cb = this._callbackTag === message.tag ? this._callback : (err: Error, data: messages.CommandResponse) => {
+                //this.
+            };
 
             // We want to clear state out before firing the callback so that the callback has the option
             // to issue a new request immediately
@@ -189,10 +199,9 @@ export class CommandConnection extends Bindable {
             return;
         }
 
-        this.request({
-            type: messages.RequestType.LifeCycle,
+        this.request<messages.LifeCycleRequest>(messages.RequestType.LifeCycle, {
             action: messages.LifeCycleAction.ping
-        } as messages.LifeCycleRequest, (err, response) => {
+        }, (err, response) => {
             if (err) this._onError(err);
             else {
                 this._lastHeatbeatResponse = response as messages.LifeCyclePingResponse;

@@ -46,10 +46,9 @@ export class UpdatePage extends Page {
         this.tty.stdout("Requesting update...\n");
         this.tty.stdout(`Current git revision: ${this._connection.gitRevision}\n`);
     
-        this._connection.request({
-            type: RequestType.LifeCycle,
+        this._connection.request<LifeCycleRequest>(RequestType.LifeCycle, {
             action: LifeCycleAction.update
-        } as LifeCycleRequest, (e, r) => this.onMessage(e, r));
+        }, (e, r) => this.onMessage(e, r));
     }
 }
 

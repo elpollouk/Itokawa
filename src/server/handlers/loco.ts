@@ -1,15 +1,13 @@
 import { Logger } from "../../utils/logger";
 import { HandlerMap, Sender, ok } from "./handlers"
 import { application } from "../../application";
-import { CommandRequest, RequestType, LocoSpeedRequest } from "../../common/messages";
+import { RequestType, LocoSpeedRequest } from "../../common/messages";
 
 const log = new Logger("LocoHandler");
 const _seenLocos = new Set<number>();
 
-async function onLocoSpeed(msg: CommandRequest, send: Sender): Promise<void> {
+async function onLocoSpeed(request: LocoSpeedRequest, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
-    const request = msg as LocoSpeedRequest;
-    if (request.type !== RequestType.LocoSpeed) throw new Error(`Invalid request type: ${request.type}`);
 
     const batch = await application.commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(request.locoId, request.speed, request.reverse);
@@ -20,7 +18,7 @@ async function onLocoSpeed(msg: CommandRequest, send: Sender): Promise<void> {
     await ok(send);
 };
 
-async function onEmergencyStop(msg: CommandRequest, send: Sender): Promise<void> {
+async function onEmergencyStop(data: any, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
     log.info("Issuing emergency stop");
 

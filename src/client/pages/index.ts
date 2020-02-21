@@ -57,9 +57,7 @@ class IndexPage extends Page {
             return;
         }
 
-        connection.request({
-            type: RequestType.EmergencyStop
-        });
+        connection.request(RequestType.EmergencyStop, null);
     }
 
     destroy() {

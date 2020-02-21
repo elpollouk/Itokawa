@@ -97,19 +97,17 @@ export class SystemDrawControl extends ControlBase {
             "Server Control",[
                 action("Shutdown", "Are you sure you want to shutdown server?", () => {
                     if (client.connection.state !== ConnectionState.Idle) return;
-                    client.connection.request({
-                        type: RequestType.LifeCycle,
+                    client.connection.request<LifeCycleRequest>(RequestType.LifeCycle, {
                         action: LifeCycleAction.shutdown
-                    } as LifeCycleRequest, (err) => {
+                    }, (err) => {
                         if (err) prompt.error(err.message);
                     });
                 }),
                 action("Restart", "Are you sure you want to restart server?", () => {
                     if (client.connection.state !== ConnectionState.Idle) return;
-                    client.connection.request({
-                        type: RequestType.LifeCycle,
+                    client.connection.request<LifeCycleRequest>(RequestType.LifeCycle, {
                         action: LifeCycleAction.restart
-                    } as LifeCycleRequest, (err) => {
+                    }, (err) => {
                         if (err) prompt.error(err.message);
                     });
                 }),

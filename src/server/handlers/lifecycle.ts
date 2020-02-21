@@ -1,10 +1,9 @@
 import { HandlerMap, Sender, ok } from "./handlers"
 import { application } from "../../application";
-import { CommandRequest, LifeCycleRequest, LifeCycleAction, LifeCyclePingResponse, RequestType } from "../../common/messages";
+import { LifeCycleRequest, LifeCycleAction, LifeCyclePingResponse, RequestType } from "../../common/messages";
 import { updateApplication } from "../updateApplication";
 
-async function onLifeCycleMessage(msg: CommandRequest, send: Sender): Promise<void> {
-    const request = msg as LifeCycleRequest;
+async function onLifeCycleMessage(request: LifeCycleRequest, send: Sender): Promise<void> {
     switch(request.action) {
         case LifeCycleAction.ping:
             const response: LifeCyclePingResponse = {

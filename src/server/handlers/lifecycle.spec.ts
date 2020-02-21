@@ -3,13 +3,13 @@ use(require("chai-as-promised"));
 import "mocha";
 import { stub, SinonStub, SinonSpy } from "sinon";
 import { registerHandlers } from "./lifecycle";
-import { RequestType, CommandRequest, LifeCycleRequest, LifeCycleAction } from "../../common/messages";
+import { RequestType, LifeCycleRequest, LifeCycleAction } from "../../common/messages";
 import * as handlers from "./handlers";
 import { application } from "../../application";
 import * as applicationUpdate from "../updateApplication";
 
 function createHandlerMap(): handlers.HandlerMap {
-    return new Map<RequestType, (msg: CommandRequest, send: handlers.Sender)=>Promise<void>>();
+    return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();
 }
 
 describe("Life Cycle Handler", () => {
@@ -34,7 +34,6 @@ describe("Life Cycle Handler", () => {
             registerHandlers(handlers);
 
             await expect(handlers.get(RequestType.LifeCycle)({
-                type: RequestType.LifeCycle,
                 action: -1
             } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Unrecognised life cycle action: -1");
         })
@@ -56,7 +55,6 @@ describe("Life Cycle Handler", () => {
             registerHandlers(handlers);
 
             await handlers.get(RequestType.LifeCycle)({
-                type: RequestType.LifeCycle,
                 action: LifeCycleAction.shutdown
             } as LifeCycleRequest, sendStub);
 
@@ -85,7 +83,6 @@ describe("Life Cycle Handler", () => {
             registerHandlers(handlers);
 
             await handlers.get(RequestType.LifeCycle)({
-                type: RequestType.LifeCycle,
                 action: LifeCycleAction.restart
             } as LifeCycleRequest, sendStub);
 
@@ -121,7 +118,6 @@ describe("Life Cycle Handler", () => {
             registerHandlers(handlers);
 
             await handlers.get(RequestType.LifeCycle)({
-                type: RequestType.LifeCycle,
                 action: LifeCycleAction.update
             } as LifeCycleRequest, sendStub);
 

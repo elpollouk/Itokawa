@@ -69,11 +69,10 @@ export class TrainControl extends ControlBase {
         if (Client.instance.connection.state !== ConnectionState.Idle) return;
         this._updateSpeed();
         const request: LocoSpeedRequest = {
-            type: RequestType.LocoSpeed,
             locoId: this.loco.address,
             speed: this._speed,
             reverse: this._reverse
         };
-        Client.instance.connection.request(request);
+        Client.instance.connection.request(RequestType.LocoSpeed, request);
     }
 }
