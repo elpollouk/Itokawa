@@ -15,6 +15,10 @@ body {
 
 @media (min-width: 600px) {
     body {
+        /* Image details:
+         * "Tree Framing British Countryside" by incurable_hippie is licensed under CC BY-NC 2.0 
+         * https://search.creativecommons.org/photos/885474ad-2b94-4296-ab02-b427d28e8e59
+         */
         background-image: url("/background-wide.jpg");
         background-position: center;
         background-size: cover;
