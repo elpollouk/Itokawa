@@ -88,14 +88,16 @@ export class TrainControl extends ControlBase {
     }
 
     private _updateSpeed() {
+        // We always have a direction button
+        this._directionButton.innerText = this._reverse ? "REV" : "FWD";        
+
+        // We won't have a slider if we're using discrete speeds
         const slider = this._speedSlider;
         if (!slider) return;
 
         const uiSpeed = parseInt(this._speedSlider.value);
         if (uiSpeed != this._speed)
             this._animateSlider(20);
-
-        this._directionButton.innerText = this._reverse ? "REV" : "FWD";        
     }
 
     private _sendRequest() {

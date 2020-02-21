@@ -39,8 +39,8 @@ function _openPage(path: string, params: any, depth: number) {
 
     const oldPage = _currentPage;
     if (oldPage) {
-        let startLeft = depth < _currentPageDepth ? "-120vw" : "120vw";
-        let endLeft = depth < _currentPageDepth ? "120vw" : "-120vw";
+        let startLeft = depth < _currentPageDepth ? "-120%" : "120%";
+        let endLeft = depth < _currentPageDepth ? "120%" : "-120%";
 
         content.style.left = startLeft;
         oldPage.content.style.left = "0";
