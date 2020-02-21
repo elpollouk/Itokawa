@@ -63,25 +63,46 @@ export class TrainControl extends ControlBase {
         this._updateSpeed();
     }
 
+    private _animateSlider(frames: number) {
+        // Calculate the animation speed required to arrive at the target speed in the requested number of frames
+        const requestedSpeed = this._speed;
+        let currentSpeed = parseInt(this._speedSlider.value);
+        const step = (requestedSpeed - currentSpeed) / frames;
+
+        const sliderUpdate = () => {
+            if (this._speed != requestedSpeed) return; // Give up if there have been another speed change
+
+            currentSpeed += step;
+            if (Math.abs(this._speed - currentSpeed) < 1.0) {
+                // Close enough, just set the speed
+                this._speedSlider.value = `${this._speed}`;
+            }
+            else {
+                this._speedSlider.value = `${currentSpeed}`;
+                frames--;
+                if (frames !== 0)
+                    requestAnimationFrame(sliderUpdate);
+            }
+        };
+        sliderUpdate();
+    }
+
     private _updateSpeed() {
         const slider = this._speedSlider;
         if (!slider) return;
 
         const uiSpeed = parseInt(this._speedSlider.value);
         if (uiSpeed != this._speed)
-            this._speedSlider.value = `${this._speed}`;
+            this._animateSlider(20);
 
         this._directionButton.innerText = this._reverse ? "REV" : "FWD";        
     }
 
     private _sendRequest() {
-        if (Client.instance.connection.state !== ConnectionState.Idle) return;
-        this._updateSpeed();
-        const request: LocoSpeedRequest = {
+        Client.instance.connection.request<LocoSpeedRequest>(RequestType.LocoSpeed, {
             locoId: this.loco.address,
             speed: this._speed,
             reverse: this._reverse
-        };
-        Client.instance.connection.request(RequestType.LocoSpeed, request);
+        });
     }
 }
