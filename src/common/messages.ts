@@ -1,7 +1,8 @@
 export enum RequestType {
     LifeCycle = 1,
     LocoSpeed = 2,
-    EmergencyStop = 3
+    EmergencyStop = 3,
+    CommandResponse = 1000,
 }
 
 export interface TransportMessage {

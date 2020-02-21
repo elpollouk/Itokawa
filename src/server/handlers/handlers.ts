@@ -31,7 +31,7 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
         // message with diagnostics data.
         // It also protects us againsts accidental WebSocket misuse as we never provide handlers
         // direct access to the socket.
-        function createSender(type: RequestType, tag: string): Sender {
+        function createResponder(tag: string): Sender {
             return (data: CommandResponse): Promise<boolean> => {
                 if (ws.readyState !== 1) {
                     // We handle disconnections without throwing as it's not always possible to cancel
@@ -41,7 +41,7 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
                     return Promise.resolve(false);
                 }
                 const msg: TransportMessage = {
-                    type: type,
+                    type: RequestType.CommandResponse,
                     requestTime: timestamp(),
                     tag: tag,
                     data: data
@@ -57,7 +57,7 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
             try {
                 const request = JSON.parse(msg.toString()) as TransportMessage;
                 if (!messageHandlers.has(request.type)) throw new Error(`Unrecognised request type: ${request.type}`);
-                send = createSender(request.type, request.tag);
+                send = createResponder(request.tag);
                 await messageHandlers.get(request.type)(request.data, send);
             }
             catch (ex) {
