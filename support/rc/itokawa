@@ -21,7 +21,7 @@ PID_FILE=/home/$USER/.itokawa/pid
 case "$1" in
 start)
     cd $APP_DIR
-    su $USER -c 'node dist/server/main.js > ~/.itokawa/itokawa.log 2>&1 &'
+    su $USER -c 'npm start > ~/.itokawa/itokawa.log 2>&1 &'
 ;;
 stop)
     if test -f "$PID_FILE"; then
