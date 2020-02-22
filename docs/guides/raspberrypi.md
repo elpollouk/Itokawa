@@ -20,6 +20,7 @@ You will want to perform the following setup actions:
 * Enter your Wi-Fi network details if you want to connect to the network wirelessly.
 * Enable SSH access if you want to be able to perform system admin tasks such as updating the OS remotely.
 
+When you have finished configuring the Raspberry Pi, exit the software and select `Yes` to reboot. After the Raspberry Pi has rebooted, log back in with the details you just configured.
 
 ## Software Installation
 
@@ -50,21 +51,22 @@ git clone https://github.com/elpollouk/Itokawa.git
 cd Itokawa
 ```
 
-Then we need to fetch the dependencies and build the code. This step will take a few minutes, so you have plenty of time to make a cup of tea.
+Then we need to fetch the dependencies and build the code. This step will take a few minutes, so you have plenty of time to go and make a cup of tea.
 ```
 npm run prod-update
 ```
-You can run this command again to perform a manual update any time you wish.
+You can run this command again to perform a manual update any time you wish and should be much quicker.
 
 Finally, connect your command station (e.g. an eLink) to the Raspberry Pi and start Itokawa:
 ```
 npm start
 ```
 
-You should now be able to connect to your Raspberry Pi via the host name you configued earlier, e.g. [http://itokawa:8080](http://itokawa:8080). You can verify that the command station has been detected correctly by viewing the details in the about screen.
+You should now be able to connect to your Raspberry Pi via the URL displayed in the outpu, e.g. [http://itokawa:8080](http://itokawa:8080). You can verify that the command station has been detected correctly by viewing the details in the about screen.
 
 ### Enable Auto-Start (optional)
 
+_TO DO_
 
 ### Configure Port Number (optional)
 
@@ -81,6 +83,6 @@ Enter the following text (changing 8080 to the port you wish to use):
     </server>
 </config>
 ```
-Press `Ctrl+X` to exit and slect yes to saving the file.
+Press `Ctrl+X` to exit and select yes to saving the file.
 
 Next time Itokawa starts, it will use the port number you specified in the config file.
