@@ -342,7 +342,7 @@ a:visited {
     top: 30%;
     transform: translateY(-50%);
     text-align: center;
-    width: 100%;
+    width: calc(100% - 4px);
 }
 
 .noTrainsContainer .message {
