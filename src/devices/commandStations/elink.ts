@@ -92,6 +92,7 @@ export class ELinkCommandStation extends CommandStationBase {
             baudRate: 115200
         });
         this._port.on("error", (err) => {
+            this._setState(CommandStationState.ERROR);
             this.emit("error", err);
         });
 

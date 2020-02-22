@@ -18,6 +18,7 @@ export class AsyncSerialPort extends EventEmitter {
         });
     }
 
+    private _closeRequested = false;
     private _buffer: number[] = [];
     private _updateReader: () => void = _nullUpdate;
 
@@ -28,13 +29,19 @@ export class AsyncSerialPort extends EventEmitter {
     private constructor(private _port:SerialPort) {
         super();
 
-        this._port.on('data', (data: Buffer) => {
+        this._port.on("data", (data: Buffer) => {
             log.debug(() => `Received: ${toHumanHex(data)}`);
             for (let i = 0; i < data.length; i++)
                 this._buffer.push(data[i]);
 
             this.emit("data", data);
             this._updateReader();
+        });
+        this._port.on("close", () => {
+            if (!this._closeRequested) {
+                log.warning("Serial port closed");
+                this.emit("error", new Error("Unexpected serial port close event"));
+            }
         });
         this._port.on("error", (err) => {
             log.warning(`Serial port error: ${err}`);
@@ -79,6 +86,7 @@ export class AsyncSerialPort extends EventEmitter {
     }
 
     close(): Promise<void> {
+        this._closeRequested = true;
         return new Promise((resolve, reject) => {
             this._port.close((err) => {
                 if (err) reject(err);

@@ -36,10 +36,6 @@ async function main()
     application.onrestartbegin = restartCheck;
     application.onrestart = execRestart;
 
-    application.commandStation = await openDevice(program);
-    if (!application.commandStation) log.error("No devices found");
-    else log.display(`Using ${application.commandStation.deviceId} ${application.commandStation.version}`);
-
     const ews = expressWs(express());
     const app = ews.app;
 

@@ -43,13 +43,15 @@ async function onEmergencyStop(data: any, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
     log.info("Issuing emergency stop");
 
-    const batch = await application.commandStation.beginCommandBatch();
-    for (const locoId of _seenLocos.keys()) {
-        log.debug(() => `Stopping loco ${locoId}`);
-        batch.setLocomotiveSpeed(locoId, 0);
+    if (_seenLocos.size !== 0) {
+        const batch = await application.commandStation.beginCommandBatch();
+        for (const locoId of _seenLocos.keys()) {
+            log.debug(() => `Stopping loco ${locoId}`);
+            batch.setLocomotiveSpeed(locoId, 0);
+        }
+        await batch.commit();
     }
-    await batch.commit();
-
+    
     await ok(send);
 
     for (const locoId of _seenLocos.keys())

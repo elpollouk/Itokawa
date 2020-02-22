@@ -9,10 +9,12 @@ import { applyLogLevel } from "./utils/commandLineArgs";
 import { execAsync } from "./utils/exec";
 import { ICommandStation } from "./devices/commandStations/commandStation"
 import { Database } from "./model/database";
+import { DeviceEnumerator } from "./devices/deviceEnumerator";
 
 const log = new Logger("Application");
 
 const DATABASE_FILE = "data.sqlite3";
+const DEVICE_RETRY_TIME = 5000;
 
 function _initDataDirectory(dataPath: string) {
     dataPath = dataPath || pathMod.join(os.homedir(), ".itokawa");
@@ -73,6 +75,7 @@ class Application {
         return this._db;
     }
 
+    private _args: CommanderStatic;
     private _config: ConfigNode = new ConfigNode();
     private _configPath: string;
     private _gitrev: string = "";
@@ -90,9 +93,12 @@ class Application {
     //  * Fetch the current git revision
     //  * Write a pid file to the data directory
     //  * Open the local database
+    //  * Start the command station mointoring process
     start(args: CommanderStatic, savepid: boolean = false): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
+                this._args = args;
+
                 // We apply an initial log level based on the command line args so that we can debug
                 // directory initialisation and config loading if needed
                 applyLogLevel(args);
@@ -114,6 +120,10 @@ class Application {
 
                 const dbPath = this.getDataPath(DATABASE_FILE);
                 this._db = await Database.open(dbPath);
+
+                // Technically, we don't need this await, but it improves the experience if a
+                // device is already opened before starting the server
+                await this._initDevice();
 
                 resolve();
             }
@@ -146,6 +156,43 @@ class Application {
         await this._db.close();
         if (this.onrestart) await this.onrestart();
         process.exit(0);
+    }
+
+    private async _initDevice() {
+        // This will start monitoring for device errors and attempt recovery
+        const errorHandler = (err: Error) => {
+            if (this.commandStation) {
+                // Remove the error handler to avoid memory leaks associated with it
+                this.commandStation.off("error", errorHandler);
+            }
+
+            log.error("Command station error");
+            log.error(err.stack);
+            log.info(`Schedulling retry in ${DEVICE_RETRY_TIME}ms`);
+            setTimeout(() => this._initDevice(), DEVICE_RETRY_TIME);
+        };
+
+        try {
+            log.info("Attempting to open device...");
+            this.commandStation = await this._openDevice();
+            log.display(`Using ${this.commandStation.deviceId} ${this.commandStation.version}`);
+
+            this.commandStation.on("error", errorHandler);
+        }
+        catch (err) {
+            errorHandler(err);
+        }
+    }
+
+    private async _openDevice(): Promise<ICommandStation> {
+        if (this._args.device) {
+            return await DeviceEnumerator.openDevice(this._args.device, this._args.connectionString);
+        }
+    
+        let devices = await DeviceEnumerator.listDevices();
+        if (devices.length === 0) throw Error("No command stations found");
+    
+        return await devices[0].open();
     }
 }
 

@@ -88,16 +88,27 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
         this._setState(CommandStationState.IDLE);
     }
 
+    // Waits until the command station reaches the requested state.
+    // Will reject the promise if the command station transitions to the ERROR state while waiting.
+    // This is to avoid batch commits waiting on command stations that have failed and may never
+    // recover.
     protected _untilState(state: CommandStationState): Promise<void> {
         if (this.state === state) return Promise.resolve();
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            if (this.state === CommandStationState.ERROR)
+                reject(new CommandStationError("Command station is in ERROR state"));
+
             const listener = async (newState: CommandStationState) => {
                 if (newState === state) {
                     this.off("state", listener);
                     resolve();
                 }
+                else if (this.state === CommandStationState.ERROR) {
+                    this.off("state", listener);
+                    reject(new CommandStationError("Command station is in ERROR state"));
+                }
             };
-            const token = this.on("state", listener);
+            this.on("state", listener);
         });
     }
 
