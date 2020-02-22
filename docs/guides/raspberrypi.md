@@ -55,7 +55,7 @@ Then we need to fetch the dependencies and build the code. This step will take a
 ```
 npm run prod-update
 ```
-You can run this command again to perform a manual update any time you wish and should be much quicker.
+You can run this command again to perform a manual update any time you wish and it should be much quicker after the first run.
 
 Finally, connect your command station (e.g. an eLink) to the Raspberry Pi and start Itokawa:
 ```
