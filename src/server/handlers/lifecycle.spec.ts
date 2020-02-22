@@ -7,6 +7,7 @@ import { RequestType, LifeCycleRequest, LifeCycleAction } from "../../common/mes
 import * as handlers from "./handlers";
 import { application } from "../../application";
 import * as applicationUpdate from "../updateApplication";
+let packageVersion = require("../../../package.json").version;
 
 function createHandlerMap(): handlers.HandlerMap {
     return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();
@@ -158,6 +159,7 @@ describe("Life Cycle Handler", () => {
 
             expect(sendStub.callCount).to.equal(1);
             expect(sendStub.lastCall.args).to.eql([{
+                packageVersion: packageVersion,
                 commandStation: "",
                 commandStationState: -1,
                 gitrev: "gitrev",
@@ -170,6 +172,7 @@ describe("Life Cycle Handler", () => {
         it("should return a ping response for a connected command station", async () => {
             commandStationStub.value({
                 deviceId: "TestCommandStation",
+                version: "1.2.3",
                 state: 2
             });
             const handlers = createHandlerMap();
@@ -182,7 +185,8 @@ describe("Life Cycle Handler", () => {
 
             expect(sendStub.callCount).to.equal(1);
             expect(sendStub.lastCall.args).to.eql([{
-                commandStation: "TestCommandStation",
+                packageVersion: packageVersion,
+                commandStation: "TestCommandStation 1.2.3",
                 commandStationState: 2,
                 gitrev: "gitrev",
                 publicUrl: "public_url",
