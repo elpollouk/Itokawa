@@ -97,14 +97,14 @@ export class TrainEditPage extends Page {
 
     _validate(): boolean {
         if (!vaildateNotEmptyInput(this._nameElement, "Name must be set.")) return false;
-        if (!vaildateIntInput(this._addressElement, 1, 9999, "Address must be in the range 1-9999.")) return false;
+        if (!vaildateIntInput(this._addressElement, "Address must be in the range 1-9999.")) return false;
         if (this._discreteElement.checked) {
-            if (!vaildateIntInput(this._slowElement, 1, 127, "Slow speed must be in the range 1-127.")) return false;
-            if (!vaildateIntInput(this._mediumElement, 1, 127, "Medium speed must be in the range 1-127.")) return false;
-            if (!vaildateIntInput(this._fastElement, 1, 127, "Fast speed must be in the range 1-127.")) return false;
+            if (!vaildateIntInput(this._slowElement, "Slow speed must be in the range 1-127.")) return false;
+            if (!vaildateIntInput(this._mediumElement, "Medium speed must be in the range 1-127.")) return false;
+            if (!vaildateIntInput(this._fastElement, "Fast speed must be in the range 1-127.")) return false;
         }
         else {
-            if (!vaildateIntInput(this._maxSpeedEelement, 1, 127, "Max speed must be in the range 1-127")) return false;
+            if (!vaildateIntInput(this._maxSpeedEelement, "Max speed must be in the range 1-127")) return false;
         }
 
         return true;

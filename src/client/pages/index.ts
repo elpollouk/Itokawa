@@ -54,7 +54,7 @@ class IndexPage extends Page {
             // were off this page.
             Client.instance.connection.request(RequestType.LocoSpeedRefresh, null, (err, response) => {
                 if (err) {
-                    console.error(err);
+                    prompt.error(`Failed to refresh loco speeds:\n${err.message}`);
                     return;
                 }
                 if (response.lastMessage) return; // The last message is just "OK"
@@ -63,7 +63,7 @@ class IndexPage extends Page {
             });
         }).catch((err) => {
             console.error(err);
-            prompt.error("Failed to load train list.");
+            prompt.error(`Failed to load train list.\n${err.message}`);
         });
     }
 
