@@ -1,4 +1,4 @@
-# Itokawa DCC Control
+# Itokawa DCC Server
 
 [Node.js](https://nodejs.org/) based [DCC control](https://www.nmra.org/dcc-working-group) for model railways.
 
