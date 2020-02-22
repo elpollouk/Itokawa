@@ -26,11 +26,16 @@ export function vaildateNotEmptyInput(input: HTMLInputElement, message: string) 
     return true;
 }
 
-export function vaildateIntInput(input: HTMLInputElement, min: number, max: number, message: string) {
+export function vaildateIntInput(input: HTMLInputElement, message: string) {
     let value = parseInt(input.value);
-    if (isNaN(value) || value < 1 || value > 9999) {
+    const min = input.min ? parseInt(input.min) : Number.MIN_VALUE;
+    const max = input.max ? parseInt(input.max) : Number.MAX_VALUE;
+
+    if (isNaN(value) || value < min || value > max) {
+        console.log("not valid");
         prompt.error(message).then(() => input.focus());
         return false;
     }
+    console.log("valid");
     return true;
 }
