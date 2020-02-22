@@ -23,3 +23,6 @@ You can update to the latest code at any time by running `npm run prod-update` a
 
 ## Tested Command Stations
  * [Hornby eLink 1.07 (R8312)](https://www.hornby.com/uk-en/elink-and-railmaster-combination-pack.html)
+
+## Dedicated Setup Guides
+* [Raspberry Pi](https://github.com/elpollouk/Itokawa/blob/master/docs/guides/raspberrypi.md)
