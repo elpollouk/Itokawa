@@ -192,7 +192,9 @@ export abstract class SqliteRepository<T> extends Repository<T> {
             ON
                 ${this._table}.id = ${this._table}_fts.id
             WHERE
-                ${this._table}_fts MATCH $query ORDER BY rank;`);
+                ${this._table}_fts MATCH $query
+            ORDER BY
+                rank;`);
 
         this._get = await this._prepare(`
             SELECT

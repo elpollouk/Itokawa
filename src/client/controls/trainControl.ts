@@ -70,7 +70,7 @@ export class TrainControl extends ControlBase {
         const step = (requestedSpeed - currentSpeed) / frames;
 
         const sliderUpdate = () => {
-            if (this._speed != requestedSpeed) return; // Give up if there have been another speed change
+            if (this._speed != requestedSpeed) return; // Give up if there has been another speed change
 
             currentSpeed += step;
             if (Math.abs(this._speed - currentSpeed) < 1.0) {
