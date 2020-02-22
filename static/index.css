@@ -39,6 +39,14 @@ button {
     font-size: large;
 }
 
+a {
+    color: rgb(0, 0, 238);
+}
+
+a:visited {
+    color: rgb(0, 0, 238);
+}
+
 
 /*
  * General Purpose
@@ -218,7 +226,7 @@ button {
     display: block;
 }
 
-.prompt {
+.prompt, .about {
     position: absolute;
     padding: 0.5em;
     width: 25em;
@@ -260,6 +268,33 @@ button {
     width: 100%;
     margin-top: 0.5em;
 }
+
+
+/*
+ * About popup
+ */
+.about .websiteURl {
+    margin-bottom: 1.5em;
+}
+
+.about .value {
+    font-style: italic;
+}
+
+.about .additionalText {
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+}
+
+.about .additionalText .subtitle {
+    font-style: italic;
+    font-weight: bold;
+}
+
+.about .buttons {
+    text-align: right;
+}
+
 
 /*
  * Content Area
@@ -346,6 +381,7 @@ button {
     display: none;
 }
 
+
 /*
  * Train Controls
  */
@@ -405,6 +441,7 @@ button {
 .qrcode a:visited {
     color: black;
 }
+
 
 /*
  * TTY Control

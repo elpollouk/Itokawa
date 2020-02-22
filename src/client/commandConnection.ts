@@ -46,6 +46,11 @@ export class CommandConnection extends Bindable {
         return this.state === ConnectionState.Idle;
     }
 
+    get packageVersion(): string {
+        const info = this._lastHeatbeatResponse;
+        return info ? info.packageVersion : "";
+    }
+
     get deviceId(): string {
         const info = this._lastHeatbeatResponse;
         return info ? info.commandStation : "";

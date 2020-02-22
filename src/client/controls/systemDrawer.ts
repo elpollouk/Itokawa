@@ -12,11 +12,11 @@ import { ConnectionState } from "../commandConnection";
 import { UpdatePage, UpdatePageConstructor } from "../pages/update";
 import { PromptButton } from "../controls/promptControl";
 import { createElement } from "../utils/dom";
+import { AboutControl } from "./about";
 
 function createControlContainer(parent: HTMLElement) {
-    const div = document.createElement("div");
+    const div = createElement(parent, "div");
     div.className = "container";
-    parent.appendChild(div);
     return div;
 }
 
@@ -34,18 +34,20 @@ export class SystemDrawControl extends ControlBase {
         const globalControls = createControlContainer(container);
         globalControls.classList.add("globalControls");
 
-        const trainsButton = document.createElement("button");
+        const trainsButton = createElement(globalControls, "button");
         trainsButton.innerText = "Trains";
         trainsButton.onclick = () => nav.open("trains");
-        globalControls.appendChild(trainsButton);
 
-        const serverButton = document.createElement("button");
+        const serverButton = createElement(globalControls, "button");
         serverButton.innerText = "Server";
         serverButton.onclick = () => this.openServerPopup();
-        globalControls.appendChild(serverButton);
+
+        const aboutButton = createElement(globalControls, "button");
+        aboutButton.innerText = "About";
+        aboutButton.onclick = () => this.openAbout();
 
         // Back button
-        const backButton = document.createElement("button");
+        const backButton = createElement(container, "button");
         backButton.className = "backButton";
         backButton.onclick = (ev: MouseEvent) => {
             nav.back();
@@ -53,7 +55,6 @@ export class SystemDrawControl extends ControlBase {
             ev.stopPropagation();
         };
         backButton.innerText = "<";
-        container.appendChild(backButton);
 
         const handle = createElement(container, "div", "handle");
         handle.innerText = "...";
@@ -118,5 +119,9 @@ export class SystemDrawControl extends ControlBase {
                 { caption: "Cancel" }
             ]
         );
+    }
+
+    private openAbout() {
+        AboutControl.open();
     }
 }

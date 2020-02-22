@@ -1,5 +1,4 @@
 import { ControlBase } from "./control";
-import { ConnectionState } from "../commandConnection";
 import { RequestType, LocoSpeedRequest } from "../../common/messages";
 import { parseHtml, getById } from "../utils/dom";
 import { Loco } from "../../common/api";
