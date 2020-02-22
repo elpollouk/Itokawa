@@ -14,9 +14,9 @@
 # User to launch server using
 USER=pi
 # Directory containing server code
-APP_DIR=/mnt/data/projects/Itokawa
+APP_DIR=/home/$USER/Itokawa
 # Path to pid file
-PID_FILE=/mnt/data/pi/.itokawa/pid
+PID_FILE=/home/$USER/.itokawa/pid
 
 case "$1" in
 start)
