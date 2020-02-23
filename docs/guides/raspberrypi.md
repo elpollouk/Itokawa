@@ -16,7 +16,7 @@ These instructions have been tested on the Raspberry Pi 3 Model B and Raspberry 
 
 First time booting up, you can log in with the user name `pi` and the password `raspberry`. Once logged in, we want to make some configuration changes.
 
-Launch the Raspberry Pi config app by entering the following and pressing enter:
+Launch the [Raspberry Pi config app](https://www.raspberrypi.org/documentation/configuration/raspi-config.md) by entering the following and pressing enter:
 ```
 sudo raspi-config
 ```
@@ -26,6 +26,7 @@ You will want to perform the following setup actions:
 * Set a memorable host name such as `itokawa`.
 * Enter your Wi-Fi network details if you want to connect to the network wirelessly.
 * Enable SSH access if you want to be able to perform system admin tasks such as updating the OS remotely.
+* Adjust the memory split to only use 16mb for the GPU.
 
 When you have finished configuring the Raspberry Pi, exit the software and select `Yes` to reboot. After the Raspberry Pi has rebooted, log back in with the details you just configured.
 
@@ -69,7 +70,7 @@ Finally, connect your command station (e.g. an eLink) to the Raspberry Pi and st
 npm start
 ```
 
-You should now be able to connect to your Raspberry Pi via the URL displayed in the outpu, e.g. [http://itokawa:8080](http://itokawa:8080). You can verify that the command station has been detected correctly by viewing the details in the about screen.
+You should now be able to connect to your Raspberry Pi via the URL displayed in the output, e.g. [http://itokawa:8080](http://itokawa:8080). You can verify that the command station has been detected correctly by viewing the details in the about screen.
 
 ### Enable Auto-Start (optional)
 
