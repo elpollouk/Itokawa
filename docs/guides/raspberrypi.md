@@ -2,7 +2,7 @@
 
 This guide aims to set up Itokawa on a fresh Raspberry Pi. Instructions for downloading and writing the SD card for the Raspberry Pi can be found on the [Raspbian Downloads](https://www.raspberrypi.org/downloads/raspbian/) page. This guide will work with the Raspbian Buster Lite download as no graphical user interface is required.
 
-Although these instructions have been tested on a Raspberry Pi 3 Model B, they should in theory work for other models.
+These instructions have been tested on the Raspberry Pi 3 Model B and Raspberry Pi 1 Model B. In theory, this guide should work for any Raspberry Pi, but older models will take _much_, _much_ longer to set up.
 
 ## Raspberry Pi Config
 
@@ -16,7 +16,6 @@ sudo raspi-config
 You will want to perform the following setup actions:
 * Set a new user password.
 * Set a memorable host name such as `itokawa`.
-* Expand the file system to match the size of the SD card.
 * Enter your Wi-Fi network details if you want to connect to the network wirelessly.
 * Enable SSH access if you want to be able to perform system admin tasks such as updating the OS remotely.
 
@@ -38,7 +37,7 @@ Install the software require to run Itokawa:
 ```
 sudo apt install -y git nodejs npm
 sudo npm install npm@latest -g
-sudo shutdown -r now
+sudo reboot now
 ```
 
 Once the Raspberry Pi has restarted, log in again with the user name and password you configured earlier.
@@ -66,16 +65,45 @@ You should now be able to connect to your Raspberry Pi via the URL displayed in 
 
 ### Enable Auto-Start (optional)
 
-_TO DO_
+If you want Itokawa to start automatically when the Raspberry Pi boots, then you can use the init.d script that lives in `support/rc/itokawa`. For a dedicated Raspberry Pi, the easiest way to register the script is to edit `/etc/rc.local` using `nano`:
+
+```
+sudo nano /etc/rc.local
+```
+
+Add the following lines before the `exit` command at the end of the script:
+
+```
+echo Starting Itokawa...
+/home/pi/Itokawa/support/rc/itokawa start
+```
+
+Press `Ctrl+X` to exit and select yes to saving the file.
+
+You can now test you changes by rebooting the Raspberry Pi:
+
+```
+sudo reboot now
+```
+
+Once rebooted, you should be able to open the web page sucessfully without any further action. You can also check that the server is running by executing:
+
+```
+ps -ef | grep node
+```
+
+If you see `node dist/server/main.js` in the output, then Itokawa is probably up and running.
 
 ### Configure Port Number (optional)
 
 If you would rather use a different port for the server, you can create a custom config file for Itokawa by doing the following:
+
 ```
 nano ~/.itokawa/config.xml
 ```
 
 Enter the following text (changing 8080 to the port you wish to use):
+
 ```
 <config>
     <server>
