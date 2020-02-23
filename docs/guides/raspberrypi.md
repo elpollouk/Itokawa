@@ -4,11 +4,13 @@ This guide aims to set up Itokawa on a fresh Raspberry Pi. Instructions for down
 
 These instructions have been tested on the Raspberry Pi 3 Model B and Raspberry Pi 1 Model B. In theory, this guide should work for any Raspberry Pi, but older models will take _much_, _much_ longer to set up.
 
-## Setup Time:
+## Setup Times:
 
-Raspberry Pi 3 Model B: ~30 minutes
-Raspberry Pi 1 Model B+: ~2 hours (SQLite build takes majority of time)
-Raspberry Pi 1 Model B: 8+ hours (SQLite build uses swap memory, requires 340mb of RAM)
+| Model | Time | Notes |
+|-|-|-|
+| Raspberry Pi 3 Model B | ~30 minutes | |
+| Raspberry Pi 1 Model B+ | ~2 hours | SQLite build takes majority of time |
+| Raspberry Pi 1 Model B | 8+ hours | SQLite build uses swap memory as it requires 340mb of RAM |
 
 ## Raspberry Pi Config
 
