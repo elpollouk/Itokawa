@@ -576,3 +576,16 @@ a:visited {
 .trainEditor .buttons {
     text-align: right;
 }
+
+
+/*
+ * Icons
+ */
+.iconButton {
+    vertical-align: bottom;
+    padding: 3px;
+}
+
+.iconButton img {
+    height: 100%;
+}
