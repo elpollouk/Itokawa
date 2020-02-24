@@ -1,6 +1,6 @@
 # Itokawa DCC Server
 
-[Node.js](https://nodejs.org/) based [DCC control](https://www.nmra.org/dcc-working-group) for model trains and railways.
+[Node.js](https://nodejs.org/) based [DCC server](https://www.nmra.org/dcc-working-group) for model trains and railways.
 
 ## Quick-start Guide
 
