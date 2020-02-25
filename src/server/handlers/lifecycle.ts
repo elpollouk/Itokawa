@@ -7,7 +7,7 @@ async function onLifeCycleMessage(request: LifeCycleRequest, send: Sender): Prom
     switch(request.action) {
         case LifeCycleAction.ping:
             const response: LifeCyclePingResponse = {
-                packageVersion: application.packageVersion || "",
+                packageVersion: application.packageVersion,
                 commandStation: application.commandStation ? `${application.commandStation.deviceId} ${application.commandStation.version}` : "",
                 commandStationState: application.commandStation ? application.commandStation.state : -1,
                 gitrev: application.gitrev,

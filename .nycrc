@@ -3,6 +3,7 @@
     "node_modules/**",
     "**/*.d.ts",
     "**/*.spec.ts",
-    "**/*.mock.ts"
+    "**/*.mock.ts",
+    "**/testdata"
   ]
 }
