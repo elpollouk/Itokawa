@@ -106,6 +106,8 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     async close() {
+        if (this.state === CommandStationState.UNINITIALISED) return;
+
         log.info("Closing connection...");
         this._setState(CommandStationState.SHUTTING_DOWN);
         this._cancelHeartbeart();

@@ -144,16 +144,23 @@ class Application {
         await saveConfig(this._configPath, this.config);
     }
 
+    private async _shutdown() {
+        await this._db.close();
+        if (this.commandStation) {
+            this.commandStation.close();
+        }
+    }
+
     async shutdown() {
         if (this.onshutdownbegin) await this.onshutdownbegin();
-        await this._db.close();
+        await this._shutdown();
         if (this.onshutdown) await this.onshutdown();
         process.exit(0);
     }
 
     async restart() {
         if (this.onrestartbegin) await this.onrestartbegin();
-        await this._db.close();
+        await this._shutdown();
         if (this.onrestart) await this.onrestart();
         process.exit(0);
     }

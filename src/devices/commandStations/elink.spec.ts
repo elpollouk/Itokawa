@@ -133,6 +133,16 @@ describe("eLink", () => {
             expect(cs.state).to.equal(CommandStationState.UNINITIALISED);
             expect(serialPortStub.close.callCount).to.equal(1);
         })
+
+        it("should be safe to call close multiple times", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+            await cs.close();
+            await cs.close();
+            await cs.close();
+
+            expect(cs.state).to.equal(CommandStationState.UNINITIALISED);
+            expect(serialPortStub.close.callCount).to.equal(1);
+        })
     })
 
     describe("Raw Writes", () => {

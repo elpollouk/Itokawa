@@ -8,7 +8,7 @@ import * as expressWs from "express-ws";
 import * as program from "commander";
 import * as ngrok from "../publishers/ngrok";
 import { application } from "../application";
-import { addCommonOptions,  openDevice } from "../utils/commandLineArgs";
+import { addCommonOptions } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
 import { execShutdown, execRestart, shutdownCheck, restartCheck } from "./shutdown";
 import { ConfigNode } from "../utils/config";

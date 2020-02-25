@@ -3,14 +3,15 @@ import * as program from "commander";
 import { Logger, LogLevel } from "../utils/logger";
 Logger.logLevel = LogLevel.DISPLAY;
 
-import { addCommonOptions, applyLogLevel, openDevice } from "../utils/commandLineArgs";
-
-// All commands are implemented as module level function exports and we discover then via "reflection"
-import * as Commands from "./commands";
+import { addCommonOptions } from "../utils/commandLineArgs";
 import { ICommandStation } from "../devices/commandStations/commandStation";
 import { nextTick } from "../utils/promiseUtils";
 import { parseCommand } from "../utils/parsers";
 import { toHumanHex } from "../utils/hex";
+import { application } from "../application";
+
+// All commands are implemented as module level function exports and we discover then via "reflection"
+import * as Commands from "./commands";
 
 addCommonOptions(program);
 program
@@ -33,8 +34,6 @@ type Output = (message:string)=>void;
 export interface CommandContext {
     out: Output;
     error: Output;
-    commandStation: ICommandStation;
-    onExit?:(context: CommandContext)=>Promise<void>;
 }
 
 // An exception a command can throw to display an error to the user without a call stack.
@@ -58,14 +57,18 @@ function _error(message: string) {
 }
 
 // Handler for clean up when exit command is issued
-async function _onExit(context: CommandContext) {
+async function _onExit() {
     try {
-        if (program.exitEstop) await Commands.estop(context);
+        if (program.exitEstop) await Commands.estop({
+            out: _out,
+            error: _error
+        });
     }
     catch(ex) {
-        if (!(ex instanceof CommandError)) throw ex;
+        if (!(ex instanceof CommandError)) {
+            console.error(ex.stack);
+        }
     } 
-    await context.commandStation.close();
 }
 
 // Handler for a raw command string.
@@ -106,26 +109,24 @@ export function resolveCommand(context: CommandContext, commandName: string): Co
 
 async function main() {
     program.parse(process.argv);
-    applyLogLevel(program);
 
-    const cs = await openDevice(program);
-    if (!cs) {
-        console.error("No deviced detected, exiting...");
+    application.onshutdown = _onExit;
+    await application.start(program);
+    if (!application.commandStation) {
+        console.error("No command station connected");
         process.exit(1);
     }
 
-    console.log(`Using ${cs.deviceId} ${cs.version}`);
+    console.log(`Using ${application.commandStation.deviceId} ${application.commandStation.version}`);
     // Dump data received in raw mode
-    cs.on("data", (data: Buffer | number[]) => {
+    application.commandStation.on("data", (data: Buffer | number[]) => {
         console.log(`data: ${toHumanHex(data)}`);
     });
 
     // Set up the global context for command execution
     _commandContext = {
         out: _out,
-        error: _error,
-        onExit: _onExit,
-        commandStation: cs
+        error: _error
     };
 
     // A command or script has been explicitly specified on the command line, so execute it and then exit

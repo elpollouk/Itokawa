@@ -3,6 +3,7 @@ import { resolveCommand, execCommand, CommandContext } from "./main"
 import { timeout } from "../utils/promiseUtils";
 import * as fs from "fs";
 import { fromHex } from "../utils/hex";
+import { application } from "../application";
 
 // Maintain a list of locos we've sent commands to for the 'estop' command
 const _seenLocos = new Set<number>();
@@ -42,7 +43,7 @@ echo.help = "Echo args back to the output."
 export async function estop(context: CommandContext, args?: string[]) {
     if (_seenLocos.size == 0) context.error("No locos have received commands yet.");
 
-    const batch = await context.commandStation.beginCommandBatch();
+    const batch = await application.commandStation.beginCommandBatch();
     for (const address of _seenLocos) {
         batch.setLocomotiveSpeed(address, 0);
     }
@@ -73,8 +74,7 @@ exec.help = "Execute a script.\n  Usage: exec SCRIPT_PATH"
 
 // Exit
 export async function exit(context: CommandContext, args?: string[]) {
-    if (context.onExit) await context.onExit(context);
-    process.exit(0);
+    await application.shutdown();
 }
 exit.maxArgs = 0;
 exit.help = "Exits this application";
@@ -109,7 +109,7 @@ export async function loco_speed(context: CommandContext, args: string[]) {
     let speed = resolveSpeed(context, args[1]);
     let address = resolveLocoAddress(context, args[0]);
 
-    const batch = await context.commandStation.beginCommandBatch();
+    const batch = await application.commandStation.beginCommandBatch();
     batch.setLocomotiveSpeed(address, speed, reverse);
     await batch.commit();
 }
@@ -137,7 +137,7 @@ loglevel.help = "Sets the application log level.\n  Usage: loglevel [NONE|ERROR|
 export async function raw_command(context: CommandContext, args: string[]) {
     const hex = args.join("");
     const data = fromHex(hex);
-    const batch = await context.commandStation.beginCommandBatch();
+    const batch = await application.commandStation.beginCommandBatch();
     batch.writeRaw(data);
     await batch.commit();
 }
@@ -148,7 +148,7 @@ raw_command.help = "Write raw bytes as a command batch\n  Udate: raw_command HEX
 export async function raw_write(context: CommandContext, args: string[]) {
     const hex = args.join("");
     const data = fromHex(hex);
-    await context.commandStation.writeRaw(data);
+    await application.commandStation.writeRaw(data);
 }
 raw_write.minArgs = 1;
 raw_write.help = "Write raw bytes to the command station\n  Udate: raw_write HEX_DATA";
