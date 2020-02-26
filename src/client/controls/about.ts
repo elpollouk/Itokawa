@@ -1,7 +1,9 @@
 import { ControlBase } from "./control";
+import { Navigator as nav } from "../pages/page";
 import { parseHtml, getById } from "../utils/dom";
 import * as popup from "./popup";
 import { Client } from "../client";
+import { AttributionsConstructor } from "../pages/attributions";
 const html = require("./about.html");
 
 const REVISION_URL = "https://github.com/elpollouk/Itokawa/tree/";
@@ -30,6 +32,7 @@ export class AboutControl extends ControlBase {
         getById(control, "gitRev").innerText = revision.substr(0, 8);
         getById<HTMLAnchorElement>(control, "gitRev").href = REVISION_URL + revision;
 
+        getById(control, "attributions").onclick = () => this._openAttributions();
         getById(control, "close").onclick = () => this.close();
         return control;
     }
@@ -39,4 +42,9 @@ export class AboutControl extends ControlBase {
         popup.remove(this);
     }
 
+    _openAttributions() {
+        nav.open(AttributionsConstructor.path);
+        this.close();
+        return false;
+    }
 }

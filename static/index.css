@@ -281,20 +281,23 @@ a:visited {
     font-style: italic;
 }
 
-.about .additionalText {
-    margin-top: 1.5em;
-    margin-bottom: 1.5em;
+.about .buttons {
+    margin-top: 2.5em;
+    text-align: right;
 }
 
-.about .additionalText .subtitle {
+.attribution {
+    margin-top: 0.5em;
+}
+
+.attribution .subtitle {
     font-style: italic;
     font-weight: bold;
 }
 
-.about .buttons {
-    text-align: right;
+.attribution img {
+    vertical-align: middle;
 }
-
 
 /*
  * Content Area
