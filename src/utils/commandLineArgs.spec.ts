@@ -1,6 +1,6 @@
-import { expect, use } from "chai";
+import { expect } from "chai";
 import "mocha";
-import { stub, SinonStub } from "sinon";
+import { stub } from "sinon";
 import { CommanderStatic } from "commander";
 import { Logger, LogLevel } from "./logger";
 let pjson = require('../../package.json');
