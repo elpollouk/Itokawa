@@ -135,6 +135,23 @@ describe("Command Station Base", () => {
             expect(error.callCount).to.equal(0);
         })
 
+        it ("should reject waiting promise if error occurs while awaiting a state", async () => {
+            const cs = new TestCommmandStation();
+            const promise = cs.untilState(CommandStationState.IDLE);
+            await nextTick();
+
+            cs.setState(CommandStationState.ERROR);
+
+            await expect(promise).to.be.eventually.rejectedWith("Command station is in ERROR state");
+        })
+
+        it ("should reject istantly if already in error state bust asked to await another state", async () => {
+            const cs = new TestCommmandStation();
+            cs.setState(CommandStationState.ERROR);
+
+            await expect(cs.untilState(CommandStationState.IDLE)).to.be.eventually.rejectedWith("Command station is in ERROR state");
+        })
+
         it ("should be safe to await the current state", async () => {
             const cs = new TestCommmandStation();
             const then = stub();

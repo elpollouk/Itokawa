@@ -1,7 +1,8 @@
 import { expect } from "chai";
 import "mocha";
-import { stub } from "sinon";
+import { stub, SinonStub } from "sinon";
 import { execAsync, spawnAsync } from "./exec";
+import * as child_process from "child_process";
 
 const TEST_COMMAND = "node testdata/exec/exectest.js";
 const TEST_COMMAND_NO_OUTPUT = "node testdata/exec/exectest_nooutput.js";
@@ -81,6 +82,55 @@ describe("Exec", () => {
             expect(stdout.lastCall.args).to.eql(["stdout: 糸川\n"]);
             expect(stderr.callCount).to.equal(1);
             expect(stderr.lastCall.args).to.eql(["stderr: 糸川\n"]);
+        })
+
+        describe("Vanilla string data handling", () => {
+            let spawnStub: SinonStub;
+            let processMock: any;
+            beforeEach(() => {
+                processMock = {
+                    on: stub(),
+                    stdout: {
+                        on: stub()
+                    },
+                    stderr: {
+                        on: stub()
+                    }
+                };
+                spawnStub = stub(child_process, "spawn").returns(processMock)
+            })
+
+            afterEach(() => {
+                spawnStub.restore();
+            })
+
+            it("should pass vanilla strings from stdout", async () => {
+                const stdout = stub();
+                const stderr = stub();
+                const promise = spawnAsync(TEST_COMMAND_UTF8, stdout, stderr);
+
+                processMock["stdout"]["on"].lastCall.args[1]("ABCDEF");
+
+                await processMock["on"].lastCall.args[1]();
+                await promise;
+
+                expect(stdout.callCount).to.equal(1);
+                expect(stdout.lastCall.args).to.eql(["ABCDEF"]);
+            })
+
+            it("should pass vanilla strings from stderr", async () => {
+                const stdout = stub();
+                const stderr = stub();
+                const promise = spawnAsync(TEST_COMMAND_UTF8, stdout, stderr);
+
+                processMock["stderr"]["on"].lastCall.args[1]("12345");
+
+                await processMock["on"].lastCall.args[1]();
+                await promise;
+
+                expect(stderr.callCount).to.equal(1);
+                expect(stderr.lastCall.args).to.eql(["12345"]);
+            })
         })
     })
 })
