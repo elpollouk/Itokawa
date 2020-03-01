@@ -175,7 +175,7 @@ export class ELinkCommandStation extends CommandStationBase {
 
                 // Heartbeat failed, so assume the device connection has also failed and flag error
                 log.error(`Failed sending heartbeat request: ${err}`);
-                if (err.stack) log.error(err.stack);
+                log.error(err.stack);
                 this._setState(CommandStationState.ERROR);
                 this.emit("error", err);
 
@@ -220,23 +220,22 @@ export class ELinkCommandStation extends CommandStationBase {
         data = await this._port.concatRead(data, 2);
         ensureValidMessage(data, MessageType.HANDSHAKE_STATUS);
 
-        if (data[1] != 0x04) {
-            log.info("Received handshake request");
+        log.info("Received handshake request");
 
-            // I'm assuming the string is a key, but it seems to be the same for all computers
-            await this._port.write([MessageType.HANDSHAKE_KEY, 0x36, 0x34, 0x4A, 0x4B, 0x44, 0x38, 0x39, 0x42, 0x53, 0x54, 0x39]);
-            data = await this._port.read(7);
-            ensureValidMessage(data, MessageType.HANDSHAKE_EXCHANGE);
-            log.info("Received check bytes");
+        // I'm assuming the string is a key, but it seems to be the same for all computers
+        await this._port.write([MessageType.HANDSHAKE_KEY, 0x36, 0x34, 0x4A, 0x4B, 0x44, 0x38, 0x39, 0x42, 0x53, 0x54, 0x39]);
+        data = await this._port.read(7);
+        ensureValidMessage(data, MessageType.HANDSHAKE_EXCHANGE);
+        log.info("Received check bytes");
 
-            // We received a series of bytes that we need to modify and send back in order to
-            // complete the handshake
-            updateHandshakeMessage(data);
-            await this._port.write(data);
-            data = await this._port.read(3);
-            ensureValidMessage(data, MessageType.HANDSHAKE_STATUS);
-            if (data[1] != 0x04) throw new CommandStationError("Handshake failed");
-        }
+        // We received a series of bytes that we need to modify and send back in order to
+        // complete the handshake
+        updateHandshakeMessage(data);
+        await this._port.write(data);
+        data = await this._port.read(3);
+        ensureValidMessage(data, MessageType.HANDSHAKE_STATUS);
+        if (data[1] != 0x04) throw new CommandStationError("Handshake failed");
+
         log.info("Handshake complete");
     }
 

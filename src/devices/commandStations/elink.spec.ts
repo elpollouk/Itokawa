@@ -123,6 +123,44 @@ describe("eLink", () => {
             portReads.push([0x63, 0x21, 0x6A, 0x01, 0x29]);
             await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Unsupported eLink version encountered, version=106");
         })
+
+        it("should fail if unexpected message type received", async () => {
+            // Remove 1.07 info message and replace it with a 1.06 message
+            portReads = [
+                [123]
+            ];
+            await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Unrecognised message type, got 123");
+        })
+
+        it("should raise an error if info message checksum is invalid", async () => {
+            portReads = [
+                [0x62],
+                [0x22, 0x40, 0x01]
+            ];
+
+            await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Invalid checksum for received message");
+        })
+
+        it("should raise an error if unexpected handshake exchange message received", async () => {
+            portReads = [
+                [0x01],
+                [0x02, 0x03],
+                [0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x36],
+            ];
+
+            await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Unexpected message type, expected 53, but got 54");
+        })
+
+        it("should raise an error if unexpected handshake complete message received", async () => {
+            portReads = [
+                [0x01],
+                [0x02, 0x03],
+                [0x35, 0x00, 0x00, 0x00, 0x00, 0x00, 0x35],
+                [0x01, 0x02, 0x03],
+            ];
+
+            await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Handshake failed");
+        })
     })
 
     describe("Close", () => {
@@ -227,6 +265,56 @@ describe("eLink", () => {
 
             expect(onError.callCount).to.equal(1);
             expect(onError.lastCall.args[0].message).to.equal("Mock Write Error");
+            expect(cs.state).to.equal(CommandStationState.ERROR);
+        })
+
+        it("should fire error event on unrecognised response to heartbeat", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+            const onError = stub();
+            cs.on("error", onError);
+            portReads = [
+                [97]
+            ];
+
+            setTimeoutStub.lastCall.args[0]();
+            await nextTick();
+
+            expect(onError.callCount).to.equal(1);
+            expect(onError.lastCall.args[0].message).to.equal("Unrecognised message type, got 97");
+            expect(cs.state).to.equal(CommandStationState.ERROR);
+        })
+
+        it("should fire error event if info response doesn't contrain expected first value", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+            const onError = stub();
+            cs.on("error", onError);
+            portReads = [
+                [0x62],
+                [0x23, 0x40, 0x01]
+            ];
+
+            setTimeoutStub.lastCall.args[0]();
+            await nextTick();
+
+            expect(onError.callCount).to.equal(1);
+            expect(onError.lastCall.args[0].message).to.equal("Unrecognised INFO_RESPONSE, got 62 23 40 01");
+            expect(cs.state).to.equal(CommandStationState.ERROR);
+        })
+
+        it("should fire error event if info response doesn't contrain expected second value", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+            const onError = stub();
+            cs.on("error", onError);
+            portReads = [
+                [0x62],
+                [0x22, 0x41, 0x01]
+            ];
+
+            setTimeoutStub.lastCall.args[0]();
+            await nextTick();
+
+            expect(onError.callCount).to.equal(1);
+            expect(onError.lastCall.args[0].message).to.equal("Unrecognised INFO_RESPONSE, got 62 22 41 01");
             expect(cs.state).to.equal(CommandStationState.ERROR);
         })
     })
