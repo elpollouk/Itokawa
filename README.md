@@ -2,6 +2,8 @@
 
 [Node.js](https://nodejs.org/) based [DCC server](https://www.nmra.org/dcc-working-group) for model trains and railways.
 
+Try an online demo built from the code in this repo [here](https://elpollouk.github.io/Itokawa/?demo). The demo mocks the connection to the control server but should provide a relevant example of the user interface.
+
 ## Quick-start Guide
 
 * Install [Node.js](https://nodejs.org/en/download/)
