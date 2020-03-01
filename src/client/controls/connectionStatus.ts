@@ -1,5 +1,5 @@
 import { Client } from "../client";
-import { ConnectionState } from "../commandConnection";
+import { ConnectionState } from "../client";
 import { CommandStationState } from "../../devices/commandStations/commandStation";
 
 export class ConnectionStatus {

@@ -1,6 +1,6 @@
 import { Page, IPageConstructor, Navigator } from "./page";
 import { CommandResponse } from "../../common/messages";
-import { CommandConnection, ConnectionState } from "../commandConnection";
+import { ICommandConnection, ConnectionState } from "../client";
 import { TtyControl } from "../controls/ttyControl";
 import { LifeCycleRequest, RequestType, LifeCycleAction } from "../../common/messages";
 import { Client } from "../client";
@@ -9,7 +9,7 @@ export class UpdatePage extends Page {
     path: string = UpdatePageConstructor.path;
     content: HTMLElement;
     tty: TtyControl;
-    private readonly _connection: CommandConnection;
+    private readonly _connection: ICommandConnection;
 
 
     constructor () {

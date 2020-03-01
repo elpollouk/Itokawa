@@ -1,7 +1,6 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
 import * as prompt from "../controls/promptControl";
-import { Client } from "../client";
-import { ApiClient } from "../apiClient";
+import { Client, IApiClient } from "../client";
 import { Loco } from "../../common/api";
 import { createElement, parseHtml, getById } from "../utils/dom";
 import { TrainEditConstructor } from "./trainEditor";
@@ -17,7 +16,7 @@ export class TrainRosterPage extends Page {
     content: HTMLElement;
     
     private _trains: HTMLElement;
-    private readonly _api: ApiClient;
+    private readonly _api: IApiClient;
 
     
     constructor () {

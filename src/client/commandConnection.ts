@@ -2,20 +2,11 @@ import { Bindable } from "./utils/bindable";
 import * as messages from "../common/messages"
 import { timestamp } from "../common/time";
 import { CommandStationState } from "../devices/commandStations/commandStation";
+import { RequestCallback, ConnectionState, ICommandConnection } from "./client";
 
 const HEARTBEAT_TIME = 15; // In seconds
 
-type RequestCallback = (err: Error, response?: messages.CommandResponse)=>void
-
-export enum ConnectionState {
-    Opening,
-    Idle,
-    Busy,
-    Closed,
-    Errored
-}
-
-export class CommandConnection extends Bindable {
+export class CommandConnection extends Bindable implements ICommandConnection {
 
     static relativeUri(path: string): string {
         const loc = window.location;
@@ -68,7 +59,7 @@ export class CommandConnection extends Bindable {
             "deviceState",
             "publicUrl"
         );
-        this.retry();
+        this._retry();
     }
 
     request<T>(type: messages.RequestType, data: T, callback?: RequestCallback) {
@@ -110,7 +101,7 @@ export class CommandConnection extends Bindable {
         this._socket.send(JSON.stringify(message));
     }
 
-    retry() {
+    private _retry() {
         if (this._socket) throw new Error("Socket already open");
 
         this._socket = new WebSocket(CommandConnection.relativeUri(this.url));
@@ -122,11 +113,11 @@ export class CommandConnection extends Bindable {
         this.state = ConnectionState.Opening;
     }
 
-    close() {
+    /*private _close() {
         this._cancelHeartbeat();
         this.state = ConnectionState.Closed;
         if (this._socket) this._socket.close();
-    }
+    }*/
 
     private _onOpen(ev: Event) {
         console.log("WebSocket opened");
@@ -219,7 +210,7 @@ export class CommandConnection extends Bindable {
 
     private _requestHeartbeat() {
         if (!this._socket) {
-            this.retry();
+            this._retry();
             return;
         }
 

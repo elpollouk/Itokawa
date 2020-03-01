@@ -1,4 +1,5 @@
 import * as api from "../common/api";
+import { IApiClient } from "./client";
 
 function isSuccess(status: number) {
     return 200 <= status && status <= 299;
@@ -12,7 +13,7 @@ function ensureSucces(status: number) {
     if (isNotSuccess(status)) throw new Error(`HTTP request failed ${status}`);
 }
 
-export class ApiClient {
+export class ApiClient implements IApiClient {
     private _client = new XMLHttpRequest();
     private _callback: (err: Error, status?: number, result?: any)=>void = null;
 
@@ -95,7 +96,7 @@ export class ApiClient {
         return this.request("GET", "/locos");
     }
 
-    async addLoco(name: string, address: number, speed: number[] | number): Promise<api.Loco> {
+    addLoco(name: string, address: number, speed: number[] | number): Promise<api.Loco> {
         const request: api.Loco = {
             name: name,
             address: address,
@@ -109,8 +110,7 @@ export class ApiClient {
             request.maxSpeed = speed;
         }
 
-        const response = await this.request<api.Loco>("POST", "/locos", request);
-        return response;
+        return this.request<api.Loco>("POST", "/locos", request);
     }
 
     getLoco(id: number): Promise<api.Loco> {

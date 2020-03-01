@@ -32,10 +32,8 @@ export function vaildateIntInput(input: HTMLInputElement, message: string) {
     const max = input.max ? parseInt(input.max) : Number.MAX_VALUE;
 
     if (isNaN(value) || value < min || value > max) {
-        console.log("not valid");
         prompt.error(message).then(() => input.focus());
         return false;
     }
-    console.log("valid");
     return true;
 }

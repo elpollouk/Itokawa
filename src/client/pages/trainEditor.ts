@@ -1,9 +1,7 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
-import { Client } from "../client";
-import { ApiClient } from "../apiClient";
+import { Client, IApiClient } from "../client";
 import { parseHtml, getById, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
-import { firstCharLowerCase } from "xml2js/lib/processors";
 const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
@@ -15,7 +13,7 @@ export class TrainEditPage extends Page {
     content: HTMLElement;
 
     private _id: number;
-    private readonly _api: ApiClient;
+    private readonly _api: IApiClient;
 
     private _nameElement: HTMLInputElement;
     private _addressElement: HTMLInputElement;

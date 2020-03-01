@@ -1,6 +1,13 @@
 type ValueCallback<T> = (newValue:T, oldValue?: T)=>void;
 
-export class Bindable {
+export interface IBindable {
+    bind<T>(name: string, cb: ValueCallback<T>): ValueCallback<T>;
+    on<T>(name: string, cb: ValueCallback<T>): ValueCallback<T>;
+    unbind<T>(name: string, cb: ValueCallback<T>): void;
+    off<T>(name: string, cb: ValueCallback<T>): void;
+}
+
+export class Bindable implements IBindable{
     _bindings: { [key: string]: Set<ValueCallback<any>> } = {}
     _backingStore: { [key: string]: any } = {}
 

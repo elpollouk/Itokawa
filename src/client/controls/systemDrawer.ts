@@ -8,7 +8,7 @@ import * as prompt from "../controls/promptControl";
 // Controls used within the system drawer
 import { PublicUrlQrCode } from "./publicUrlQrCode";
 import { ConnectionStatus } from "./connectionStatus";
-import { ConnectionState } from "../commandConnection";
+import { ConnectionState } from "../client";
 import { UpdatePage, UpdatePageConstructor } from "../pages/update";
 import { PromptButton } from "../controls/promptControl";
 import { createElement } from "../utils/dom";

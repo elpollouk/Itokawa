@@ -5,7 +5,7 @@ import { TrainControl } from "../controls/trainControl";
 import { RequestType, TransportMessage, LocoSpeedRequest } from "../../common/messages";
 import { Loco } from "../../common/api";
 import { parseHtml, getById } from "../utils/dom";
-import { ConnectionState } from "../commandConnection";
+import { ConnectionState } from "../client";
 import { TrainRosterConstructor } from "./trainRoster";
 const html = require("./index.html");
 
