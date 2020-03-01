@@ -5,6 +5,7 @@ import * as sinon from "sinon";
 import { DeviceEnumerator } from "./deviceEnumerator";
 import * as SerialPort from "serialport";
 import { NullCommandStation } from "./commandStations/null";
+import { ICommandStationConstructable } from "./commandStations/commandStation";
 
 const ELINK_PNPID_WIN = "USB\\VID_04D8&PID_000A\\6&3A757EEC&1&2";
 
@@ -90,6 +91,18 @@ describe("Device Enumerator", () => {
         let cs = await DeviceEnumerator.openDevice(NullCommandStation.deviceId, "Foo=Bar");
 
         expect(cs).to.be.instanceOf(NullCommandStation);
+    });
+
+    it ("should provide a default empty command string if none supplied by caller", async () => {
+        const testDevice = {
+            open: sinon.stub().returns({})
+        }
+        await DeviceEnumerator.openDevice(testDevice as unknown as ICommandStationConstructable);
+
+        expect(testDevice.open.callCount).to.equal(1);
+        expect(testDevice.open.lastCall.args).to.eql([
+            ""
+        ]);
     });
 
     it ("should fail if attempting to open an invalid device directly", () => {
