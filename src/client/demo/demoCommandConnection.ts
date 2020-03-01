@@ -26,10 +26,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
 
     constructor() {
         super();
-        this.publicUrl = `${window.location.protocol}//${window.location.hostname}`;
-        if (window.location.port) {
-            this.publicUrl += `:${window.location.port}`;
-        }
+        this.publicUrl = window.location.href;
 
         this.makeBindableProperty(
             "state",
