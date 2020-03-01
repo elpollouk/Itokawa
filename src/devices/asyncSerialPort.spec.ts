@@ -2,7 +2,7 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 
 import "mocha";
-import { spy, SinonSpy, stub, SinonStub, mock } from "sinon";
+import { spy, SinonSpy, stub } from "sinon";
 import { nextTick } from "../utils/promiseUtils";
 
 import { AsyncSerialPort } from "./asyncSerialPort";
@@ -117,7 +117,7 @@ describe("AsyncSerialPort", () => {
 
             try {
                 let port = await open();
-                port.on("error", mock());
+                port.on("error", stub());
 
                 let promise = port.write([0, 0]);
 
