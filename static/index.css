@@ -19,7 +19,7 @@ body {
          * "Tree Framing British Countryside" by incurable_hippie is licensed under CC BY-NC 2.0 
          * https://search.creativecommons.org/photos/885474ad-2b94-4296-ab02-b427d28e8e59
          */
-        background-image: url("/background-wide.jpg");
+        background-image: url("background-wide.jpg");
         background-position: center;
         background-size: cover;
     }
@@ -589,6 +589,10 @@ a:visited {
     padding: 3px;
 }
 
-.iconButton img {
-    height: 100%;
+.iconButton .stop {
+    background-image: url("icons/stop.svg");
+    background-size: cover;
+    height: calc(2.5em - 10px);
+    width: calc(2.5em - 10px);
+    display: inline-block;
 }

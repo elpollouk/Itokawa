@@ -25,7 +25,7 @@ export class CommandConnection extends Bindable implements ICommandConnection {
 
     state = ConnectionState.Closed;
     deviceState = CommandStationState.NOT_CONNECTED;
-    publicUrl = `${window.location.protocol}://${window.location.hostname}:${window.location.port}`;
+    publicUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
 
     private _socket: WebSocket;
     private _callback: RequestCallback = null;

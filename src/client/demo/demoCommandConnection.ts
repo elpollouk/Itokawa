@@ -20,12 +20,17 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
     gitRevision = config.gitRevision;
     state = ConnectionState.Idle;
     deviceState = CommandStationState.IDLE;
-    publicUrl = `${window.location.protocol}://${window.location.hostname}:${window.location.port}`;
+    publicUrl: string;
 
     private _locoStates = new Map<number, LocoState>();
 
     constructor() {
         super();
+        this.publicUrl = `${window.location.protocol}//${window.location.hostname}`;
+        if (window.location.port) {
+            this.publicUrl += `:${window.location.port}`;
+        }
+
         this.makeBindableProperty(
             "state",
             "deviceState",
