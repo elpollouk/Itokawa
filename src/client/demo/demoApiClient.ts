@@ -82,9 +82,9 @@ export class DemoApiClient implements IApiClient {
                     loco.discrete = false;
                     loco.maxSpeed = speed;
                 }
+                this._saveData();
+                return Promise.resolve();
             }
-            this._saveData();
-            return Promise.resolve();
         }
 
         return Promise.reject(new Error("Loco not found"));
