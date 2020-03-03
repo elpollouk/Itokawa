@@ -32,4 +32,4 @@ You can update to the latest code at any time by running `npm run prod-update` a
 * Google Chrome for Android
 
 ## Dedicated Setup Guides
-* [Raspberry Pi](https://github.com/elpollouk/Itokawa/blob/master/docs/guides/raspberrypi.md)
+* [Raspberry Pi](https://github.com/elpollouk/Itokawa/wiki/Raspberry-Pi-Setup-Guide)
