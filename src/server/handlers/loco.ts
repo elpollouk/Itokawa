@@ -36,7 +36,7 @@ async function onLocoSpeed(request: LocoSpeedRequest, send: Sender): Promise<voi
     await batch.commit();
 
     await ok(send);
-    await broadcastSpeedChange(request.locoId, request.speed, request.reverse);
+    await broadcastSpeedChange(request.locoId, request.speed, !!request.reverse);
 };
 
 async function onEmergencyStop(data: any, send: Sender): Promise<void> {
@@ -74,6 +74,11 @@ async function onLocoSpeedRefresh(data: any, send: Sender): Promise<void> {
     }
 
     await ok(send);
+}
+
+// This is mainly used for testing
+export function resetSeenLocos() {
+    _seenLocos.clear();
 }
 
 export function registerHandlers(map: HandlerMap) {
