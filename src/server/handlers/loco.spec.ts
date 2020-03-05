@@ -61,6 +61,7 @@ describe("Loco Handler", () => {
                 data: "OK"
             }]);
 
+            // Verify the speed change was sent to all clients
             expect(clientBroadcastStub.callCount).to.equal(1);
             expect(clientBroadcastStub.lastCall.args).to.eql([
                 RequestType.LocoSpeed,
@@ -69,7 +70,18 @@ describe("Loco Handler", () => {
                     speed: 127,
                     reverse: true
                 }
-            ])
+            ]);
+
+            // Verify the command was sent to the command station
+            expect(commandStationStub.beginCommandBatch.callCount).to.equal(1);
+            const commandBatch = commandStationStub.lastCommandBatch;
+            expect(commandBatch.setLocomotiveSpeed.callCount).to.equal(1);
+            expect(commandBatch.setLocomotiveSpeed.lastCall.args).to.eql([
+                3,
+                127,
+                true
+            ]);
+            expect(commandBatch.commit.callCount).to.equal(1);
         })
 
         it("should reject the request if no command station is connected", async () => {

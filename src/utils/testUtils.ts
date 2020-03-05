@@ -17,6 +17,7 @@ export function createStubCommandStation() {
     };
 
     return {
+        lastCommandBatch: commandBatch,
         beginCommandBatch: stub().returns(Promise.resolve(commandBatch))
     }
 }
