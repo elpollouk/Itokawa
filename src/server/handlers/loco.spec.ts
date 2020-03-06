@@ -2,7 +2,7 @@ import { expect } from "chai";
 import "mocha";
 import { stub, SinonStub } from "sinon";
 import {createStubCommandStation } from "../../utils/testUtils";
-import { RequestType, LocoSpeedRequest } from "../../common/messages";
+import { RequestType } from "../../common/messages";
 import * as handlers from "./handlers";
 import { application } from "../../application";
 import { registerHandlers, resetSeenLocos } from "./loco";
