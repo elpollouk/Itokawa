@@ -7,7 +7,6 @@ import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
 import { ok, resetHandler, getControlWebSocketRoute, HandlerMap, clientBroadcast } from "./handlers";
 import { RequestType, CommandResponse } from "../../common/messages";
-import { SignalablePromise, nextTick } from "../../utils/promiseUtils";
 
 class MockWebSocket extends ws {
     send = stub();
