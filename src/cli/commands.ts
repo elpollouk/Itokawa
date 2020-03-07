@@ -2,7 +2,7 @@ import { Logger, LogLevel } from "../utils/logger";
 import { resolveCommand, execCommand, CommandContext } from "./main"
 import { timeout } from "../utils/promiseUtils";
 import * as fs from "fs";
-import { fromHex } from "../utils/hex";
+import { fromHex, toHumanHex } from "../utils/hex";
 import { application } from "../application";
 
 // Maintain a list of locos we've sent commands to for the 'estop' command
@@ -102,6 +102,18 @@ export async function help(context: CommandContext, args: string[]) {
 }
 help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
+
+// Read Loco CV
+export async function loco_cv_read(context: CommandContext, args: string[]) {
+    const cv = parseInt(args[0]);
+    if (isNaN(cv) || cv < 1 || cv > 255) context.error(`${args[0]} is not a valid CV number`);
+    const value = await application.commandStation.readLocoCv(cv);
+
+    context.out(`CV ${cv}: ${value} (0x${toHumanHex([value])})`);
+}
+loco_cv_read.minArgs = 1;
+loco_cv_read.maxArgs = 1;
+loco_cv_read.help = "Read locomotive CV value.\n  Usage: loco_cv_read CV_NUMBER";
 
 // Loco Speed Control
 export async function loco_speed(context: CommandContext, args: string[]) {
