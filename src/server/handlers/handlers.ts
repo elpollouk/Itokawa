@@ -23,6 +23,11 @@ export async function ok(send: Sender) {
 const messageHandlers = new Map<RequestType, (msg: any, send: Sender)=>Promise<void>>();
 const clientSockets = new Set<ws>();
 
+export function resetHandler() {
+    messageHandlers.clear();
+    clientSockets.clear();
+}
+
 export async function clientBroadcast<T>(type: RequestType, data: T, exclude?: ws[] | ws | Set<ws>): Promise<void> {
     if (exclude instanceof(ws)) {
         exclude = new Set([exclude]);
@@ -31,7 +36,7 @@ export async function clientBroadcast<T>(type: RequestType, data: T, exclude?: w
         exclude = new Set(exclude);
     }
     else {
-        exclude = new Set();
+        exclude = exclude || new Set();
     }
 
     const message: TransportMessage = {
