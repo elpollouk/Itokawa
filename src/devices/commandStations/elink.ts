@@ -144,14 +144,14 @@ export class ELinkCommandStation extends CommandStationBase {
             for (let i = 0; i < 4; i++) {
                 const resMessage = await this._port.read(3);
                 ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
-                if (resMessage[1] != 2) throw new Error(`Unexpected messaget: ${toHumanHex(resMessage)}`);
+                if (resMessage[1] !== 2) throw new Error(`Unexpected messaget: ${toHumanHex(resMessage)}`);
             }
 
             // Then another 4 similar messages, just with a different value in the data field
             for (let i = 0; i < 4; i++) {
                 const resMessage = await this._port.read(3);
                 ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
-                if (resMessage[1] != 1) throw new Error(`Unexpected messaget: ${toHumanHex(resMessage)}`);
+                if (resMessage[1] !== 1) throw new Error(`Unexpected messaget: ${toHumanHex(resMessage)}`);
             }
 
             // CV is selected, now request its value
@@ -159,7 +159,7 @@ export class ELinkCommandStation extends CommandStationBase {
 
             // Ensure a value is read from the command station
             let resMessage = await this._port.read(1);
-            if (resMessage[0] == MessageType.CV_SELECT_RESPONSE) {
+            if (resMessage[0] === MessageType.CV_SELECT_RESPONSE) {
                 // Read in the rest of the error message to remove it from the buffer
                 await this._port.read(2);
                 throw new Error(`Failed to read CV ${cv}`);

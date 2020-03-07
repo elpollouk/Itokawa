@@ -103,17 +103,26 @@ export async function help(context: CommandContext, args: string[]) {
 help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
 
+function parseCvNumber(context: CommandContext, value: string) {
+    const cv = parseInt(value);
+    if (isNaN(cv) || cv < 1 || cv > 255) context.error(`${value} is not a valid CV number`);
+    return cv;
+}
+
 // Read Loco CV
 export async function loco_cv_read(context: CommandContext, args: string[]) {
-    const cv = parseInt(args[0]);
-    if (isNaN(cv) || cv < 1 || cv > 255) context.error(`${args[0]} is not a valid CV number`);
-    const value = await application.commandStation.readLocoCv(cv);
+    let cv = parseCvNumber(context, args[0]);
+    const cvEnd = args[1] ? parseCvNumber(context, args[1]) : cv;
 
-    context.out(`CV ${cv}: ${value} (0x${toHumanHex([value])})`);
+    while (cv <= cvEnd) {
+        const value = await application.commandStation.readLocoCv(cv);
+        if (value !== 0 || args.length === 1) context.out(`CV ${cv}: ${value} (0x${toHumanHex([value])})`);
+        cv++;
+    }
 }
 loco_cv_read.minArgs = 1;
-loco_cv_read.maxArgs = 1;
-loco_cv_read.help = "Read locomotive CV value.\n  Usage: loco_cv_read CV_NUMBER";
+loco_cv_read.maxArgs = 2;
+loco_cv_read.help = "Read locomotive CV value.\n  Usage: loco_cv_read CV_NUMBER [END_CV_NUMBER]";
 
 // Loco Speed Control
 export async function loco_speed(context: CommandContext, args: string[]) {
