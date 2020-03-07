@@ -36,7 +36,7 @@ export async function clientBroadcast<T>(type: RequestType, data: T, exclude?: w
         exclude = new Set(exclude);
     }
     else {
-        exclude = new Set();
+        exclude = exclude || new Set();
     }
 
     const message: TransportMessage = {

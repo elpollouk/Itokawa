@@ -2,18 +2,28 @@ import { expect } from "chai";
 import "mocha";
 import { stub, SinonStub } from "sinon";
 
+import * as ws from "ws";
 import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
-import { ok, resetHandler, getControlWebSocketRoute, HandlerMap } from "./handlers";
-import { Handler } from "express";
+import { ok, resetHandler, getControlWebSocketRoute, HandlerMap, clientBroadcast } from "./handlers";
 import { RequestType } from "../../common/messages";
 
-class MockWebSocket {
+class MockWebSocket extends ws {
     send = stub();
     eventHandlers = new Map<string, Function>();
-    on(event: string, cb: Function) {
-        this.eventHandlers[event] = cb;
+
+    constructor() {
+        super(null);
+        Object.defineProperty(this, "on", {
+            value: (event: string, cb: Function) => this.eventHandlers[event] = cb
+        });
     }
+}
+
+function connectSocket(route: Function): MockWebSocket {
+    const socket = new MockWebSocket();
+    route(socket, null, stub());
+    return socket;
 }
 
 describe("WebSocket Handlers", () => {
@@ -83,10 +93,87 @@ describe("WebSocket Handlers", () => {
 
         it("should ignore malformed requests", async () => {
             const route = getControlWebSocketRoute();            
-            const ws = new MockWebSocket();
-            route(ws as any, null, stub());
+            const ws = connectSocket(route);
 
             await ws.eventHandlers["message"]('INVALID');
         })
     })
+
+    describe("clientBroadcast", () => {
+        it("should broadcast to all connected sockets", async () => {
+            const route = getControlWebSocketRoute();            
+            const ws1 = connectSocket(route);
+            const ws2 = connectSocket(route);
+
+            await clientBroadcast(RequestType.LocoSpeedRefresh, "Foo Bar");
+
+            expect(ws1.send.callCount).to.equal(1);
+            expect(ws2.send.callCount).to.equal(1);
+            let message = ws1.send.lastCall.args[0];
+            expect(ws2.send.lastCall.args[0]).to.equal(message);
+            
+            message = JSON.parse(message);
+            expect(message.type).to.equal(RequestType.LocoSpeedRefresh);
+            expect(message.data).to.equal("Foo Bar");
+            expect(message.requestTime).to.not.be.undefined.and.not.null.and.not.empty;
+            expect(message.tag).to.not.be.undefined.and.not.null.and.not.empty;
+        })
+
+        it("should not broadcast to closed socket", async () => {
+            const route = getControlWebSocketRoute();            
+            const ws1 = connectSocket(route);
+            const ws2 = connectSocket(route);
+            const ws3 = connectSocket(route);
+            ws1.eventHandlers["close"]();
+
+            await clientBroadcast(RequestType.LocoSpeed, "Test");
+
+            expect(ws1.send.callCount).to.equal(0);
+            expect(ws2.send.callCount).to.equal(1);
+            expect(ws3.send.callCount).to.equal(1);
+        })
+
+        it("should not broadcast to excluded socket", async () => {
+            const route = getControlWebSocketRoute();            
+            const ws1 = connectSocket(route);
+            const ws2 = connectSocket(route);
+            const ws3 = connectSocket(route);
+
+            await clientBroadcast(RequestType.LocoSpeed, "Test", ws2);
+
+            expect(ws1.send.callCount).to.equal(1);
+            expect(ws2.send.callCount).to.equal(0);
+            expect(ws3.send.callCount).to.equal(1);
+        })
+
+        it("should not broadcast to array of excluded sockets", async () => {
+            const route = getControlWebSocketRoute();            
+            const ws1 = connectSocket(route);
+            const ws2 = connectSocket(route);
+            const ws3 = connectSocket(route);
+
+            await clientBroadcast(RequestType.LocoSpeed, "Test", [ws1, ws3]);
+
+            expect(ws1.send.callCount).to.equal(0);
+            expect(ws2.send.callCount).to.equal(1);
+            expect(ws3.send.callCount).to.equal(0);
+        })
+
+        it("should not broadcast to set of excluded sockets", async () => {
+            const route = getControlWebSocketRoute();            
+            const ws1 = connectSocket(route);
+            const ws2 = connectSocket(route);
+            const ws3 = connectSocket(route);
+            const exclude = new Set<ws>([
+                ws2,
+                ws3
+            ]);
+
+            await clientBroadcast(RequestType.LocoSpeed, "Test", exclude);
+
+            expect(ws1.send.callCount).to.equal(1);
+            expect(ws2.send.callCount).to.equal(0);
+            expect(ws3.send.callCount).to.equal(0);
+        })
+    });
 })
