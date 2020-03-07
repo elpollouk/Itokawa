@@ -48,3 +48,14 @@ export function nextTick(): Promise<void> {
         process.nextTick(() => resolve());
     });
 }
+
+export class SignalablePromise<T> extends Promise<T> {
+    resolve: (value?: T) => void;
+    reject: (error: Error) => void;
+    constructor () {
+        super((resolve, reject) => {
+            this.resolve = resolve;
+            this.reject = reject;
+        })
+    }
+}

@@ -6,7 +6,8 @@ import * as ws from "ws";
 import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
 import { ok, resetHandler, getControlWebSocketRoute, HandlerMap, clientBroadcast } from "./handlers";
-import { RequestType } from "../../common/messages";
+import { RequestType, CommandResponse } from "../../common/messages";
+import { SignalablePromise, nextTick } from "../../utils/promiseUtils";
 
 class MockWebSocket extends ws {
     send = stub();
@@ -14,8 +15,13 @@ class MockWebSocket extends ws {
 
     constructor() {
         super(null);
-        Object.defineProperty(this, "on", {
-            value: (event: string, cb: Function) => this.eventHandlers[event] = cb
+        Object.defineProperties(this, {
+            on: {
+                value: (event: string, cb: Function) => this.eventHandlers[event] = cb
+            },
+            readyState: {
+                value: 1
+            }
         });
     }
 }
@@ -71,8 +77,7 @@ describe("WebSocket Handlers", () => {
 
         it("should route messages through to the correct handler", async () => {
             const route = getControlWebSocketRoute();            
-            const ws = new MockWebSocket();
-            route(ws as any, null, stub());
+            const ws = connectSocket(route);
 
             await ws.eventHandlers["message"]('{"type":2,"data":"foo"}');
             expect(locoHandlerStub.callCount).to.equal(1);
@@ -96,6 +101,55 @@ describe("WebSocket Handlers", () => {
             const ws = connectSocket(route);
 
             await ws.eventHandlers["message"]('INVALID');
+        })
+
+        it("should handle errors from handlers", async () => {
+            locoHandlerStub.throws(new Error("Test Error"));
+            const route = getControlWebSocketRoute();            
+            const socket = connectSocket(route);
+
+            await socket.eventHandlers["message"]('{"type":2,"data":"foo"}');
+            expect(socket.send.callCount).to.equal(1);
+            const message = JSON.parse(socket.send.lastCall.args[0]);
+            expect(message.type).to.equal(RequestType.CommandResponse);
+            expect(message.data.lastMessage).to.be.true;
+            expect(message.data.error).to.equal("Test Error");
+        })
+    })
+
+    describe("per socket command responder function", () => {
+        it("should wrap handler message in transport message", async () => {
+            let sent:boolean;
+            locoHandlerStub.callsFake(async (msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
+                sent = await send("Test Data" as any);
+            });
+            const route = getControlWebSocketRoute();            
+            const socket = connectSocket(route);
+
+            await socket.eventHandlers["message"]('{"type":2,"data":{},"tag":"client:123"}');
+
+            expect(socket.send.callCount).equal(1);
+            expect(sent).to.be.true;
+            const message = JSON.parse(socket.send.lastCall.args[0]);
+            expect(message.type).to.equal(RequestType.CommandResponse);
+            expect(message.data).to.equal("Test Data");
+            expect(message.tag).to.equal("client:123");
+            expect(message.requestTime).to.not.be.undefined.and.not.be.null.and.not.be.empty;
+        })
+
+        it("should not send to unopen sockets", async () => {
+            let sent:boolean;
+            locoHandlerStub.callsFake(async (msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
+                sent = await send("Test Data" as any);
+            });
+            const route = getControlWebSocketRoute();            
+            const socket = connectSocket(route);
+            socket.readyState = 0;
+
+            await socket.eventHandlers["message"]('{"type":2,"data":{},"tag":"client:123"}');
+
+            expect(socket.send.callCount).equal(0);
+            expect(sent).to.be.false;
         })
     })
 
