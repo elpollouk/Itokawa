@@ -264,4 +264,18 @@ describe("Command Station Base", () => {
             expect(cs.isBusy).to.be.true;
         })
     })
+
+    describe("readLocoCv", () => {
+        it("should reject with unsupported error", async () => {
+            const cs = new TestCommmandStation();
+            await expect(cs.readLocoCv(1)).to.eventually.be.rejectedWith("CV reading is not supported");
+        })
+    })
+
+    describe("writeLocoCv", () => {
+        it("should reject with unsupported error", async () => {
+            const cs = new TestCommmandStation();
+            await expect(cs.writeLocoCv(1, 10)).to.eventually.be.rejectedWith("CV writing is not supported");
+        })
+    })
 })
