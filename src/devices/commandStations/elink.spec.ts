@@ -37,6 +37,15 @@ describe("eLink", () => {
         ];
     }
 
+    async function initCommandStation(reads: number[][] = []) {
+        // Gets through initial handshake then clears the write buffer and initialises
+        // the read buffer for the test.
+        const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+        portWrites = [];
+        portReads = reads;
+        return cs;
+    }
+
     beforeEach(() => {
         portWrites = [];
         initReads();
@@ -365,6 +374,337 @@ describe("eLink", () => {
                 [0xE4, 0x13, 0xC3, 0xE8, 0x7F, 0xA3],
                 [0x21, 0x24, 0x05]
             ]);
+        })
+    })
+
+    describe("readLocoCv", () => {
+        it("should return the CV value", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                // CV value
+                [0x63],
+                [0x14, 0x01, 0x03, 0x75],
+                // Status info
+                [0x62],
+                [0x22, 0x40, 0x00]
+            ]);
+
+            const value = await cs.readLocoCv(1);
+            expect(value).to.equal(3);
+
+            expect(portWrites).to.eql([
+                // Select CV
+               [0x22, 0x15, 0x01, 0x36],
+               // Request Value
+               [0x21, 0x10, 0x31],
+               // Heartbeat
+               [0x21, 0x24, 0x05] 
+            ]);
+            expect(portReads).to.be.empty;
+        })
+
+        it("should wait until IDLE before attempting to read CV", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                // CV value
+                [0x63],
+                [0x14, 0x08, 0x30, 0x4F],
+                // Status info
+                [0x62],
+                [0x22, 0x40, 0x00]
+            ]);
+            cs["_state"] = CommandStationState.BUSY;
+
+            const then = stub();
+            const promise = cs.readLocoCv(8).then(then);
+            await nextTick();
+            await nextTick();
+            await nextTick();
+            expect(then.callCount).to.equal(0);
+            expect(portWrites).to.be.empty;
+            
+            cs["_setState"](CommandStationState.IDLE);
+            await promise;
+            expect(then.callCount).to.equal(1);
+            expect(then.lastCall.args[0]).to.equal(48);
+        })
+
+        it("should return error if ERROR state entered while waiting for IDLE", async () => {
+            const cs = await initCommandStation();
+            cs["_state"] = CommandStationState.BUSY;
+
+            const promise = cs.readLocoCv(8);
+            await nextTick();
+            await nextTick();
+            await nextTick();
+            cs["_setState"](CommandStationState.ERROR);
+
+            await expect(promise).to.be.eventually.rejectedWith("Command station is in ERROR state");
+        })
+
+        it("should return an error if no loco is present", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                // CV value
+                [0x61],
+                [0x13, 0x72]
+            ]);
+
+            await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Failed to read CV 1");
+            expect(portReads).to.be.empty;
+        })
+
+        it("should return an error if unrecognaised message seen", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                // CV value
+                [0xFF]
+            ]);
+
+            await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Unexpected CV value response: ff");
+        })
+
+        it("should return an error if the wrong CV is read", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                // CV value
+                [0x63],
+                [0x14, 0x02, 0x03, 0x76],
+            ]);
+
+            await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Received value for CV 2 but expected CV 1");
+        })
+
+        it("should return an error if CV selection response isn't as expected for first message type", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x13, 0x72]
+            ]);
+
+            await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Unexpected message: 61 13 72");
+        })
+
+        it("should return an error if CV selection response isn't as expected for second message type", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x13, 0x72]
+            ]);
+
+            await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Unexpected message: 61 13 72");
+        })
+
+        it("should return an error if selection response checksum is invalid for first message type", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x64]
+            ]);
+
+            await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Invalid checksum for received message");
+        })
+
+        it("should return an error if selection response checksum is invalid for second message type", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x02, 0x64]
+            ]);
+
+            await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Invalid checksum for received message");
+        })
+
+        it("should return an error if value response checksum is invalid", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                // CV value
+                [0x63],
+                [0x14, 0x01, 0x03, 0x70],
+            ]);
+
+            await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Invalid checksum for received message");
+        })
+
+        it("should raise and error if invalid CV is requested", async () => {
+            const cs = await initCommandStation();
+            await expect(cs.readLocoCv(-1)).to.be.eventually.rejectedWith("CV -1 outside of valid range");
+        })
+    })
+
+    describe("readWriteCv", () => {
+        it("should write the CV value", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                // CV value
+                [0x63],
+                [0x14, 0x01, 0x10, 0x66],
+                // Status info
+                [0x62],
+                [0x22, 0x40, 0x00]
+            ]);
+
+            await cs.writeLocoCv(1, 16);
+
+            expect(portWrites).to.eql([
+                // Write CV
+               [0x23, 0x16, 0x01, 0x10, 0x24],
+               // Request Value
+               [0x21, 0x10, 0x31],
+               // Heartbeat
+               [0x21, 0x24, 0x05] 
+            ]);
+            expect(portReads).to.be.empty;
+        })
+
+        it("should wait until IDLE to write the CV value", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                // CV value
+                [0x63],
+                [0x14, 0x01, 0x10, 0x66],
+                // Status info
+                [0x62],
+                [0x22, 0x40, 0x00]
+            ]);
+            cs["_state"] = CommandStationState.BUSY;
+
+            const then = stub();
+            const promise = cs.writeLocoCv(1, 16).then(then);
+            await nextTick();
+            await nextTick();
+            await nextTick();
+            expect(then.callCount).to.equal(0);
+            expect(portWrites).to.be.empty;
+            
+            cs["_setState"](CommandStationState.IDLE);
+            await promise;
+            expect(then.callCount).to.equal(1);
+
+            expect(portWrites).to.eql([
+                // Write CV
+               [0x23, 0x16, 0x01, 0x10, 0x24],
+               // Request Value
+               [0x21, 0x10, 0x31],
+               // Heartbeat
+               [0x21, 0x24, 0x05] 
+            ]);
+            expect(portReads).to.be.empty;
+        })
+
+        it("should return error if ERROR state entered while waiting for IDLE", async () => {
+            const cs = await initCommandStation();
+            cs["_state"] = CommandStationState.BUSY;
+
+            const promise = cs.writeLocoCv(3, 5);
+            await nextTick();
+            await nextTick();
+            await nextTick();
+            cs["_setState"](CommandStationState.ERROR);
+
+            await expect(promise).to.be.eventually.rejectedWith("Command station is in ERROR state");
+        })
+
+        it("should return an error if the wrong CV value is written", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                // CV value
+                [0x63],
+                [0x14, 0x01, 0x10, 0x66],
+            ]);
+
+            await expect(cs.writeLocoCv(1, 4)).to.be.eventually.rejectedWith("Failed to write CV 1");
+        })
+
+        it("should raise and error if invalid CV is requested", async () => {
+            const cs = await initCommandStation();
+            await expect(cs.writeLocoCv(-1, 0)).to.be.eventually.rejectedWith("CV -1 outside of valid range");
+        })
+
+        it("should raise and error if invalid value is provided", async () => {
+            const cs = await initCommandStation();
+            await expect(cs.writeLocoCv(1, 256)).to.be.eventually.rejectedWith("Byte(256) outside of valid range");
         })
     })
 
