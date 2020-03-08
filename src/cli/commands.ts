@@ -109,6 +109,12 @@ function parseCvNumber(context: CommandContext, value: string) {
     return cv;
 }
 
+function parseByte(context: CommandContext, value: string) {
+    const byte = parseInt(value);
+    if (isNaN(byte) || byte < 0 || byte > 255) context.error(`${value} is not a valid byte value`);
+    return byte;
+}
+
 // Read Loco CV
 export async function loco_cv_read(context: CommandContext, args: string[]) {
     let cv = parseCvNumber(context, args[0]);
@@ -137,6 +143,16 @@ export async function loco_speed(context: CommandContext, args: string[]) {
 loco_speed.minArgs = 2;
 loco_speed.maxArgs = 3;
 loco_speed.help = "Set locomotive's speed.\n  Usage: loco_speed LOCO_ID SPEED [F|R]";
+
+// Write Loco CV
+export async function loco_cv_write(context: CommandContext, args: string[]) {
+    const cv = parseCvNumber(context, args[0]);
+    const value = parseByte(context, args[1]);
+    await application.commandStation.writeLocoCv(cv, value);
+}
+loco_cv_write.minArgs = 2;
+loco_cv_write.maxArgs = 2;
+loco_cv_write.help = "Write locomotive CV value.\n  Usage: loco_cv_write CV_NUMBER CV_VALUE";
 
 // Log level
 export async function loglevel(context: CommandContext, args: string[]) {

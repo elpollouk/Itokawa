@@ -1,7 +1,7 @@
 import { Logger } from "../../utils/logger";
 import { CommandStationError, ICommandBatch, CommandStationState, CommandStationBase } from "./commandStation"
 import { AsyncSerialPort } from "../asyncSerialPort";
-import { encodeLongAddress } from "./nmraUtils";
+import { encodeLongAddress, ensureCvNumber, ensureByte } from "./nmraUtils";
 import { toHumanHex } from "../../utils/hex";
 import { parseConnectionString } from "../../utils/parsers";
 
@@ -15,6 +15,7 @@ enum MessageType {
     HANDSHAKE_STATUS = 0x01,
     INFO_REQ = 0x21,
     CV_SELECT_REQUEST = 0x22,
+    CV_WRITE_REQUEST = 0x23,
     HANDSHAKE_EXCHANGE = 0x35,
     HANDSHAKE_KEY = 0x3A,
     CV_SELECT_RESPONSE = 0x61,
@@ -164,27 +165,56 @@ export class ELinkCommandStation extends CommandStationBase {
         ensureValidMessage(resMessage);
 
         // Ensure the correct CV was read
-        if (resMessage[2] !== verificationCv) throw new Error(`Received value for CV ${resMessage[2]} but expected CV ${verificationCv}`);
+        if (resMessage[2] !== verificationCv)
+            throw new Error(`Received value for CV ${resMessage[2]} but expected CV ${verificationCv}`);
         return resMessage[3];
     }
 
     async readLocoCv(cv: number) {
-        if (cv < 1 || cv > 255) throw new Error(`CV ${cv} outside of valid range`);
+        ensureCvNumber(cv);
 
         await this._requestIdleToBusy();
         try {
             this._cancelHeartbeart();
 
             // Select the CV we want to write to
-            let reqMessage = [MessageType.CV_SELECT_REQUEST, 0x15, cv, 0]
+            let reqMessage = [MessageType.CV_SELECT_REQUEST, 0x15, cv, 0];
             applyChecksum(reqMessage);
             await this._port.write(reqMessage);
-
             await this._ensureCvSelected();
+
             const value = await this._readCurrentCvValue(cv);
 
             await this._sendStatusRequest();
             return value;
+        }
+        finally {
+            this._scheduleHeartbeat();
+            this._setIdle();
+        }
+    }
+
+    async writeLocoCv(cv: number, value: number) {
+        ensureCvNumber(cv);
+        ensureByte(value);
+
+        await this._requestIdleToBusy();
+        try {
+            this._cancelHeartbeart();
+
+            // Select the CV we want to write to
+            let reqMessage = [MessageType.CV_WRITE_REQUEST, 0x16, cv, value, 0];
+            applyChecksum(reqMessage);
+            await this._port.write(reqMessage);
+            await this._ensureCvSelected();
+
+            // Verify value was written correctly
+            const writtenValue = await this._readCurrentCvValue(cv);
+            log.debug(() => `Read back value: ${toHumanHex([writtenValue])}`)
+            if (writtenValue !== value)
+                throw new Error(`Failed to write CV ${cv}`);
+
+            await this._sendStatusRequest();
         }
         finally {
             this._scheduleHeartbeat();

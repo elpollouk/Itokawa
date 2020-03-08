@@ -10,3 +10,15 @@ export function encodeLongAddress(address: number, buffer: number[] | Buffer, of
     buffer[offset + 0] = address >> 8;
     buffer[offset + 1] = address & 0xFF;
 }
+
+export function ensureWithinRange(value: number, minValue: number, maxValue: number, valueName: string) {
+    if (value < minValue || value > maxValue) throw new Error(`${valueName} outside of valid range`);
+}
+
+export function ensureCvNumber(cv: number) {
+    ensureWithinRange(cv, 1, 255, `CV ${cv}`);
+}
+
+export function ensureByte(value: number) {
+    ensureWithinRange(value, 0, 255, `Byte(${value})`);
+}
