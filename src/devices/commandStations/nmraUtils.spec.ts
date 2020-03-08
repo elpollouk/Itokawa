@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 import "./nmraUtils";
-import { encodeLongAddress } from "./nmraUtils";
+import { encodeLongAddress, ensureWithinRange, ensureCvNumber, ensureByte } from "./nmraUtils";
 
 describe("NMRA Utilities", () => {
     describe("encodeLongAddress", () => {
@@ -90,4 +90,70 @@ describe("NMRA Utilities", () => {
 
         });
     });
+
+    describe("ensureWithinRange", () => {
+        it("should accept value at lower bound", () => {
+            ensureWithinRange(2, 2, 10, "Test Value");
+        })
+
+        it("should accept value at upper bound", () => {
+            ensureWithinRange(10, 2, 10, "Test Value");
+        })
+
+        it("should accept value within range", () => {
+            ensureWithinRange(6, 2, 10, "Test Value");
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureWithinRange(1, 2, 10, "Test Value")).to.throw("Test Value outside of valid range");
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureWithinRange(11, 2, 10, "Test Value")).to.throw("Test Value outside of valid range");
+        })
+    })
+
+    describe("ensureCvNumber", () => {
+        it("should accept value at lower bound", () => {
+            ensureCvNumber(1);
+        })
+
+        it("should accept value at upper bound", () => {
+            ensureCvNumber(255);
+        })
+
+        it("should accept value within range", () => {
+            ensureCvNumber(128);
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureCvNumber(0)).to.throw("CV 0 outside of valid range");
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureCvNumber(256)).to.throw("CV 256 outside of valid range");
+        })
+    })
+
+    describe("ensureByte", () => {
+        it("should accept value at lower bound", () => {
+            ensureByte(0);
+        })
+
+        it("should accept value at upper bound", () => {
+            ensureByte(255);
+        })
+
+        it("should accept value within range", () => {
+            ensureByte(128);
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureByte(-1)).to.throw("Byte(-1) outside of valid range");
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureByte(256)).to.throw("Byte(256) outside of valid range");
+        })
+    })
 });
