@@ -177,7 +177,7 @@ export class ELinkCommandStation extends CommandStationBase {
         try {
             this._cancelHeartbeart();
 
-            // Select the CV we want to write to
+            // Select the CV we want to read from
             let reqMessage = [MessageType.CV_SELECT_REQUEST, 0x15, cv, 0];
             applyChecksum(reqMessage);
             await this._port.write(reqMessage);
