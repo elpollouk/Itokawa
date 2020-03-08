@@ -130,6 +130,16 @@ loco_cv_read.minArgs = 1;
 loco_cv_read.maxArgs = 2;
 loco_cv_read.help = "Read locomotive CV value.\n  Usage: loco_cv_read CV_NUMBER [END_CV_NUMBER]";
 
+// Write Loco CV
+export async function loco_cv_write(context: CommandContext, args: string[]) {
+    const cv = parseCvNumber(context, args[0]);
+    const value = parseByte(context, args[1]);
+    await application.commandStation.writeLocoCv(cv, value);
+}
+loco_cv_write.minArgs = 2;
+loco_cv_write.maxArgs = 2;
+loco_cv_write.help = "Write locomotive CV value.\n  Usage: loco_cv_write CV_NUMBER CV_VALUE";
+
 // Loco Speed Control
 export async function loco_speed(context: CommandContext, args: string[]) {
     let reverse = args[2] == "R" || args[2] == "r";
@@ -143,16 +153,6 @@ export async function loco_speed(context: CommandContext, args: string[]) {
 loco_speed.minArgs = 2;
 loco_speed.maxArgs = 3;
 loco_speed.help = "Set locomotive's speed.\n  Usage: loco_speed LOCO_ID SPEED [F|R]";
-
-// Write Loco CV
-export async function loco_cv_write(context: CommandContext, args: string[]) {
-    const cv = parseCvNumber(context, args[0]);
-    const value = parseByte(context, args[1]);
-    await application.commandStation.writeLocoCv(cv, value);
-}
-loco_cv_write.minArgs = 2;
-loco_cv_write.maxArgs = 2;
-loco_cv_write.help = "Write locomotive CV value.\n  Usage: loco_cv_write CV_NUMBER CV_VALUE";
 
 // Log level
 export async function loglevel(context: CommandContext, args: string[]) {
