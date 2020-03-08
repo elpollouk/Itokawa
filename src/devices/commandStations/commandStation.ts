@@ -26,6 +26,7 @@ export interface ICommandStation extends NodeJS.EventEmitter {
     beginCommandBatch(): Promise<ICommandBatch>;
     writeRaw(data: Buffer | number[]): Promise<void>;
     readLocoCv(cv: number): Promise<number>;
+    writeLocoCv(cv: number, value: number): Promise<void>;
 }
 
 export interface ICommandStationConstructable {
@@ -66,7 +67,11 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
     }
 
     readLocoCv(cv: number): Promise<number> {
-        return Promise.reject(new Error("CV Reading is not supported"));
+        return Promise.reject(new Error("CV reading is not supported"));
+    }
+
+    writeLocoCv(cv: number, value: number): Promise<void> {
+        return Promise.reject(new Error("CV writing is not supported"));
     }
 
     protected _setState(state: CommandStationState) {

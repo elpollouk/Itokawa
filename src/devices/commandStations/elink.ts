@@ -128,6 +128,46 @@ export class ELinkCommandStation extends CommandStationBase {
         this._setIdle();
     }
 
+    async _ensureCvSelected() {
+        // We get the next message 4 times for some reason
+        for (let i = 0; i < 4; i++) {
+            const resMessage = await this._port.read(3);
+            ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
+            if (resMessage[1] !== 2) throw new Error(`Unexpected message: ${toHumanHex(resMessage)}`);
+        }
+
+        // Then another 4 similar messages, just with a different value in the data field
+        for (let i = 0; i < 4; i++) {
+            const resMessage = await this._port.read(3);
+            ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
+            if (resMessage[1] !== 1) throw new Error(`Unexpected message: ${toHumanHex(resMessage)}`);
+        }
+    }
+
+    async _readCurrentCvValue(verificationCv: number): Promise<number> {
+        // CV is selected, now request its value
+        await this._port.write([MessageType.INFO_REQ, 0x10, 0x31]);
+
+        // Ensure a value is read from the command station
+        let resMessage = await this._port.read(1);
+        if (resMessage[0] === MessageType.CV_SELECT_RESPONSE) {
+            // Read in the rest of the error message to remove it from the buffer
+            await this._port.read(2);
+            throw new Error(`Failed to read CV ${verificationCv}`);
+        }
+        else if (resMessage[0] !== MessageType.CV_VALUE_RESPONSE) {
+            // We don't know what this message is, so the buffer is likely full of junk now
+            // The eLink will need to be physically reset.
+            throw new Error(`Unexpected CV value response: ${toHumanHex(resMessage)}`);
+        }
+        resMessage = await this._port.concatRead(resMessage, 4);
+        ensureValidMessage(resMessage);
+
+        // Ensure the correct CV was read
+        if (resMessage[2] !== verificationCv) throw new Error(`Received value for CV ${resMessage[2]} but expected CV ${verificationCv}`);
+        return resMessage[3];
+    }
+
     async readLocoCv(cv: number) {
         if (cv < 1 || cv > 255) throw new Error(`CV ${cv} outside of valid range`);
 
@@ -140,43 +180,11 @@ export class ELinkCommandStation extends CommandStationBase {
             applyChecksum(reqMessage);
             await this._port.write(reqMessage);
 
-            // We get the next message 4 times for some reason
-            for (let i = 0; i < 4; i++) {
-                const resMessage = await this._port.read(3);
-                ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
-                if (resMessage[1] !== 2) throw new Error(`Unexpected messaget: ${toHumanHex(resMessage)}`);
-            }
-
-            // Then another 4 similar messages, just with a different value in the data field
-            for (let i = 0; i < 4; i++) {
-                const resMessage = await this._port.read(3);
-                ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
-                if (resMessage[1] !== 1) throw new Error(`Unexpected messaget: ${toHumanHex(resMessage)}`);
-            }
-
-            // CV is selected, now request its value
-            await this._port.write([MessageType.INFO_REQ, 0x10, 0x31]);
-
-            // Ensure a value is read from the command station
-            let resMessage = await this._port.read(1);
-            if (resMessage[0] === MessageType.CV_SELECT_RESPONSE) {
-                // Read in the rest of the error message to remove it from the buffer
-                await this._port.read(2);
-                throw new Error(`Failed to read CV ${cv}`);
-            }
-            else if (resMessage[0] !== MessageType.CV_VALUE_RESPONSE) {
-                // We don't know what this message is, so the buffer is likely full of junk now
-                // The eLink will need to be physically reset.
-                throw new Error(`Unexpected CV value response: ${toHumanHex(resMessage)}`);
-            }
-            resMessage = await this._port.concatRead(resMessage, 4);
-            ensureValidMessage(resMessage);
-
-            // Ensure the correct CV was read
-            if (resMessage[2] !== cv) throw new Error(`Received value for CV ${resMessage[2]} but expected CV ${cv}`);
+            await this._ensureCvSelected();
+            const value = await this._readCurrentCvValue(cv);
 
             await this._sendStatusRequest();
-            return resMessage[3];
+            return value;
         }
         finally {
             this._scheduleHeartbeat();
