@@ -4,6 +4,7 @@ import { AsyncSerialPort } from "../asyncSerialPort";
 import { encodeLongAddress, ensureCvNumber, ensureByte } from "./nmraUtils";
 import { toHumanHex } from "../../utils/hex";
 import { parseConnectionString } from "../../utils/parsers";
+import { padLeadingZero } from "../../utils/padding";
 
 const log = new Logger("eLink");
 
@@ -360,7 +361,7 @@ export class ELinkCommandStation extends CommandStationBase {
 
         const major = Math.trunc(version / 100);
         const minor = Math.trunc(version - (major * 100));
-        this._version = `${major}.${minor <= 9 ? "0" : ""}${minor}`;
+        this._version = `${major}.${padLeadingZero(minor, 2)}`;
 
         log.info(() => `Version: ${this.version}`);
     }
