@@ -244,8 +244,8 @@ describe("CV Handler", () => {
                     cv: 1,
                     value: 10,
                  }, {
-                     cv: 256,
-                     value: 10
+                    cv: 256,
+                    value: 10
                  }]
             } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("CV 256 outside of valid range");
             expect(await application.commandStation.readLocoCv(1)).to.equal(3);
@@ -260,8 +260,8 @@ describe("CV Handler", () => {
                     cv: 1,
                     value: 10,
                  }, {
-                     cv: 29,
-                     value: 256
+                    cv: 29,
+                    value: 256
                  }]
             } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("Byte(256) outside of valid range");
             expect(await application.commandStation.readLocoCv(1)).to.equal(3);
