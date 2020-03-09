@@ -2,6 +2,7 @@ import { Logger } from "../../utils/logger";
 import { HandlerMap, Sender, ok } from "./handlers"
 import { RequestType, LocoCvReadRequest, LocoCvWriteRequest } from "../../common/messages";
 import { application } from "../../application";
+import { ensureCvNumber, ensureByte } from "../../devices/commandStations/nmraUtils";
 
 const log = new Logger("CV");
 
@@ -23,6 +24,8 @@ async function retryWrapper<T = void>(action: () => Promise<T>): Promise<T> {
 
 async function onLocoCvReadMessage(request: LocoCvReadRequest, send: Sender): Promise<void> {
     if (!request.cvs || request.cvs.length === 0) throw new Error("No CVs provided");
+    for (const cv of request.cvs)
+        ensureCvNumber(cv);
 
     for (const cv of request.cvs) {
         log.info(() => `Reading CV ${cv}...`);
@@ -40,6 +43,11 @@ async function onLocoCvReadMessage(request: LocoCvReadRequest, send: Sender): Pr
 
 async function onLocoCvWriteMessage(request: LocoCvWriteRequest, send: Sender): Promise<void> {
     if (!request.cvs || request.cvs.length === 0) throw new Error("No CVs provided");
+    // We want to do this first so that we don't attempt to write if the batch is invalid
+    for (const pair of request.cvs) {
+        ensureCvNumber(pair.cv);
+        ensureByte(pair.value);
+    }
 
     for (const pair of request.cvs) {
         log.info(() => `Writing CV ${pair.cv}...`);

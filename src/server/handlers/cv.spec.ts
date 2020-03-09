@@ -67,8 +67,7 @@ describe("CV Handler", () => {
         it("should handle up to three read errors", async () => {
             let errorCount = 3;
             stub(application.commandStation, "readLocoCv").callsFake((cv) => {
-                if (errorCount !== 0) {
-                    errorCount--;
+                if (errorCount-- !== 0) {
                     return Promise.reject(new Error("Error reading CV"));
                 }
                 return Promise.resolve(6);
@@ -94,8 +93,7 @@ describe("CV Handler", () => {
         it("should reject on fourth read error", async () => {
             let errorCount = 4;
             stub(application.commandStation, "readLocoCv").callsFake((cv) => {
-                if (errorCount !== 0) {
-                    errorCount--;
+                if (errorCount-- !== 0) {
                     return Promise.reject(new Error("Error reading CV"));
                 }
                 return Promise.resolve(6);
@@ -106,6 +104,15 @@ describe("CV Handler", () => {
             await expect(handlers.get(RequestType.LocoCvRead)({
                 cvs: [29]
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("Error reading CV");
+        })
+
+        it("should reject if any CVs are invalid", async () => {
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LocoCvRead)({
+                cvs: [1, 3, 256]
+            } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("CV 256 outside of valid range");
         })
 
         it("should reject empty CV list", async () => {
@@ -171,8 +178,7 @@ describe("CV Handler", () => {
         it("should handle up to three write errors", async () => {
             let errorCount = 3;
             stub(application.commandStation, "writeLocoCv").callsFake((cv, value) => {
-                if (errorCount !== 0) {
-                    errorCount--;
+                if (errorCount-- !== 0) {
                     return Promise.reject(new Error("Error writing CV"));
                 }
                 return Promise.resolve();
@@ -201,8 +207,7 @@ describe("CV Handler", () => {
         it("should reject on fourth write error", async () => {
             let errorCount = 4;
             stub(application.commandStation, "writeLocoCv").callsFake((cv, value) => {
-                if (errorCount !== 0) {
-                    errorCount--;
+                if (errorCount-- !== 0) {
                     return Promise.reject(new Error("Error writing CV"));
                 }
                 return Promise.resolve();
@@ -216,6 +221,39 @@ describe("CV Handler", () => {
                     value: 6
                 }]
             } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("Error writing CV");
+        })
+
+        it("should not write and reject if any CVs are invalid", async () => {
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LocoCvWrite)({
+                cvs: [{
+                    cv: 1,
+                    value: 10,
+                 }, {
+                     cv: 256,
+                     value: 10
+                 }]
+            } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("CV 256 outside of valid range");
+            expect(await application.commandStation.readLocoCv(1)).to.equal(3);
+        })
+
+        it("should not write and reject if any values are invalid", async () => {
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LocoCvWrite)({
+                cvs: [{
+                    cv: 1,
+                    value: 10,
+                 }, {
+                     cv: 29,
+                     value: 256
+                 }]
+            } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("Byte(256) outside of valid range");
+            expect(await application.commandStation.readLocoCv(1)).to.equal(3);
+            expect(await application.commandStation.readLocoCv(29)).to.equal(6);
         })
 
         it("should reject empty CV list", async () => {
