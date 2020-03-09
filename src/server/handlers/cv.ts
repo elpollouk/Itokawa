@@ -1,6 +1,6 @@
 import { Logger } from "../../utils/logger";
 import { HandlerMap, Sender, ok } from "./handlers"
-import { RequestType, LocoCvReadRequest, LocoCvWriteRequest } from "../../common/messages";
+import { RequestType, LocoCvReadRequest, LocoCvWriteRequest, CvValuePair } from "../../common/messages";
 import { application } from "../../application";
 import { ensureCvNumber, ensureByte } from "../../devices/commandStations/nmraUtils";
 
@@ -33,7 +33,10 @@ async function onLocoCvReadMessage(request: LocoCvReadRequest, send: Sender): Pr
         log.info(() => `CV ${cv} = ${value}`);
         await send({
             lastMessage: false,
-            data: value
+            data: {
+                cv: cv,
+                value: value
+            } as CvValuePair
         });
     }
 
