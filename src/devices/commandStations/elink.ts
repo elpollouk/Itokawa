@@ -249,8 +249,6 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     private _scheduleHeartbeat() {
-        if (this._heartbeatToken) throw new CommandStationError("Heartbeat already schedulled");
-
         log.info(`Scheduling next heartbeat in ${Config.heartbeatTime}s`);
         this._heartbeatToken = setTimeout(() => {
 
@@ -284,10 +282,8 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     private _cancelHeartbeart() {
-        if (this._heartbeatToken) {
-            clearTimeout(this._heartbeatToken);
-            this._heartbeatToken = null;
-        }
+        clearTimeout(this._heartbeatToken);
+        this._heartbeatToken = null;
     }
 
     private async _sendStatusRequest() {
