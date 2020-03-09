@@ -5,6 +5,7 @@ import { stub, SinonStub } from "sinon";
 import * as ws from "ws";
 import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
+import * as cvHandler from "./cv";
 import { ok, resetHandler, getControlWebSocketRoute, HandlerMap, clientBroadcast } from "./handlers";
 import { RequestType, CommandResponse } from "../../common/messages";
 
@@ -36,6 +37,7 @@ describe("WebSocket Handlers", () => {
     let lifeCycleHanderStub: SinonStub;
     let locoRegisterStub: SinonStub;
     let locoHandlerStub: SinonStub;
+    let cvRegisterStub: SinonStub;
 
     beforeEach(() => {
         resetHandler();
@@ -47,11 +49,13 @@ describe("WebSocket Handlers", () => {
         locoRegisterStub = stub(locoHandler, "registerHandlers").callsFake((map: HandlerMap) => {
             map.set(RequestType.LocoSpeed, locoHandlerStub);
         });
+        cvRegisterStub = stub(cvHandler, "registerHandlers");
     })
 
     afterEach(() => {
         lifeCycleRegisterStub.restore();
         locoRegisterStub.restore();
+        cvRegisterStub.restore();
     })
 
     describe("ok", () => {
@@ -72,6 +76,7 @@ describe("WebSocket Handlers", () => {
             expect(route).to.be.instanceOf(Function);
             expect(lifeCycleRegisterStub.callCount).to.equal(1);
             expect(locoRegisterStub.callCount).to.equal(1);
+            expect(cvRegisterStub.callCount).to.equal(1);
         })
 
         it("should route messages through to the correct handler", async () => {

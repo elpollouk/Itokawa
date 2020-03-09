@@ -7,6 +7,7 @@ import { timestamp } from "../../common/time";
 // Specific message handlers
 import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
+import * as cvHandler from "./cv";
 
 const log = new Logger("ControlMessageHandler");
 
@@ -57,6 +58,7 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
     // Register the message handlers in one pass
     lifecycleHandler.registerHandlers(messageHandlers);
     locoHandler.registerHandlers(messageHandlers);
+    cvHandler.registerHandlers(messageHandlers);
     
     return (ws, req) => {
         // We wrap WebSocket sending so that we can perform additional checks and augment the

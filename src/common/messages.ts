@@ -3,6 +3,8 @@ export enum RequestType {
     LocoSpeed = 2,
     EmergencyStop = 3,
     LocoSpeedRefresh = 4,
+    LocoCvRead = 5,
+    LocoCvWrite = 6,
     CommandResponse = 1000,
 }
 
@@ -28,6 +30,19 @@ export enum LifeCycleAction {
 
 export interface LifeCycleRequest {
     action: LifeCycleAction
+}
+
+export interface LocoCvReadRequest {
+    cvs: number[]
+}
+
+export interface CvValuePair {
+    cv: number,
+    value: number
+}
+
+export interface LocoCvWriteRequest {
+    cvs: CvValuePair[]
 }
 
 export interface CommandResponse {
