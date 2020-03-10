@@ -93,6 +93,7 @@ class IndexPage extends Page {
 
     destroy() {
         Client.instance.connection.off("message", this._messageHandlerToken);
+        super.destroy();
     }
 }
 
