@@ -2,6 +2,7 @@ import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { Client, IApiClient } from "../client";
 import { parseHtml, getById, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
+import { CvEditorConstructor } from "./cvEditor";
 const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
@@ -54,6 +55,7 @@ export class TrainEditPage extends Page {
             }
         }
 
+        getById(page, "editCVs").onclick = () => this._editCvs();
         getById(page, "save").onclick = () => this._save();
         getById(page, "cancel").onclick = () => nav.back();
 
@@ -74,7 +76,7 @@ export class TrainEditPage extends Page {
             else {
                 this._maxSpeedEelement.value = `${loco.maxSpeed}`;
             }
-            this._deleteButton.style.visibility = "";
+            this._deleteButton.style.display = "";
         }).catch((err) => {
             console.error(err);
             prompt.error("Failed to load train details.");
@@ -106,6 +108,11 @@ export class TrainEditPage extends Page {
         }
 
         return true;
+    }
+
+    _editCvs() {
+        nav.open(CvEditorConstructor.path);
+        return false;
     }
 
     _save() {

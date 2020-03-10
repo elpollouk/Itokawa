@@ -1,4 +1,4 @@
-import { Page, IPageConstructor, Navigator as nav } from "./page";
+import { Page, IPageConstructor } from "./page";
 import { parseHtml } from "../utils/dom";
 const html = require("./attributions.html");
 

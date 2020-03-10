@@ -6,6 +6,7 @@ import { SystemDrawControl } from "./controls/systemDrawer";
 import { TrainRosterConstructor } from "./pages/trainRoster";
 import { TrainEditConstructor } from "./pages/trainEditor";
 import { AttributionsConstructor } from "./pages/attributions";
+import { CvEditorConstructor } from "./pages/cvEditor";
 
 window["main"] = function () {
     window["itokawa"] = new Client();
@@ -25,6 +26,7 @@ window["main"] = function () {
     Navigator.registerPage(TrainRosterConstructor);
     Navigator.registerPage(TrainEditConstructor);
     Navigator.registerPage(AttributionsConstructor);
+    Navigator.registerPage(CvEditorConstructor);
 
     Navigator.initalOpen();
 }
