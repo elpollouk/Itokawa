@@ -73,6 +73,25 @@ describe("CV Handler", () => {
             }]);
         })
 
+        it("should stop attempting to read CVs if the WebSocket disconnects", async () => {
+            let sendLimit = 2;
+            sendStub = stub().callsFake(() => {
+                if (sendLimit-- <= 0) {
+                    return Promise.resolve(false);
+                }
+                return Promise.resolve(true);
+            })
+
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await handlers.get(RequestType.LocoCvRead)({
+                cvs: [8, 7, 29, 1, 17, 18]
+            } as LocoCvReadRequest, sendStub);
+
+            expect(sendStub.callCount).to.equal(3);
+        })
+
         it("should handle up to three read errors", async () => {
             let errorCount = 3;
             stub(application.commandStation, "readLocoCv").callsFake((cv) => {
@@ -185,6 +204,40 @@ describe("CV Handler", () => {
             expect(await application.commandStation.readLocoCv(29)).to.equal(38);
             expect(await application.commandStation.readLocoCv(17)).to.equal(196);
             expect(await application.commandStation.readLocoCv(18)).to.equal(210);
+        })
+
+        it("should continue writing CVs if the WebSocket disconnects", async () => {
+            let sendLimit = 2;
+            sendStub = stub().callsFake(() => {
+                if (sendLimit-- <= 0) {
+                    return Promise.resolve(false);
+                }
+                return Promise.resolve(true);
+            })
+
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await handlers.get(RequestType.LocoCvWrite)({
+                cvs: [{
+                    cv: 29,
+                    value: 255
+                }, {
+                    cv: 1,
+                    value: 254
+                }, {
+                    cv: 17,
+                    value: 253
+                }, {
+                    cv: 18,
+                    value: 252
+                }]
+            } as LocoCvWriteRequest, sendStub);
+
+            expect(await application.commandStation.readLocoCv(29)).to.equal(255);
+            expect(await application.commandStation.readLocoCv(1)).to.equal(254);
+            expect(await application.commandStation.readLocoCv(17)).to.equal(253);
+            expect(await application.commandStation.readLocoCv(18)).to.equal(252);
         })
 
         it("should handle up to three write errors", async () => {

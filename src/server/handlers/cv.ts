@@ -31,13 +31,17 @@ async function onLocoCvReadMessage(request: LocoCvReadRequest, send: Sender): Pr
         log.info(() => `Reading CV ${cv}...`);
         const value = await retryWrapper(() => application.commandStation.readLocoCv(cv));
         log.info(() => `CV ${cv} = ${value}`);
-        await send({
+        const sent = await send({
             lastMessage: false,
             data: {
                 cv: cv,
                 value: value
             } as CvValuePair
         });
+
+        // As reading CVs is quite a slow process and occupies the command station, we want to stop if
+        // we discover that no one is listening to the results.
+        if (!sent) return;
     }
 
     log.info("CV read batch complete");
@@ -59,6 +63,9 @@ async function onLocoCvWriteMessage(request: LocoCvWriteRequest, send: Sender): 
             lastMessage: false,
             data: pair.cv
         });
+
+        // Even if the web socket becomes disconnected, we want to continue writing CVs
+        // as it could leave the loco in an invalid state if we stop halfway through
     }
 
     log.info("CV write batch complete");
