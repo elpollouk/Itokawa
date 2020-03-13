@@ -2,7 +2,7 @@ import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { Client, IApiClient } from "../client";
 import { parseHtml, getById, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
-import { CvEditorConstructor } from "./cvEditor";
+import { CvEditorConstructor, CvEditorPage } from "./cvEditor";
 const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
@@ -15,6 +15,7 @@ export class TrainEditPage extends Page {
 
     private _id: number;
     private readonly _api: IApiClient;
+    private _cvs: {[key:string]:number};
 
     private _nameElement: HTMLInputElement;
     private _addressElement: HTMLInputElement;
@@ -62,10 +63,12 @@ export class TrainEditPage extends Page {
         return page;
     }
 
-    onEnter() {
+    onEnter(previousPage: Page) {
+        super.onEnter(previousPage);
         if (this._id) this._api.getLoco(this._id).then((loco) => {
             this._nameElement.value = loco.name;
             this._addressElement.value = `${loco.address}`;
+            this._cvs = loco.cvs;
             if (loco.discrete) {
                 this._slowElement.value = `${loco.speeds[0]}`;
                 this._mediumElement.value = `${loco.speeds[1]}`;
@@ -77,6 +80,10 @@ export class TrainEditPage extends Page {
                 this._maxSpeedEelement.value = `${loco.maxSpeed}`;
             }
             this._deleteButton.style.display = "";
+
+            if (previousPage && previousPage instanceof CvEditorPage) {
+                this._cvs = previousPage.cvs;
+            }
         }).catch((err) => {
             console.error(err);
             prompt.error("Failed to load train details.");
@@ -111,7 +118,7 @@ export class TrainEditPage extends Page {
     }
 
     _editCvs() {
-        nav.open(CvEditorConstructor.path);
+        nav.open(CvEditorConstructor.path, this._cvs);
         return false;
     }
 
@@ -137,10 +144,10 @@ export class TrainEditPage extends Page {
 
             let promise: Promise<any>;
             if (this._id) {
-                promise = this._api.updateLoco(this._id, name, address, speed);
+                promise = this._api.updateLoco(this._id, name, address, speed, this._cvs);
             }
             else {
-                promise = this._api.addLoco(name, address, speed).then((loco) => {
+                promise = this._api.addLoco(name, address, speed, this._cvs).then((loco) => {
                     this._id = loco.id;
                     nav.replaceParams({
                         id: loco.id

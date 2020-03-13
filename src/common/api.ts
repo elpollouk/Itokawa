@@ -5,4 +5,5 @@ export interface Loco {
     discrete: boolean;
     speeds?: number[];
     maxSpeed?: number;
+    cvs?: {[key: string]: number};
 }

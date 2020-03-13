@@ -13,7 +13,7 @@ export class CvEditorPage extends Page {
     private _cvContainer: HTMLElement;
     private _cvControls = new Map<number, CvControl>();
 
-    get cvs() {
+    get cvs(): {[key:string]:number} {
         const c = {};
         this._cvControls.forEach((cv, key) => c[key] = cv.value);
         return c;
@@ -42,10 +42,6 @@ export class CvEditorPage extends Page {
         getById(page, "write").onclick = () => this._writeCvs();
         
         return page;
-    }
-
-    protected _onOpen() {
-        super.onEnter();
     }
 
     private _addCv(cv: number, value: number) {

@@ -11,10 +11,10 @@ let _client: Client = null;
 
 export interface IApiClient {
     getLocos(): Promise<api.Loco[]>;
-    addLoco(name: string, address: number, speed: number[] | number): Promise<api.Loco>;
+    addLoco(name: string, address: number, speed: number[] | number, cvs: {[key:string]:number}): Promise<api.Loco>;
     getLoco(id: number): Promise<api.Loco>;
     deleteLoco(id: number): Promise<void>;
-    updateLoco(id: number, name: string, address: number, speed: number[] | number): Promise<void>;
+    updateLoco(id: number, name: string, address: number, speed: number[] | number, cvs: {[key:string]:number}): Promise<void>;
 }
 
 export type RequestCallback = (err: Error, response?: messages.CommandResponse)=>void;

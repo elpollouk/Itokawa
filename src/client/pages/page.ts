@@ -2,7 +2,7 @@ export abstract class Page {
     readonly abstract path: string;
     readonly abstract content: HTMLElement;
 
-    onEnter(): void {}
+    onEnter(previousPage: Page): void {}
     onLeave(): void {}
     close(): void {
         Navigator.back();
@@ -35,9 +35,10 @@ function _openPage(path: string, params: any, depth: number) {
     const content = newPage.content;
     content.classList.add("page");
     document.getElementById("contentArea").appendChild(content);
-    newPage.onEnter();
 
     const oldPage = _currentPage;
+    newPage.onEnter(oldPage);
+
     if (oldPage) {
         let startLeft = depth < _currentPageDepth ? "-120%" : "120%";
         let endLeft = depth < _currentPageDepth ? "120%" : "-120%";

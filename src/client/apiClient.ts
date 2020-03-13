@@ -96,11 +96,12 @@ export class ApiClient implements IApiClient {
         return this.request("GET", "/locos");
     }
 
-    addLoco(name: string, address: number, speed: number[] | number): Promise<api.Loco> {
+    addLoco(name: string, address: number, speed: number[] | number, cvs: {[key:string]:number}): Promise<api.Loco> {
         const request: api.Loco = {
             name: name,
             address: address,
             discrete: Array.isArray(speed),
+            cvs: cvs
         };
 
         if (Array.isArray(speed)) {
@@ -121,12 +122,13 @@ export class ApiClient implements IApiClient {
         return this.request("DELETE", `/locos/${id}`);
     }
 
-    updateLoco(id: number, name: string, address: number, speed: number[] | number): Promise<void> {
+    updateLoco(id: number, name: string, address: number, speed: number[] | number, cvs: {[key:string]:number}): Promise<void> {
         const request: api.Loco = {
             id: id,
             name: name,
             address: address,
             discrete: Array.isArray(speed),
+            cvs: cvs
         };
 
         if (Array.isArray(speed)) {
