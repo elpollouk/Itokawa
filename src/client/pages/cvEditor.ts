@@ -4,6 +4,7 @@ import * as prompt from "../controls/promptControl";
 import { Client } from "../client";
 import { CvControl, State } from "../controls/cvControl";
 import { RequestType, LocoCvReadRequest, CvValuePair, LocoCvWriteRequest } from "../../common/messages";
+import { CvMap } from "../../common/api";
 const html = require("./cvEditor.html");
 
 export class CvEditorPage extends Page {
@@ -13,7 +14,7 @@ export class CvEditorPage extends Page {
     private _cvContainer: HTMLElement;
     private _cvControls = new Map<number, CvControl>();
 
-    get cvs(): {[key:string]:number} {
+    get cvs(): CvMap {
         const c = {};
         this._cvControls.forEach((cv, key) => c[key] = cv.value);
         return c;

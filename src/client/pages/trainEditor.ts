@@ -3,6 +3,7 @@ import { Client, IApiClient } from "../client";
 import { parseHtml, getById, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
 import { CvEditorConstructor, CvEditorPage } from "./cvEditor";
+import { CvMap } from "../../common/api";
 const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
@@ -15,7 +16,7 @@ export class TrainEditPage extends Page {
 
     private _id: number;
     private readonly _api: IApiClient;
-    private _cvs: {[key:string]:number};
+    private _cvs: CvMap;
 
     private _nameElement: HTMLInputElement;
     private _addressElement: HTMLInputElement;
@@ -93,7 +94,7 @@ export class TrainEditPage extends Page {
         })
     }
 
-    _haveCVsChanged(newCVs: {[key:string]:number}) {
+    _haveCVsChanged(newCVs: CvMap) {
         for (const key in newCVs) {
             if (this._cvs[key] !== newCVs[key])
                 return true;

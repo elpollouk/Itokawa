@@ -1,3 +1,5 @@
+export type CvMap = {[key: string]: number};
+
 export interface Loco {
     id?: number;
     address: number;
@@ -5,5 +7,5 @@ export interface Loco {
     discrete: boolean;
     speeds?: number[];
     maxSpeed?: number;
-    cvs?: {[key: string]: number};
+    cvs?: CvMap;
 }
