@@ -178,25 +178,30 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
     private async _handleLocoCvRead(request: LocoCvReadRequest, callback: RequestCallback) {
         this.state = ConnectionState.Busy;
 
-        for (const requestedCV of request.cvs) {
-            await timeout(CV_ACCESS_TIME);
+        try {
+            for (const requestedCV of request.cvs) {
+                await timeout(CV_ACCESS_TIME);
 
-            let value = 0;
-            if (this._cvs.has(requestedCV)) value = this._cvs.get(requestedCV);
+                let value = 0;
+                if (this._cvs.has(requestedCV)) value = this._cvs.get(requestedCV);
+
+                callback(null, {
+                    lastMessage: false,
+                    data: {
+                        cv: requestedCV,
+                        value: value
+                    } as CvValuePair
+                });
+            }
 
             callback(null, {
-                lastMessage: false,
-                data: {
-                    cv: requestedCV,
-                    value: value
-                } as CvValuePair
+                lastMessage: true,
+                data: "OK"
             });
         }
-
-        callback(null, {
-            lastMessage: true,
-            data: "OK"
-        })
+        catch(error) {
+            callback(error);
+        }
 
         this.state = ConnectionState.Idle;
     }
@@ -204,22 +209,27 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
     private async _handleLocoCvWrite(request: LocoCvWriteRequest, callback: RequestCallback) {
         this.state = ConnectionState.Busy;
 
-        for (const pair of request.cvs) {
-            await timeout(CV_ACCESS_TIME);
+        try {
+            for (const pair of request.cvs) {
+                await timeout(CV_ACCESS_TIME);
 
-            this._cvs.set(pair.cv, pair.value);
+                this._cvs.set(pair.cv, pair.value);
+                callback(null, {
+                    lastMessage: false,
+                    data: pair
+                });
+            }
+
             callback(null, {
-                lastMessage: false,
-                data: pair
-            });
+                lastMessage: true,
+                data: "OK"
+            })
+
+            this._saveCVs();
         }
-
-        callback(null, {
-            lastMessage: true,
-            data: "OK"
-        })
-
-        this._saveCVs();
+        catch (error) {
+            callback(error);
+        }
 
         this.state = ConnectionState.Idle;
     }
