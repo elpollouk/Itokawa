@@ -1,8 +1,9 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { parseHtml, getById } from "../utils/dom";
+import * as prompt from "../controls/promptControl";
 import { Client } from "../client";
-import { CvControl } from "../controls/cvControl";
-import { RequestType, LocoCvReadRequest, CvValuePair } from "../../common/messages";
+import { CvControl, State } from "../controls/cvControl";
+import { RequestType, LocoCvReadRequest, CvValuePair, LocoCvWriteRequest } from "../../common/messages";
 const html = require("./cvEditor.html");
 
 export class CvEditorPage extends Page {
@@ -38,6 +39,7 @@ export class CvEditorPage extends Page {
 
         this._cvContainer = getById(page, "cvContainer");
         getById(page, "refresh").onclick = () => this._refreshCvs(); 
+        getById(page, "write").onclick = () => this._writeCvs();
         
         return page;
     }
@@ -56,21 +58,41 @@ export class CvEditorPage extends Page {
         }
     }
 
+    private _onCvResponse(error: Error, response: any) {
+        if (error) {
+            console.log(error);
+            prompt.error(error.message);
+            return;
+        }
+        if (response.lastMessage) {
+            nav.replaceParams(this.cvs);
+            return;
+        }
+        const data = response.data as CvValuePair;
+        this._addCv(data.cv, data.value);
+    }
+
     private _refreshCvs() {
         Client.instance.connection.request(RequestType.LocoCvRead, {
             cvs: [1, 3, 4, 7, 8, 10, 17, 18, 29 ]
-        } as LocoCvReadRequest, (error, response) => {
-            if (error) {
-                console.log(error);
-                return;
-            }
-            if (response.lastMessage) {
-                nav.replaceParams(this.cvs);
-                return;
-            }
-            const data = response.data as CvValuePair;
-            this._addCv(data.cv, data.value);
-        })
+        } as LocoCvReadRequest, (e, r) => this._onCvResponse(e, r));
+        return false;
+    }
+
+    private _writeCvs() {
+        const batch: CvValuePair[] = [];
+        this._cvControls.forEach((cv, key) => {
+            if (!cv.isDirty) return;
+            batch.push({
+                cv: key,
+                value: cv.value
+            })
+            cv.state = State.updating;
+        });
+
+        Client.instance.connection.request(RequestType.LocoCvWrite, {
+            cvs: batch
+        } as LocoCvWriteRequest, (e, r) => this._onCvResponse(e, r));
         return false;
     }
 }

@@ -9,6 +9,10 @@ body {
     color: rgb(64, 64, 64);
 }
 
+input:read-only {
+    background-color: lightgray;
+}
+
 #uiContainer {
     width: 100vw;
 }
@@ -586,6 +590,10 @@ a:visited {
 
 .cv {
     padding: 2px;
+}
+
+.cv input {
+    width: 3em;
 }
 
 .cv .led {

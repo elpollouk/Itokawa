@@ -18,6 +18,7 @@ export class NullCommandStation extends CommandStationBase {
         4: 5,
         7: 100,
         8: 255,
+        10: 128,
         29: 6
     };
 

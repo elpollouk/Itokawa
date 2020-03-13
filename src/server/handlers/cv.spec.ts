@@ -185,15 +185,15 @@ describe("CV Handler", () => {
 
             expect(sendStub.callCount).to.equal(4);
             expect(sendStub.getCall(0).args).to.eql([{
-                data: 17,
+                data: { cv: 17, value: 196 },
                 lastMessage: false
             }]);
             expect(sendStub.getCall(1).args).to.eql([{
-                data: 18,
+                data: { cv: 18, value: 210 },
                 lastMessage: false
             }]);
             expect(sendStub.getCall(2).args).to.eql([{
-                data: 29,
+                data: { cv: 29, value: 38 },
                 lastMessage: false
             }]);
             expect(sendStub.lastCall.args).to.eql([{
@@ -260,7 +260,7 @@ describe("CV Handler", () => {
 
             expect(sendStub.callCount).to.equal(2);
             expect(sendStub.getCall(0).args).to.eql([{
-                data: 29,
+                data: { cv: 29, value: 6 },
                 lastMessage: false
             }]);
             expect(sendStub.lastCall.args).to.eql([{

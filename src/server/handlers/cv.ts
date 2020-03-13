@@ -61,7 +61,7 @@ async function onLocoCvWriteMessage(request: LocoCvWriteRequest, send: Sender): 
         await retryWrapper(() => application.commandStation.writeLocoCv(pair.cv, pair.value));
         await send({
             lastMessage: false,
-            data: pair.cv
+            data: pair
         });
 
         // Even if the web socket becomes disconnected, we want to continue writing CVs
