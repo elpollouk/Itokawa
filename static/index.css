@@ -580,6 +580,40 @@ a:visited {
     text-align: right;
 }
 
+/*
+ * CV Editor
+ */
+
+.cv {
+    padding: 2px;
+}
+
+.cv .led {
+    width: 0.8em;
+    height: 0.8em;
+    margin: 1px;
+    display: inline-block;
+    border-color: rgb(24, 24, 24);
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 50%;
+    background-color: gray;
+    transition: background-color 0.2s;
+    vertical-align: middle;
+}
+
+.cv.updating .led {
+    background-color: orange;
+}
+
+.cv.clean .led {
+    background-color: greenyellow;
+}
+
+.cv.dirty .led {
+    background-color: red;
+}
+
 
 /*
  * Icons

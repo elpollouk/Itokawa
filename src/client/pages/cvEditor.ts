@@ -1,4 +1,4 @@
-import { Page, IPageConstructor } from "./page";
+import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { parseHtml, getById } from "../utils/dom";
 import { Client } from "../client";
 import { CvControl } from "../controls/cvControl";
@@ -12,9 +12,25 @@ export class CvEditorPage extends Page {
     private _cvContainer: HTMLElement;
     private _cvControls = new Map<number, CvControl>();
 
-    constructor () {
+    get cvs() {
+        const c = {};
+        this._cvControls.forEach((cv, key) => c[key] = cv.value);
+        return c;
+    }
+
+    constructor (params: any) {
         super();
         this.content = this._buildUi();
+        if (params) {
+            for (const key in params) {
+                const cv = parseInt(key);
+                if (isNaN(cv)) continue;
+                const value = params[key];
+                if (!Number.isInteger(value)) continue;
+
+                this._addCv(cv, value);
+            }
+        }
     }
 
     private _buildUi(): HTMLElement {
@@ -24,6 +40,10 @@ export class CvEditorPage extends Page {
         getById(page, "refresh").onclick = () => this._refreshCvs(); 
         
         return page;
+    }
+
+    protected _onOpen() {
+        super.onEnter();
     }
 
     private _addCv(cv: number, value: number) {
@@ -45,6 +65,7 @@ export class CvEditorPage extends Page {
                 return;
             }
             if (response.lastMessage) {
+                nav.replaceParams(this.cvs);
                 return;
             }
             const data = response.data as CvValuePair;
@@ -56,5 +77,5 @@ export class CvEditorPage extends Page {
 
 export const CvEditorConstructor: IPageConstructor = {
     path: "cvEditor",
-    create: () => new CvEditorPage()
+    create: (params) => new CvEditorPage(params)
 }

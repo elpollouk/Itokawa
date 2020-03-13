@@ -58,6 +58,7 @@ export class CvControl extends ControlBase {
         super();
         if (_value < 0 || _value > 255) throw new Error("Invalid CV value");
         this._init(parent);
+        this.state = State.clean;
     }
 
     protected _buildUi(): HTMLElement {
