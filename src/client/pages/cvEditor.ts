@@ -10,6 +10,7 @@ export class CvEditorPage extends Page {
     content: HTMLElement;
 
     private _cvContainer: HTMLElement;
+    private _cvControls = new Map<number, CvControl>();
 
     constructor () {
         super();
@@ -26,7 +27,13 @@ export class CvEditorPage extends Page {
     }
 
     private _addCv(cv: number, value: number) {
-        const cvControl = new CvControl(this._cvContainer, cv, value);
+        if (this._cvControls.has(cv)) {
+            this._cvControls.get(cv).value = value;
+        }
+        else {
+            const cvControl = new CvControl(this._cvContainer, cv, value);
+            this._cvControls.set(cv, cvControl);
+        }
     }
 
     private _refreshCvs() {

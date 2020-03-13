@@ -2,8 +2,21 @@ import { ControlBase } from "./control";
 import { parseHtml, getById } from "../utils/dom";
 const html = require("./cvControl.html");
 
+const enum State {
+    clean = 0,
+    dirty = 1,
+    updating = 2
+}
+
+const _stateClasses = [
+    "clean",
+    "dirty",
+    "updating"
+]
+
 export class CvControl extends ControlBase {
     private _valueElement: HTMLInputElement;
+    private _state: State = State.clean;
 
     get cv() {
         return this._cv;
@@ -11,6 +24,23 @@ export class CvControl extends ControlBase {
 
     get value() {
         return this._value;
+    }
+
+    get state() {
+        return this._state;
+    }
+
+    set state(value: State) {
+        this._state = value;
+        const desiredClass = _stateClasses[value];
+        for (const cls of _stateClasses) {
+            if (desiredClass === cls) {
+                this.element.classList.add(cls);
+            }
+            else {
+                this.element.classList.remove(cls);
+            }
+        }
     }
 
     get isDirty() {
@@ -21,6 +51,7 @@ export class CvControl extends ControlBase {
         if (v < 0 || v > 255) throw new Error("Invalid CV value");
         this._value = v;
         this._valueElement.value = `${v}`;
+        this.state = State.clean;
     }
 
     constructor (parent: HTMLElement, private _cv: number, private _value: number) {
@@ -43,10 +74,10 @@ export class CvControl extends ControlBase {
 
     private _onValueChanged() {
         if (this.isDirty) {
-            this.element.classList.add("dirty");
+            this.state = State.dirty;
         }
         else {
-            this.element.classList.remove("dirty");
+            this.state = State.clean;
         }
     }
 }
