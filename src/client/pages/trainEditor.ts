@@ -57,7 +57,7 @@ export class TrainEditPage extends Page {
         }
 
         getById(page, "editCVs").onclick = () => this._editCvs();
-        getById(page, "save").onclick = () => this._save();
+        getById(page, "save").onclick = () => this._save(true);
         getById(page, "cancel").onclick = () => nav.back();
 
         return page;
@@ -82,12 +82,23 @@ export class TrainEditPage extends Page {
             this._deleteButton.style.display = "";
 
             if (previousPage && previousPage instanceof CvEditorPage) {
-                this._cvs = previousPage.cvs;
+                if (this._haveCVsChanged(previousPage.cvs)) {
+                    this._cvs = previousPage.cvs;
+                    this._save(false);
+                }
             }
         }).catch((err) => {
             console.error(err);
             prompt.error("Failed to load train details.");
         })
+    }
+
+    _haveCVsChanged(newCVs: {[key:string]:number}) {
+        for (const key in newCVs) {
+            if (this._cvs[key] !== newCVs[key])
+                return true;
+        }
+        return false;
     }
 
     _delete() {
@@ -122,7 +133,7 @@ export class TrainEditPage extends Page {
         return false;
     }
 
-    _save() {
+    _save(navBackOnSuccess: boolean) {
         // TODO - Add protections against overlapped actions
         if (!this._validate()) return;
 
@@ -156,7 +167,8 @@ export class TrainEditPage extends Page {
             }
 
             promise.then(() => {
-                nav.back();
+                if (navBackOnSuccess)
+                    nav.back();
             }).catch((err) => {
                 console.error(err);
                 prompt.error("Failed to save train details.");
