@@ -87,20 +87,29 @@ export class CvEditorPage extends Page {
     }
 
     private _writeCvs() {
-        const batch: CvValuePair[] = [];
-        this._cvControls.forEach((cv, key) => {
-            if (!cv.isDirty) return;
-            batch.push({
-                cv: key,
-                value: cv.value
-            })
-            cv.state = State.updating;
-        });
+        let anyDirty = false;
+        this._cvControls.forEach((cv) => anyDirty = anyDirty || cv.isDirty);
+        if (!anyDirty) {
+            prompt.message("No CV values have been changed");
+            return;
+        }
 
-        Client.instance.connection.request(RequestType.LocoCvWrite, {
-            cvs: batch
-        } as LocoCvWriteRequest, (e, r) => this._onCvResponse(e, r));
-        return false;
+        prompt.confirm("Are you sure you you wish to write CV values", () => {
+            const batch: CvValuePair[] = [];
+            this._cvControls.forEach((cv, key) => {
+                if (!cv.isDirty) return;
+                batch.push({
+                    cv: key,
+                    value: cv.value
+                })
+                cv.state = State.updating;
+            });
+
+            Client.instance.connection.request(RequestType.LocoCvWrite, {
+                cvs: batch
+            } as LocoCvWriteRequest, (e, r) => this._onCvResponse(e, r));
+            return false;
+        });
     }
 }
 

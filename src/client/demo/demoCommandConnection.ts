@@ -176,6 +176,8 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
     }
 
     private async _handleLocoCvRead(request: LocoCvReadRequest, callback: RequestCallback) {
+        this.state = ConnectionState.Busy;
+
         for (const requestedCV of request.cvs) {
             await timeout(CV_ACCESS_TIME);
 
@@ -195,9 +197,13 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
             lastMessage: true,
             data: "OK"
         })
+
+        this.state = ConnectionState.Idle;
     }
 
     private async _handleLocoCvWrite(request: LocoCvWriteRequest, callback: RequestCallback) {
+        this.state = ConnectionState.Busy;
+
         for (const pair of request.cvs) {
             await timeout(CV_ACCESS_TIME);
 
@@ -214,5 +220,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
         })
 
         this._saveCVs();
+
+        this.state = ConnectionState.Idle;
     }
 }
