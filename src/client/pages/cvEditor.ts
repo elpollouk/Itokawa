@@ -73,8 +73,15 @@ export class CvEditorPage extends Page {
     }
 
     private _refreshCvs() {
+        const batch = [1, 3, 4, 7, 8, 10, 17, 18, 29];
+
+        for (const cv of batch) {
+            if (!this._cvControls.has(cv)) continue;
+            this._cvControls.get(cv).state = State.updating;
+        }
+
         Client.instance.connection.request(RequestType.LocoCvRead, {
-            cvs: [1, 3, 4, 7, 8, 10, 17, 18, 29 ]
+            cvs: batch
         } as LocoCvReadRequest, (e, r) => this._onCvResponse(e, r));
         return false;
     }

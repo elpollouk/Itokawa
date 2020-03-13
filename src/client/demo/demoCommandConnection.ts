@@ -1,9 +1,12 @@
 import { Bindable } from "../utils/bindable";
 import { ICommandConnection, ConnectionState, RequestCallback } from "../client";
-import { RequestType, CommandResponse, LocoSpeedRequest, TransportMessage, generateMessageTag } from "../../common/messages";
+import { RequestType, CommandResponse, LocoSpeedRequest, TransportMessage, generateMessageTag, CvValuePair, LocoCvReadRequest, LocoCvWriteRequest } from "../../common/messages";
 import { timestamp } from "../../common/time";
 import { CommandStationState } from "../../devices/commandStations/commandStation";
+import { timeout } from "../../utils/promiseUtils";
 const config = require('./config.json');
+
+const CV_ACCESS_TIME = 1.0;
 
 function _defaultCallback(err: Error, message: CommandResponse) {
 
@@ -23,6 +26,15 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
     publicUrl: string;
 
     private _locoStates = new Map<number, LocoState>();
+    private _cvs = new Map<number, number>([
+        [1, 3],
+        [3, 5],
+        [4, 5],
+        [7, 200],
+        [8, 255],
+        [10, 128],
+        [29, 6]
+    ]);
 
     constructor() {
         super();
@@ -33,6 +45,21 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
             "deviceState",
             "publicUrl"
         );
+
+        this._loadCVs();
+    }
+
+    private _loadCVs() {
+        const json = window.sessionStorage.getItem("cvs");
+        if (!json) return;
+        const data = JSON.parse(json);
+        this._cvs = new Map<number, number>(data);
+    }
+
+    private _saveCVs() {
+        const data: number[][] = [];
+        this._cvs.forEach((value, cv) => data.push([cv, value]));
+        window.sessionStorage.setItem("cvs", JSON.stringify(data));
     }
 
     request<T>(type: RequestType, data: T, callback?: RequestCallback): void {
@@ -55,6 +82,14 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                 this._handleLocoSpeedRefresh(callback);
                 break;
 
+            case RequestType.LocoCvRead:
+                this._handleLocoCvRead(rawData as LocoCvReadRequest, callback);
+                break;
+
+            case RequestType.LocoCvWrite:
+                this._handleLocoCvWrite(rawData as LocoCvWriteRequest, callback);
+                break;
+    
             default:
                 callback(new Error(`Unrecognised request type: ${type}`));
         }
@@ -138,5 +173,46 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                 data: "OK"
             });
         });
+    }
+
+    private async _handleLocoCvRead(request: LocoCvReadRequest, callback: RequestCallback) {
+        for (const requestedCV of request.cvs) {
+            await timeout(CV_ACCESS_TIME);
+
+            let value = 0;
+            if (this._cvs.has(requestedCV)) value = this._cvs.get(requestedCV);
+
+            callback(null, {
+                lastMessage: false,
+                data: {
+                    cv: requestedCV,
+                    value: value
+                } as CvValuePair
+            });
+        }
+
+        callback(null, {
+            lastMessage: true,
+            data: "OK"
+        })
+    }
+
+    private async _handleLocoCvWrite(request: LocoCvWriteRequest, callback: RequestCallback) {
+        for (const pair of request.cvs) {
+            await timeout(CV_ACCESS_TIME);
+
+            this._cvs.set(pair.cv, pair.value);
+            callback(null, {
+                lastMessage: false,
+                data: pair
+            });
+        }
+
+        callback(null, {
+            lastMessage: true,
+            data: "OK"
+        })
+
+        this._saveCVs();
     }
 }
