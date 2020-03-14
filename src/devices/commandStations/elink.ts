@@ -131,16 +131,17 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     async _ensureCvSelected() {
-        // We get the next message 4 times for some reason
-        for (let i = 0; i < 4; i++) {
-            const resMessage = await this._port.read(3);
+        // We get the next message multiple times
+        let resMessage: number[];
+        do {
+            resMessage = await this._port.read(3);
             ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
-            if (resMessage[1] !== 2) throw new Error(`Unexpected message: ${toHumanHex(resMessage)}`);
-        }
+        } while (resMessage[1] === 2);
+        if (resMessage[1] !== 1) throw new Error(`Unexpected message: ${toHumanHex(resMessage)}`);
 
-        // Then another 4 similar messages, just with a different value in the data field
-        for (let i = 0; i < 4; i++) {
-            const resMessage = await this._port.read(3);
+        // Then another batch of confirmation messages
+        for (let i = 0; i < 3; i++) {
+            resMessage = await this._port.read(3);
             ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
             if (resMessage[1] !== 1) throw new Error(`Unexpected message: ${toHumanHex(resMessage)}`);
         }
