@@ -16,7 +16,7 @@ export class TrainEditPage extends Page {
 
     private _id: number;
     private readonly _api: IApiClient;
-    private _cvs: CvMap;
+    private _cvs: CvMap = {};
 
     private _nameElement: HTMLInputElement;
     private _addressElement: HTMLInputElement;
@@ -69,7 +69,7 @@ export class TrainEditPage extends Page {
         if (this._id) this._api.getLoco(this._id).then((loco) => {
             this._nameElement.value = loco.name;
             this._addressElement.value = `${loco.address}`;
-            this._cvs = loco.cvs;
+            this._cvs = loco.cvs || {};
             if (loco.discrete) {
                 this._slowElement.value = `${loco.speeds[0]}`;
                 this._mediumElement.value = `${loco.speeds[1]}`;

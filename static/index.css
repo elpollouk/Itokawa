@@ -588,15 +588,28 @@ a:visited {
  * CV Editor
  */
 
+ .cvEditor .buttons {
+     margin-top: 1.0em;
+     margin-bottom: 1.0em;
+ }
+
 .cv {
     padding: 2px;
     margin-top: 2px;
 }
 
-.cv span {
+.cv .cvNumber {
     display: inline-block;
     width: 2em;
     text-align: right;
+}
+
+.cv .cvName {
+    display: inline-block;
+    width: 65%;
+    box-sizing: border-box;
+    padding-left: 1.0em;
+    vertical-align: text-top;
 }
 
 .cv input {
