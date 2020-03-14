@@ -1,9 +1,10 @@
 import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
-import { stub, SinonStub } from "sinon"
-import { createSinonStubInstance, StubbedClass } from "../../utils/testUtils"
-import { nextTick } from "../../utils/promiseUtils"
+import { stub, SinonStub } from "sinon";
+import { createSinonStubInstance, StubbedClass } from "../../utils/testUtils";
+import {  nextTick } from "../../utils/promiseUtils";
+import * as promiseUtils from "../../utils/promiseUtils";
 import { AsyncSerialPort } from "../asyncSerialPort"
 import { ELinkCommandStation, ELinkCommandBatch } from "./elink";
 import { CommandStationState } from "./commandStation";
@@ -13,11 +14,13 @@ const CONNECTION_STRING = "port=/dev/ttyACM0";
 describe("eLink", () => {
     let serialPortOpenStub: SinonStub;
     let setTimeoutStub: SinonStub;
+    let promiseTimeoutStub: SinonStub;
     let clearTimeoutStub: SinonStub;
     let serialPortStub: StubbedClass<AsyncSerialPort>;
 
     let portWrites: (number[] | Buffer)[];
     let portReads: number[][];
+    let onReadBufferEmpty: () => number[][];
 
     function initReads() {
         portReads = [];
@@ -50,9 +53,15 @@ describe("eLink", () => {
         portWrites = [];
         initReads();
 
+        onReadBufferEmpty = () => null;
+
         serialPortStub = createSinonStubInstance(AsyncSerialPort);
         serialPortStub.read.callsFake((size) => {
-            if (portReads.length === 0) return Promise.reject(new Error(`Unexpect port read in test, size=${size}`));
+            if (portReads.length === 0) {
+                portReads = onReadBufferEmpty() || [];
+                if (portReads.length === 0)
+                    return Promise.reject(new Error(`Unexpect port read in test, size=${size}`));
+            }
             const data = portReads.shift();
             if (data.length !== size) return Promise.reject(new Error(`Unexpected port read size in test, expected=${data.length}, actual=${size}`));
             return Promise.resolve(data);
@@ -64,19 +73,24 @@ describe("eLink", () => {
         serialPortStub.write.callsFake((data) => {
             portWrites.push(data);
             return Promise.resolve();
-        })
+        });
+        stub(serialPortStub, "bytesAvailable").get(() => {
+            return portReads.length;
+        });
 
         serialPortOpenStub = stub(AsyncSerialPort, "open")
             .returns(Promise.resolve(serialPortStub));
 
         setTimeoutStub = stub(global, "setTimeout").returns({} as NodeJS.Timeout);
         clearTimeoutStub = stub(global, "clearTimeout");
+        promiseTimeoutStub = stub(promiseUtils, "timeout").returns(Promise.resolve());
     })
 
     afterEach(() => {
         serialPortOpenStub.restore();
         setTimeoutStub.restore();
         clearTimeoutStub.restore();
+        promiseTimeoutStub.restore();
     })
 
     describe("Open", () => {
@@ -389,13 +403,18 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
+            ]);
+
+            // Need to split the buffer as the eLink returns a variable number of ack messages so the device
+            // implementation needs to wait until the buffer is drained before progressing
+            onReadBufferEmpty = () => [
                 // CV value
                 [0x63],
                 [0x14, 0x01, 0x03, 0x75],
                 // Status info
                 [0x62],
                 [0x22, 0x40, 0x00]
-            ]);
+            ];
 
             const value = await cs.readLocoCv(1);
             expect(value).to.equal(3);
@@ -403,6 +422,79 @@ describe("eLink", () => {
             expect(portWrites).to.eql([
                 // Select CV
                [0x22, 0x15, 0x01, 0x36],
+               // Request Value
+               [0x21, 0x10, 0x31],
+               // Heartbeat
+               [0x21, 0x24, 0x05] 
+            ]);
+            expect(portReads).to.be.empty;
+        })
+
+        it("should return the CV value if there are only 6 acks", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+            ]);
+
+            // Need to split the buffer as the eLink returns a variable number of ack messages so the device
+            // implementation needs to wait until the buffer is drained before progressing
+            onReadBufferEmpty = () => [
+                // CV value
+                [0x63],
+                [0x14, 0x02, 0x03, 0x76],
+                // Status info
+                [0x62],
+                [0x22, 0x40, 0x00]
+            ];
+
+            const value = await cs.readLocoCv(2);
+            expect(value).to.equal(3);
+
+            expect(portWrites).to.eql([
+                // Select CV
+               [0x22, 0x15, 0x02, 0x35],
+               // Request Value
+               [0x21, 0x10, 0x31],
+               // Heartbeat
+               [0x21, 0x24, 0x05] 
+            ]);
+            expect(portReads).to.be.empty;
+        })
+
+        it("should return the CV value if there are unbalanced ack types", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60],
+            ]);
+
+            // Need to split the buffer as the eLink returns a variable number of ack messages so the device
+            // implementation needs to wait until the buffer is drained before progressing
+            onReadBufferEmpty = () => [
+                // CV value
+                [0x63],
+                [0x14, 0x02, 0x13, 0x66],
+                // Status info
+                [0x62],
+                [0x22, 0x40, 0x00]
+            ];
+
+            const value = await cs.readLocoCv(2);
+            expect(value).to.equal(0x13);
+
+            expect(portWrites).to.eql([
+                // Select CV
+               [0x22, 0x15, 0x02, 0x35],
                // Request Value
                [0x21, 0x10, 0x31],
                // Heartbeat
@@ -421,14 +513,18 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
-                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60]
+            ]);
+
+            onReadBufferEmpty = () => [
                 // CV value
                 [0x63],
                 [0x14, 0x08, 0x30, 0x4F],
                 // Status info
                 [0x62],
                 [0x22, 0x40, 0x00]
-            ]);
+            ];
+
             cs["_state"] = CommandStationState.BUSY;
 
             const then = stub();
@@ -469,10 +565,13 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
+            ]);
+
+            onReadBufferEmpty = () => [
                 // CV value
                 [0x61],
                 [0x13, 0x72]
-            ]);
+            ];
 
             await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Failed to read CV 1");
             expect(portReads).to.be.empty;
@@ -488,10 +587,13 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
-                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60]
+            ]);
+
+            onReadBufferEmpty = () => [
                 // CV value
                 [0xFF]
-            ]);
+            ];
 
             await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Unexpected CV value response: ff");
         })
@@ -506,11 +608,14 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
-                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60]
+            ]);
+
+            onReadBufferEmpty = () => [
                 // CV value
                 [0x63],
                 [0x14, 0x02, 0x03, 0x76],
-            ]);
+            ];
 
             await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Received value for CV 2 but expected CV 1");
         })
@@ -574,11 +679,14 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
-                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60]
+            ]);
+
+            onReadBufferEmpty = () => [
                 // CV value
                 [0x63],
                 [0x14, 0x01, 0x03, 0x70],
-            ]);
+            ];
 
             await expect(cs.readLocoCv(1)).to.be.eventually.rejectedWith("Invalid checksum for received message");
         })
@@ -600,14 +708,17 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
-                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60]
+            ]);
+
+            onReadBufferEmpty = () => [
                 // CV value
                 [0x63],
                 [0x14, 0x01, 0x10, 0x66],
                 // Status info
                 [0x62],
                 [0x22, 0x40, 0x00]
-            ]);
+            ];
 
             await cs.writeLocoCv(1, 16);
 
@@ -632,14 +743,18 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
-                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60]
+            ]);
+
+            onReadBufferEmpty = () => [
                 // CV value
                 [0x63],
                 [0x14, 0x01, 0x10, 0x66],
                 // Status info
                 [0x62],
                 [0x22, 0x40, 0x00]
-            ]);
+            ];
+
             cs["_state"] = CommandStationState.BUSY;
 
             const then = stub();
@@ -688,11 +803,14 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
-                [0x61, 0x01, 0x60],
+                [0x61, 0x01, 0x60]
+            ]);
+
+            onReadBufferEmpty = () => [
                 // CV value
                 [0x63],
                 [0x14, 0x01, 0x10, 0x66],
-            ]);
+            ];
 
             await expect(cs.writeLocoCv(1, 4)).to.be.eventually.rejectedWith("Failed to write CV 1");
         })
