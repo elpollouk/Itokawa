@@ -6,6 +6,7 @@ import { toHumanHex } from "../../utils/hex";
 import { parseConnectionString } from "../../utils/parsers";
 import { padLeadingZero } from "../../utils/padding";
 import { timeout } from "../../utils/promiseUtils";
+import { registerHandlers } from "../../server/handlers/lifecycle";
 
 const log = new Logger("eLink");
 
@@ -145,8 +146,11 @@ export class ELinkCommandStation extends CommandStationBase {
         // The eLink is really annoying as we have no idea how many of these we'll receive, could be 3, could be 4
         // We need to wait a bit and see if there are any more messages in the buffer before we can  continue
         while (true) {
-            await timeout(250);
-            if (this._port.bytesAvailable === 0) break;
+            // TODO - Add timeout support to reads
+            if (this._port.bytesAvailable === 0) {
+                await timeout(0.5);
+                if (this._port.bytesAvailable === 0) break;
+            }
             resMessage = await this._port.read(3);
             ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
             if (resMessage[1] !== 1) throw new Error(`Unexpected message: ${toHumanHex(resMessage)}`);
