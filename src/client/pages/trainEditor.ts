@@ -1,5 +1,5 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
-import { Client, IApiClient } from "../client";
+import { IApiClient, client } from "../client";
 import { parseHtml, getById, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
 import { CvEditorConstructor, CvEditorPage } from "./cvEditor";
@@ -31,7 +31,7 @@ export class TrainEditPage extends Page {
         super();
         params = params || {};
         this._id = params.id ? params.id : 0;
-        this._api = Client.instance.api;
+        this._api = client.api;
         this.content = this._buildUi();
     }
 

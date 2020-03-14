@@ -1,4 +1,4 @@
-import { Client } from "../client";
+import { client } from "../client";
 import { RequestType, LifeCycleAction, LifeCycleRequest } from "../../common/messages";
 import { Navigator as nav } from "../pages/page";
 import { ControlBase } from "./control";
@@ -85,8 +85,6 @@ export class SystemDrawControl extends ControlBase {
     }
 
     private openServerPopup() {
-        const client = Client.instance;
-
         function action(caption: string, message: string, onyes:()=>void): PromptButton {
             return {
                 caption: caption,

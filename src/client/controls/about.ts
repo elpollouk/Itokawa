@@ -2,7 +2,7 @@ import { ControlBase } from "./control";
 import { Navigator as nav } from "../pages/page";
 import { parseHtml, getById } from "../utils/dom";
 import * as popup from "./popup";
-import { Client } from "../client";
+import { client } from "../client";
 import { AttributionsConstructor } from "../pages/attributions";
 const html = require("./about.html");
 
@@ -24,7 +24,7 @@ export class AboutControl extends ControlBase {
 
     protected _buildUi(): HTMLElement {
         const control = parseHtml(html);
-        const connection = Client.instance.connection;
+        const connection = client.connection;
 
         const revision = connection.gitRevision || "";
         getById(control, "version").innerText = connection.packageVersion;

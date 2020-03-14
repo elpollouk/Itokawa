@@ -2,7 +2,7 @@ import { ControlBase } from "./control";
 import { RequestType, LocoSpeedRequest } from "../../common/messages";
 import { parseHtml, getById } from "../utils/dom";
 import { Loco } from "../../common/api";
-import { Client } from "../client";
+import { client } from "../client";
 const html = require("./trainControl.html");
 
 export class TrainControl extends ControlBase {
@@ -100,7 +100,7 @@ export class TrainControl extends ControlBase {
     }
 
     private _sendRequest() {
-        Client.instance.connection.request<LocoSpeedRequest>(RequestType.LocoSpeed, {
+        client.connection.request<LocoSpeedRequest>(RequestType.LocoSpeed, {
             locoId: this.loco.address,
             speed: this._speed,
             reverse: this._reverse

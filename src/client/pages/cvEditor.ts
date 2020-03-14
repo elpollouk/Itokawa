@@ -1,7 +1,7 @@
 import { Page, IPageConstructor, Navigator as nav } from "./page";
 import { parseHtml, getById } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
-import { Client } from "../client";
+import { client } from "../client";
 import { CvControl, State } from "../controls/cvControl";
 import { RequestType, LocoCvReadRequest, CvValuePair, LocoCvWriteRequest } from "../../common/messages";
 import { CvMap } from "../../common/api";
@@ -70,6 +70,7 @@ export class CvEditorPage extends Page {
     }
 
     private _refreshCvs() {
+        // These are the standard Hornby CVs for now
         const batch = [1, 3, 4, 7, 8, 10, 17, 18, 29];
 
         for (const cv of batch) {
@@ -77,7 +78,7 @@ export class CvEditorPage extends Page {
             this._cvControls.get(cv).state = State.updating;
         }
 
-        Client.instance.connection.request(RequestType.LocoCvRead, {
+        client.connection.request(RequestType.LocoCvRead, {
             cvs: batch
         } as LocoCvReadRequest, (e, r) => this._onCvResponse(e, r));
         return false;
@@ -102,7 +103,7 @@ export class CvEditorPage extends Page {
                 cv.state = State.updating;
             });
 
-            Client.instance.connection.request(RequestType.LocoCvWrite, {
+            client.connection.request(RequestType.LocoCvWrite, {
                 cvs: batch
             } as LocoCvWriteRequest, (e, r) => this._onCvResponse(e, r));
             return false;

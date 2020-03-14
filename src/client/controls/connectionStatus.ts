@@ -1,4 +1,4 @@
-import { Client } from "../client";
+import { client } from "../client";
 import { ConnectionState } from "../client";
 import { CommandStationState } from "../../devices/commandStations/commandStation";
 
@@ -12,7 +12,7 @@ export class ConnectionStatus {
         this.element = this._buildUi();
         this.parent.appendChild(this.element);
 
-        Client.instance.connection.bind("state", (state: ConnectionState) => {
+        client.connection.bind("state", (state: ConnectionState) => {
             switch (state) {
                 case ConnectionState.Closed:
                     this.networkStatus.className = "led disconnected";
@@ -33,7 +33,7 @@ export class ConnectionStatus {
             }
         });
 
-        Client.instance.connection.bind("deviceState", (state: CommandStationState) => {
+        client.connection.bind("deviceState", (state: CommandStationState) => {
             switch (state) {
                 case CommandStationState.NOT_CONNECTED:
                 case CommandStationState.UNINITIALISED:
@@ -57,7 +57,7 @@ export class ConnectionStatus {
         });
 
         let timeoutToken: NodeJS.Timeout;
-        Client.instance.connection.bind("state", (state: ConnectionState) => {
+        client.connection.bind("state", (state: ConnectionState) => {
             if (timeoutToken) clearTimeout(timeoutToken);
             switch (state) {
                 case ConnectionState.Busy:

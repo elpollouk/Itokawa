@@ -1,7 +1,7 @@
 import { Navigator } from "./pages/page";
 import { IndexPageConstructor } from "./pages/index";
 import { UpdatePageConstructor, UpdatePage } from "./pages/update";
-import { Client } from "./client";
+import { client } from "./client";
 import { SystemDrawControl } from "./controls/systemDrawer";
 import { TrainRosterConstructor } from "./pages/trainRoster";
 import { TrainEditConstructor } from "./pages/trainEditor";
@@ -9,7 +9,7 @@ import { AttributionsConstructor } from "./pages/attributions";
 import { CvEditorConstructor } from "./pages/cvEditor";
 
 window["main"] = function () {
-    window["itokawa"] = new Client();
+    window["itokawa"] = client;
 
     //---------------------------------------------------------------------------------------//
     // System Drawer

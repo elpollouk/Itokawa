@@ -1,4 +1,4 @@
-import { Client } from "../client";
+import { client } from "../client";
 import { Page, IPageConstructor, Navigator as nav } from "./page";
 import * as prompt from "../controls/promptControl";
 import { TrainControl } from "../controls/trainControl";
@@ -20,7 +20,7 @@ class IndexPage extends Page {
         super();
         this.content = this._buildUi();
 
-        this._messageHandlerToken = Client.instance.connection.on("message", (data: TransportMessage) => {
+        this._messageHandlerToken = client.connection.on("message", (data: TransportMessage) => {
             this._onMessage(data);
         });
     }
@@ -36,7 +36,7 @@ class IndexPage extends Page {
     }
 
     onEnter() {
-        Client.instance.api.getLocos().then((result: Loco[]) => {
+        client.api.getLocos().then((result: Loco[]) => {
             this._trainControlsContainer.innerHTML = "";
             if (result.length) {
                 for (const loco of result) {
@@ -52,7 +52,7 @@ class IndexPage extends Page {
         }).then(() => {
             // We want to request the latest loco states as another client may have changed them while we
             // were off this page.
-            Client.instance.connection.request(RequestType.LocoSpeedRefresh, null, (err, response) => {
+            client.connection.request(RequestType.LocoSpeedRefresh, null, (err, response) => {
                 if (err) {
                     prompt.error(`Failed to refresh loco speeds:\n${err.message}`);
                     return;
@@ -68,7 +68,7 @@ class IndexPage extends Page {
     }
 
     private _emergencyStop() {
-        const connection = Client.instance.connection;
+        const connection = client.connection;
         if (connection.state !== ConnectionState.Idle) {
             setTimeout(() => this._emergencyStop(), 100);
             return;
@@ -92,7 +92,7 @@ class IndexPage extends Page {
     }
 
     destroy() {
-        Client.instance.connection.off("message", this._messageHandlerToken);
+        client.connection.off("message", this._messageHandlerToken);
         super.destroy();
     }
 }

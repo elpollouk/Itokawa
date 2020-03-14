@@ -7,8 +7,6 @@ import * as messages from "../common/messages";
 import { IBindable } from "./utils/bindable";
 import { CommandStationState } from "../devices/commandStations/commandStation";
 
-let _client: Client = null;
-
 export interface IApiClient {
     getLocos(): Promise<api.Loco[]>;
     addLoco(name: string, address: number, speed: number[] | number, cvs: api.CvMap): Promise<api.Loco>;
@@ -40,10 +38,6 @@ export interface ICommandConnection extends IBindable{
 }
 
 export class Client {
-    static get instance() {
-        return _client;
-    }
-
     readonly connection: ICommandConnection;
     readonly api: IApiClient;
 
@@ -56,6 +50,7 @@ export class Client {
             this.connection = new CommandConnection("/control/v1");
             this.api = new ApiClient("/api/v1");
         }
-        _client = this;
     }
 }
+
+export const client = new Client();
