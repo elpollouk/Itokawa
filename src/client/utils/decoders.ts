@@ -102,3 +102,9 @@ export function loadData(cb: (error?: Error) => void) {
     client.open("GET", "data/decoders.xml");
     client.send();
 }
+
+export function getLocoDecoderProfile(manufacturer: number, version: number): LocoDecoderProfile {
+    const decoders = LocoDecoderProfiles.get(manufacturer);
+    if (!decoders) return null;
+    return decoders.get(version) || null;
+}

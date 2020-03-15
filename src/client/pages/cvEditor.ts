@@ -5,7 +5,7 @@ import { client } from "../client";
 import { CvControl, State } from "../controls/cvControl";
 import { RequestType, LocoCvReadRequest, CvValuePair, LocoCvWriteRequest } from "../../common/messages";
 import { CvMap } from "../../common/api";
-import { loadData } from "../utils/decoders";
+import { loadData, getLocoDecoderProfile } from "../utils/decoders";
 const html = require("./cvEditor.html");
 
 export class CvEditorPage extends Page {
@@ -79,7 +79,7 @@ export class CvEditorPage extends Page {
 
     private _refreshCvs() {
         // These are the standard Hornby CVs for now
-        const batch = [1, 3, 4, 7, 8, 10, 17, 18, 29];
+        const batch = getLocoDecoderProfile(48, 133).cvs;
 
         for (const cv of batch) {
             if (!this._cvControls.has(cv)) continue;
