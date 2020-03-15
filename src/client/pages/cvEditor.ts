@@ -5,7 +5,7 @@ import { client } from "../client";
 import { CvControl, State } from "../controls/cvControl";
 import { RequestType, LocoCvReadRequest, CvValuePair, LocoCvWriteRequest } from "../../common/messages";
 import { CvMap } from "../../common/api";
-import { loadData } from "../controls/cvNames";
+import { loadData } from "../utils/decoders";
 const html = require("./cvEditor.html");
 
 export class CvEditorPage extends Page {

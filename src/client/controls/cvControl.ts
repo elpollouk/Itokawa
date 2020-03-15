@@ -1,6 +1,6 @@
 import { ControlBase } from "./control";
 import { parseHtml, getById } from "../utils/dom";
-import { LocoCvNames } from "./cvNames";
+import { LocoCvNames } from "../utils/decoders";
 const html = require("./cvControl.html");
 
 export enum State {
