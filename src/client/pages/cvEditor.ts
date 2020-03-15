@@ -5,7 +5,7 @@ import { client } from "../client";
 import { CvControl, State } from "../controls/cvControl";
 import { RequestType, LocoCvReadRequest, CvValuePair, LocoCvWriteRequest } from "../../common/messages";
 import { CvMap } from "../../common/api";
-import { loadData, getLocoDecoderProfile, LocoDecoderProfile } from "../utils/decoders";
+import { loadData, getLocoDecoderProfile, LocoDecoderProfile, getLocoScanCvs } from "../utils/decoders";
 const html = require("./cvEditor.html");
 
 export class CvEditorPage extends Page {
@@ -64,12 +64,16 @@ export class CvEditorPage extends Page {
         else if (cv === 7) {
             this._version = value;
         }
-        else if (this._cvControls.has(cv)) {
-            this._cvControls.get(cv).value = value;
-        }
         else {
-            const cvControl = new CvControl(this._cvContainer, cv, value);
-            this._cvControls.set(cv, cvControl);
+            let control = this._cvControls.get(cv);
+            if (!control) {
+                control = new CvControl(this._cvContainer, cv, value);
+                this._cvControls.set(cv, control);
+            }
+            else {
+                control.value = value;
+            }
+            control.element.scrollIntoView();
         }
     }
 
@@ -86,11 +90,15 @@ export class CvEditorPage extends Page {
     private async _readCvsAsync() {
         const profile = await this._getDecoderProfile();
 
-        if (!profile) {
-            throw new Error(`No profile defined for manufacturer ${this._manufacturer}, version ${this._version}`);
+        let batch: number[];
+        if (profile) {
+            batch =  profile.cvs;
         }
-
-        const batch =  profile.cvs;
+        else {
+            const yes = await prompt.confirm(`No profile defined for manufacturer ${this._manufacturer}, version ${this._version}.\nWould you like to perform a full scan?`);
+            if (!yes) return;
+            batch = getLocoScanCvs();
+        }         
 
         for (const cv of batch) {
             if (!this._cvControls.has(cv)) continue;

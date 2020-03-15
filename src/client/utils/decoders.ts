@@ -39,13 +39,29 @@ function parseData(data: Document) {
     }
 }
 
+function* parseRange(range: string): IterableIterator<number> {
+    const startEnd = range.split("-");
+    if (startEnd.length < 1 || startEnd.length > 2) throw new Error(`Invalid range specification: ${range}`);
+    if (startEnd.length === 1) startEnd.push(startEnd[0]);
+
+    let start = parseInt(startEnd[0].trim());
+    if (isNaN(start)) throw new Error(`Invalid start of range: ${startEnd[0]}`);
+    const end = parseInt(startEnd[1].trim());
+    if (isNaN(end)) throw new Error(`Invalid end of range: ${startEnd[1]}`);
+    if (end < start) throw new Error(`End of range (${end}) is before start of range (${start})`);
+
+    while (start <= end) {
+        yield start;
+        start++;
+    }
+} 
+
 function parseNumberList(input: string): number[] {
     const result = [];
     for (const valueString of input.split(",")) {
-        const value = parseInt(valueString);
-        if (isNaN(value)) throw new Error(`Invalid number encountered: ${valueString}`);
-        result.push(value);
-
+        for (const value of parseRange(valueString)) {
+            result.push(value);
+        }
     }
     return result;
 }
@@ -107,4 +123,8 @@ export function getLocoDecoderProfile(manufacturer: number, version: number): Lo
     const decoders = LocoDecoderProfiles.get(manufacturer);
     if (!decoders) return null;
     return decoders.get(version) || null;
+}
+
+export function getLocoScanCvs() {
+    return getLocoDecoderProfile(0, 0).cvs;
 }
