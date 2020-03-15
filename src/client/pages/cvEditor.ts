@@ -5,6 +5,7 @@ import { client } from "../client";
 import { CvControl, State } from "../controls/cvControl";
 import { RequestType, LocoCvReadRequest, CvValuePair, LocoCvWriteRequest } from "../../common/messages";
 import { CvMap } from "../../common/api";
+import { loadData } from "../controls/cvNames";
 const html = require("./cvEditor.html");
 
 export class CvEditorPage extends Page {
@@ -23,16 +24,23 @@ export class CvEditorPage extends Page {
     constructor (params: any) {
         super();
         this.content = this._buildUi();
-        if (params) {
-            for (const key in params) {
-                const cv = parseInt(key);
-                if (isNaN(cv)) continue;
-                const value = params[key];
-                if (!Number.isInteger(value)) continue;
 
-                this._addCv(cv, value);
+        loadData((error) => {
+            if (error) {
+                console.error(error);
+                prompt.error(error.message);
             }
-        }
+            else if (params) {
+                for (const key in params) {
+                    const cv = parseInt(key);
+                    if (isNaN(cv)) continue;
+                    const value = params[key];
+                    if (!Number.isInteger(value)) continue;
+    
+                    this._addCv(cv, value);
+                }
+            }
+        });
     }
 
     private _buildUi(): HTMLElement {

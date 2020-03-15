@@ -1,40 +1,104 @@
-// Data from https://www.nmra.org/sites/default/files/standards/sandrp/pdf/s-9.2.2_decoder_cvs_2012.07.pdf
-export const CvNames = {
-    1: "Primary Address",
-    2: "Vstart",
-    3: "Acceleration Rate",
-    4: "Deceleration Rate",
-    5: "Vhigh",
-    6: "Vmid",
-    7: "Manufacturer Version No.",
-    8: "Manufactured ID",
-    9: "Total PWM Period",
-    10: "EMF Feedback Cutout",
-    11: "Packet Time-Out Value",
-    12: "Power Source Conversion",
-    13: "Alternate Mode Function. Status F1-F8",
-    14: "Alternate Mode Function. Status FL,F9-F12",
-    15: "Decoder Lock",
-    16: "Decoder Lock",
-    17: "Extended Address High Byte",
-    18: "Extended Address Low Byte",
-    19: "Consist Address",
-    // 20: Reserved
-    21: "Consist Addr Active for F1-F8",
-    22: "Consist Addr Active for FL-F9-F12",
-    23: "Acceleration Adjustment",
-    24: "Deceleration Adjustment",
-    25: "Speed Table/Mid-range Cab Speed Step",
-    // 26: Reserved
-    27: "Decoder Automatic Stopping Configuration",
-    28: "Bi-Directional Communication Configuration",
-    29: "Configuration Data",
-    30: "Error Information",
-    31: "Index High Byte",
-    32: "Index Low Byte",
-    65: "Kick Start",
-    66: "Forward Trim",
-    95: "Reverse Trim",
-    105: "User Identifier #1",
-    106: "User Identifier #2"
+export interface LocoDecoderProfile {
+    name: string;
+    cvs: number[];
 };
+
+export const Manufactures = {};
+export const LocoCvNames = {};
+export const LocoDecoderProfiles = new Map<number, Map<number, LocoDecoderProfile>>();
+
+function parseData(data: Document) {
+    const root = data.getElementsByTagName("decoders")[0];
+
+    // Load up the manufacturers
+    const manufacturers = root.getElementsByTagName("manufacturers")[0].children;
+    for (let i = 0; i < manufacturers.length; i++) {
+        const node = manufacturers[i];
+        if (node.nodeName !== "man") continue;
+        const id = node.attributes.getNamedItem("n").nodeValue;
+        if (id in Manufactures) throw Error(`Duplicate manufacturer ${id} encountered: ${node.textContent}`);
+        Manufactures[id] = node.textContent;
+    };
+    
+    // Load up loco CVs
+    const locoCvs = root.getElementsByTagName("locoCvNames")[0].children;
+    for (let i = 0; i < locoCvs.length; i++) {
+        const node = locoCvs[i];
+        if (node.nodeName !== "cv") continue;
+        const id = node.attributes.getNamedItem("n").nodeValue;
+        if (id in LocoCvNames) throw Error(`Duplicate CV ${id} encountered: ${node.textContent}`);
+        LocoCvNames[id] = node.textContent;
+    }
+
+    // Load profiles
+    const profiles = root.getElementsByTagName("locoDecoders")[0].children
+    for (let i = 0; i < profiles.length; i++) {
+        const node = profiles[i];
+        if (node.nodeName !== "profile") continue;
+        loadProfile(node);
+    }
+}
+
+function parseNumberList(input: string): number[] {
+    const result = [];
+    for (const valueString of input.split(",")) {
+        const value = parseInt(valueString);
+        if (isNaN(value)) throw new Error(`Invalid number encountered: ${valueString}`);
+        result.push(value);
+
+    }
+    return result;
+}
+
+function loadProfile(profile: Element) {
+    const name = profile.attributes.getNamedItem("name").nodeValue;
+    let rawValue = profile.attributes.getNamedItem("man").nodeValue;
+    const manufacturer = parseInt(rawValue);
+    if (isNaN(manufacturer)) throw new Error(`Invalid manufacturer id encountered: ${rawValue}`);
+    const versions = parseNumberList(profile.attributes.getNamedItem("ver").nodeValue);
+    const cvs = parseNumberList(profile.getElementsByTagName("cvs")[0].textContent);
+
+    let decoders = LocoDecoderProfiles.get(manufacturer);
+    if (!decoders) {
+        decoders = new Map<number, LocoDecoderProfile>();
+        LocoDecoderProfiles.set(manufacturer, decoders);
+    }
+
+    for (const version of versions) {
+        if (decoders.has(version)) throw new Error(`Duplicate decoder version encountered: version = ${version}, name = ${name}`);
+        decoders.set(version, {
+            name: name,
+            cvs: cvs
+        });
+    }
+}
+
+let loaded = false;
+export function loadData(cb: (error?: Error) => void) {
+    // We should only need to load this once
+    if (loaded) {
+        cb();
+        return;
+    }
+
+    const client = new XMLHttpRequest();
+    client.onload = () => {
+        try {
+            if (client.status !== 200) {
+                throw new Error(`Unexpected HTTP response, status = ${client.status}`);
+            }
+            // XML is used as we can annotate the data with comments which isn't an option with JSON
+            parseData(client.responseXML);
+            loaded = true;
+            cb();
+        }
+        catch (error) {
+            cb(error);
+        }
+    }
+    client.onerror = () => {
+        cb(new Error("Request failed"));
+    }
+    client.open("GET", "data/decoders.xml");
+    client.send();
+}

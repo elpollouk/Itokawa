@@ -40,7 +40,10 @@
         <cv n="106">User Identifier #2</cv>
     </locoCvNames>
 
-    <!-- Data from https://www.nmra.org/sites/default/files/appendix_a_s-9_2_2.pdf -->
+    <!--
+        Data from https://www.nmra.org/sites/default/files/appendix_a_s-9_2_2.pdf
+        Revised: 20 January 2020
+    -->
     <manufacturers>
         <man n="1">CML Electronics Limited</man>
         <man n="2">Train Technology</man>

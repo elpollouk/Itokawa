@@ -1,6 +1,6 @@
 import { ControlBase } from "./control";
 import { parseHtml, getById } from "../utils/dom";
-import { CvNames } from "./cvNames";
+import { LocoCvNames } from "./cvNames";
 const html = require("./cvControl.html");
 
 export enum State {
@@ -76,7 +76,7 @@ export class CvControl extends ControlBase {
         this._valueElement.oninput = () => this._onValueChanged();
         this._valueElement.readOnly = _readOnlyCVs.has(this._cv);
 
-        const name = CvNames[this._cv];
+        const name = LocoCvNames[this._cv];
         if (name) {
             getById(control, "cvName").innerText = name;
         }
