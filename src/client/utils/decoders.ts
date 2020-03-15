@@ -1,5 +1,6 @@
 export interface LocoDecoderProfile {
     name: string;
+    manufacturer: string;
     cvs: number[];
 };
 
@@ -84,6 +85,7 @@ function loadProfile(profile: Element) {
         if (decoders.has(version)) throw new Error(`Duplicate decoder version encountered: version = ${version}, name = ${name}`);
         decoders.set(version, {
             name: name,
+            manufacturer: Manufactures[manufacturer],
             cvs: cvs
         });
     }

@@ -12,6 +12,8 @@ export class CvEditorPage extends Page {
     path: string = CvEditorConstructor.path;
     content: HTMLElement;
 
+    private _manufacturerText: HTMLElement;
+    private _decoderText: HTMLElement;
     private _cvContainer: HTMLElement;
     private _cvControls = new Map<number, CvControl>();
     private _manufacturer: number;
@@ -43,6 +45,10 @@ export class CvEditorPage extends Page {
     
                     this._addCv(cv, value);
                 }
+
+                if (this._manufacturer || this._version) {
+                    this._updateDecoderInfo(getLocoDecoderProfile(this._manufacturer, this._version));
+                }
             }
         });
     }
@@ -50,11 +56,25 @@ export class CvEditorPage extends Page {
     private _buildUi(): HTMLElement {
         const page = parseHtml(html);
 
+        this._manufacturerText = getById(page, "manufacturer");
+        this._decoderText = getById(page, "decoder");
         this._cvContainer = getById(page, "cvContainer");
         getById(page, "refresh").onclick = () => this._refreshCvs(); 
         getById(page, "write").onclick = () => this._writeCvs();
         
         return page;
+    }
+
+    private _updateDecoderInfo(profile: LocoDecoderProfile) {
+        let manufacturer: string;
+        let decoder: string;
+        if (profile) {
+            manufacturer = profile.manufacturer;
+            decoder = profile.name;
+        }
+
+        this._manufacturerText.innerText = manufacturer || "Unknown manufacturer";
+        this._decoderText.innerText = decoder || "Unknown decoder";
     }
 
     private _addCv(cv: number, value: number) {
@@ -89,6 +109,7 @@ export class CvEditorPage extends Page {
 
     private async _readCvsAsync() {
         const profile = await this._getDecoderProfile();
+        this._updateDecoderInfo(profile);
 
         let batch: number[];
         if (profile) {
