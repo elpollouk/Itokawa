@@ -46,6 +46,8 @@ export class CvEditorPage extends Page {
                     this._addCv(cv, value);
                 }
 
+                // If we don't have any decoder details yet, don't show anything for them to keep the
+                // UI clean.
                 if (this._manufacturer || this._version) {
                     this._updateDecoderInfo(getLocoDecoderProfile(this._manufacturer, this._version));
                 }
@@ -126,7 +128,8 @@ export class CvEditorPage extends Page {
             this._cvControls.get(cv).state = State.updating;
         }
 
-        // Remove old CVs that aren't part of the new profile
+        // Remove old CVs that aren't part of the new profile. We can identify these as we won't have
+        // marked them as updating in the previous loop
         for (const pair of this._cvControls) {
             if (pair[1].state === State.updating) continue;
             pair[1].close();
