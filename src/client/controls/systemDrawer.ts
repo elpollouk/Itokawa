@@ -88,7 +88,7 @@ export class SystemDrawControl extends ControlBase {
         function action(caption: string, message: string, onyes:()=>void): PromptButton {
             return {
                 caption: caption,
-                onclick: () => prompt.confirm(message, onyes)
+                onclick: () => prompt.confirm(message).then((yes) => { if (yes) onyes(); })
             }
         }
 

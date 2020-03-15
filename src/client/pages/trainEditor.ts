@@ -103,7 +103,8 @@ export class TrainEditPage extends Page {
     }
 
     _delete() {
-        prompt.confirm("Are you sure you want to delete this train?", async () => {
+        prompt.confirm("Are you sure you want to delete this train?").then(async (yes) => {
+            if (!yes) return;
             try {
                 await this._api.deleteLoco(this._id);
                 nav.back();
@@ -138,7 +139,9 @@ export class TrainEditPage extends Page {
         // TODO - Add protections against overlapped actions
         if (!this._validate()) return;
 
-        prompt.confirm("Are you sure you want to save this train?", () => {
+        prompt.confirm("Are you sure you want to save this train?").then((yes) => {
+            if (!yes) return;
+
             const name = this._nameElement.value;
             const address = parseInt(this._addressElement.value);
             let speed: number[] | number;

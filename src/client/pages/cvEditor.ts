@@ -73,14 +73,6 @@ export class CvEditorPage extends Page {
         }
     }
 
-    private _removeCv(cv: number) {
-        if (cv === 7 || cv === 8) throw new Error("Cannot remove decoder info");
-        const control = this._cvControls.get(cv);
-        if (!control) return;
-        control.close();
-        this._cvControls.delete(cv);
-    }
-
     private _refreshCvs() {
         // These are the standard Hornby CVs for now
         this._readCvsAsync().catch((error) => {
@@ -195,7 +187,9 @@ export class CvEditorPage extends Page {
             return;
         }
 
-        prompt.confirm("Are you sure you you wish to write CV values", () => {
+        prompt.confirm("Are you sure you you wish to write CV values").then((yes) => {
+            if (!yes) return;
+
             const batch: CvValuePair[] = [];
             this._cvControls.forEach((cv, key) => {
                 if (!cv.isDirty) return;

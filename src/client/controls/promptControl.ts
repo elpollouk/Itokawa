@@ -78,14 +78,16 @@ export function stackedPrompt(message: string, buttons: PromptButton[], onclose?
     return prompt;
 }
 
-export function confirm(message: string, onYes:()=>void, onNo?:()=>void): PromptControl {
-    return prompt(message, [{
-        caption: "Yes",
-        onclick: onYes
-    }, {
-        caption: "No",
-        onclick: onNo
-    }], onNo);
+export function confirm(message: string): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+        prompt(message, [{
+            caption: "Yes",
+            onclick: () => resolve(true)
+        }, {
+            caption: "No",
+            onclick: () => resolve(false)
+        }], () => resolve(false));
+    });
 }
 
 export function message(message: string): Promise<void> {
