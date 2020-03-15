@@ -81,51 +81,38 @@ export class CvEditorPage extends Page {
         this._cvControls.delete(cv);
     }
 
-    private _onCvResponse(error: Error, response: any) {
-        if (error) {
-            console.log(error);
-            prompt.error(error.message);
-            return;
-        }
-        if (response.lastMessage) {
-            nav.replaceParams(this.cvs);
-            return;
-        }
-        const data = response.data as CvValuePair;
-        this._addCv(data.cv, data.value);
-    }
-
     private _refreshCvs() {
         // These are the standard Hornby CVs for now
-        this._getDecoderProfile()
-        .then((profile) => {
-            if (!profile) throw new Error(`No profile defined for manufacturer ${this._manufacturer}, version ${this._version}`);
-
-            const batch = profile.cvs;
-
-            for (const cv of batch) {
-                if (!this._cvControls.has(cv)) continue;
-                this._cvControls.get(cv).state = State.updating;
-            }
-
-            // Remove old CVs that aren't part of the new profile
-            for (const pair of this._cvControls) {
-                if (pair[1].state === State.updating) continue;
-                pair[1].close();
-                this._cvControls.delete(pair[0]);
-            }
-    
-            client.connection.request(RequestType.LocoCvRead, {
-                cvs: batch
-            } as LocoCvReadRequest, (e, r) => this._onCvResponse(e, r));
-    
-        })
-        .catch((error) => {
+        this._readCvsAsync().catch((error) => {
             console.error(error);
             prompt.error(error.message);
         });
 
         return false;
+    }
+
+    private async _readCvsAsync() {
+        const profile = await this._getDecoderProfile();
+
+        if (!profile) {
+            throw new Error(`No profile defined for manufacturer ${this._manufacturer}, version ${this._version}`);
+        }
+
+        const batch =  profile.cvs;
+
+        for (const cv of batch) {
+            if (!this._cvControls.has(cv)) continue;
+            this._cvControls.get(cv).state = State.updating;
+        }
+
+        // Remove old CVs that aren't part of the new profile
+        for (const pair of this._cvControls) {
+            if (pair[1].state === State.updating) continue;
+            pair[1].close();
+            this._cvControls.delete(pair[0]);
+        }
+
+        await this._readCvBatch(batch);
     }
 
     private _getDecoderProfile(): Promise<LocoDecoderProfile> {
@@ -180,6 +167,26 @@ export class CvEditorPage extends Page {
         });
     }
 
+    private _readCvBatch(batch: number[]): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            client.connection.request(RequestType.LocoCvRead, {
+                cvs: batch
+            } as LocoCvReadRequest, (error, response) => {
+                if (error) {
+                    reject(error);
+                }
+                else if (response.lastMessage) {
+                    nav.replaceParams(this.cvs);
+                    resolve();
+                }
+                else {
+                    const data = response.data as CvValuePair;
+                    this._addCv(data.cv, data.value);
+                }
+            });
+        })
+    }
+
     private _writeCvs() {
         let anyDirty = false;
         this._cvControls.forEach((cv) => anyDirty = anyDirty || cv.isDirty);
@@ -201,7 +208,19 @@ export class CvEditorPage extends Page {
 
             client.connection.request(RequestType.LocoCvWrite, {
                 cvs: batch
-            } as LocoCvWriteRequest, (e, r) => this._onCvResponse(e, r));
+            } as LocoCvWriteRequest, (error, response) => {
+                if (error) {
+                    console.log(error);
+                    prompt.error(error.message);
+                }
+                else if (response.lastMessage) {
+                    nav.replaceParams(this.cvs);
+                }
+                else {
+                    const data = response.data as CvValuePair;
+                    this._addCv(data.cv, data.value);
+                }
+            });
             return false;
         });
     }
