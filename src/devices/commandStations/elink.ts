@@ -144,7 +144,7 @@ export class ELinkCommandStation extends CommandStationBase {
 
         // Then another batch of confirmation messages.
         // The eLink is really annoying as we have no idea how many of these we'll receive, could be 3, could be 4
-        // We need to wait a bit and see if there are any more messages in the buffer before we can  continue
+        // We need to wait a bit and see if there are any more messages in the buffer before we can continue
         while (true) {
             // TODO - Add timeout support to reads
             if (this._port.bytesAvailable === 0) {

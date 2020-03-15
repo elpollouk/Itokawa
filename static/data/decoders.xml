@@ -1,0 +1,227 @@
+<decoders>
+    <!-- Data from https://www.nmra.org/sites/default/files/standards/sandrp/pdf/s-9.2.2_decoder_cvs_2012.07.pdf -->
+    <locoCvNames>
+        <cv n="1">Primary Address</cv>
+        <cv n="2">Vstart</cv>
+        <cv n="3">Acceleration Rate</cv>
+        <cv n="4">Deceleration Rate</cv>
+        <cv n="5">Vhigh</cv>
+        <cv n="6">Vmid</cv>
+        <cv n="7">Manufacturer Version No.</cv>
+        <cv n="8">Manufactured ID</cv>
+        <cv n="9">Total PWM Period</cv>
+        <cv n="10">EMF Feedback Cutout</cv>
+        <cv n="11">Packet Time-Out Value</cv>
+        <cv n="12">Power Source Conversion</cv>
+        <cv n="13">Alternate Mode Function. Status F1-F8</cv>
+        <cv n="14">Alternate Mode Function. Status FL,F9-F12</cv>
+        <cv n="15">Decoder Lock</cv>
+        <cv n="16">Decoder Lock</cv>
+        <cv n="17">Extended Address High Byte</cv>
+        <cv n="18">Extended Address Low Byte</cv>
+        <cv n="19">Consist Address</cv>
+        <!-- 20: Reserved -->
+        <cv n="21">Consist Addr Active for F1-F8</cv>
+        <cv n="22">Consist Addr Active for FL-F9-F12</cv>
+        <cv n="23">Acceleration Adjustment</cv>
+        <cv n="24">Deceleration Adjustment</cv>
+        <cv n="25">Speed Table/Mid-range Cab Speed Step</cv>
+        <!-- 26: Reserved -->
+        <cv n="27">Decoder Automatic Stopping Configuration</cv>
+        <cv n="28">Bi-Directional Communication Configuration</cv>
+        <cv n="29">Configuration Data</cv>
+        <cv n="30">Error Information</cv>
+        <cv n="31">Index High Byte</cv>
+        <cv n="32">Index Low Byte</cv>
+        <cv n="65">Kick Start</cv>
+        <cv n="66">Forward Trim</cv>
+        <cv n="95">Reverse Trim</cv>
+        <cv n="105">User Identifier #1</cv>
+        <cv n="106">User Identifier #2</cv>
+    </locoCvNames>
+
+    <!-- Data from https://www.nmra.org/sites/default/files/appendix_a_s-9_2_2.pdf -->
+    <manufacturers>
+        <man n="1">CML Electronics Limited</man>
+        <man n="2">Train Technology</man>
+        <man n="11">NCE Corporation (formerly North Coast Engineering)</man>
+        <man n="12">Wangrow Electronics</man>
+        <man n="13">Public Domain &amp; Do-It-Yourself Decoders</man>
+        <man n="14">PSI –Dynatrol</man>
+        <man n="15">Ramfixx Technologies (Wangrow)</man>
+        <man n="17">Advance IC Engineering</man>
+        <man n="18">JMRI</man>
+        <man n="19">AMW</man>
+        <man n="20">T4T – Technology for Trains GmbH</man>
+        <man n="21">Kreischer Datentechnik</man>
+        <man n="22">KAM Industries</man>
+        <man n="23">S Helper Service</man>
+        <man n="24">MoBaTron.de</man>
+        <man n="25">Team Digital, LLC</man>
+        <man n="26">MBTronik – PiN GITmBH</man>
+        <man n="27">MTH Electric Trains, Inc.</man>
+        <man n="28">Heljan A/S</man>
+        <man n="29">Mistral Train Models</man>
+        <man n="30">Digsight</man>
+        <man n="31">Brelec</man>
+        <man n="32">Regal Way Co. Ltd</man>
+        <man n="33">Praecipuus</man>
+        <man n="34">Aristo-Craft Trains</man>
+        <man n="35">Electronik &amp; Model Produktion</man>
+        <man n="36">DCCconcepts</man>
+        <man n="37">NAC Services, Inc</man>
+        <man n="38">Broadway Limited Imports, LLC</man>
+        <man n="39">Educational Computer, Inc.</man>
+        <man n="40">KATO Precision Models</man>
+        <man n="41">Passmann</man>
+        <man n="42">Digirails</man>
+        <man n="43">Ngineering</man>
+        <man n="44">SPROG-DCC</man>
+        <man n="45">ANE Model Co, Ltd</man>
+        <man n="46">GFB Designs</man>
+        <man n="47">Capecom</man>
+        <man n="48">Hornby Hobbies Ltd</man>
+        <man n="49">Joka Electronic</man>
+        <man n="50">N&amp;Q Electronics</man>
+        <man n="51">DCC Supplies, Ltd</man>
+        <man n="52">Krois-Modell</man>
+        <man n="53">Rautenhaus Digital Vertrieb</man>
+        <man n="54">TCH Technology</man>
+        <man n="55">QElectronics GmbH</man>
+        <man n="56">LDH</man>
+        <man n="57">Rampino Elektronik</man>
+        <man n="58">KRES GmbH</man>
+        <man n="59">Tam Valley Depot</man>
+        <man n="60">Bluecher-Electronic</man>
+        <man n="61">TrainModules</man>
+        <man n="62">Tams Elektronik GmbH</man>
+        <man n="63">Noarail</man>
+        <man n="64">Digital Bahn</man>
+        <man n="65">Gaugemaster</man>
+        <man n="66">Railnet Solutions, LLC</man>
+        <man n="67">Heller Modenlbahn</man>
+        <man n="68">MAWE Elektronik</man>
+        <man n="69">E-Modell</man>
+        <man n="70">Rocrail</man>
+        <man n="71">New York Byano Limited</man>
+        <man n="72">MTB Model</man>
+        <man n="73">The Electric Railroad Company</man>
+        <man n="74">PpP Digital</man>
+        <man n="75">Digitools Elektronika, Kft</man>
+        <man n="76">Auvidel</man>
+        <man n="77">LS Models Sprl</man>
+        <man n="78">Tehnologistic (train-O-matic)</man>
+        <man n="79">Hattons Model Railways</man>
+        <man n="80">Spectrum Engineering</man>
+        <man n="81">GooVerModels</man>
+        <man n="82">HAG Modelleisenbahn AG</man>
+        <man n="83">JSS-Elektronic</man>
+        <man n="84">Railflyer Model Prototypes, Inc.</man>
+        <man n="85">Uhlenbrock GmbH</man>
+        <man n="86">Wekomm Engineering, GmbH</man>
+        <man n="87">RR-Cirkits</man>
+        <man n="88">HONS Model</man>
+        <man n="89">Pojezdy.EU</man>
+        <man n="90">Shourt Line</man>
+        <man n="91">Railstars Limited</man>
+        <man n="92">Tawcrafts</man>
+        <man n="93">Kevtronics cc</man>
+        <man n="94">Electroniscript, Inc.</man>
+        <man n="95">Sanda Kan Industrial, Ltd.</man>
+        <man n="96">PRICOM Design</man>
+        <man n="97">Doehler &amp; Haas</man>
+        <man n="98">Harman DCC</man>
+        <man n="99">Lenz Elektronik GmbH</man>
+        <man n="100">Trenes Digitales</man>
+        <man n="101">Bachmann Trains</man>
+        <man n="102">Integrated Signal Systems</man>
+        <man n="103">Nagasue System Design Office</man>
+        <man n="104">TrainTech</man>
+        <man n="105">Computer Dialysis France</man>
+        <man n="106">Opherline1</man>
+        <man n="107">Phoenix Sound Systems, Inc.</man>
+        <man n="108">Nagoden</man>
+        <man n="109">Viessmann Modellspielwaren GmbH</man>
+        <man n="110">AXJ Electronics</man>
+        <man n="111">Haber &amp; Koenig Electronics GmbH (HKE)</man>
+        <man n="112">LSdigital</man>
+        <man n="113">QS Industries (QSI)</man>
+        <man n="114">Benezan Electronics</man>
+        <man n="115">Dietz Modellbahntechnik</man>
+        <man n="116">MyLocoSound</man>
+        <man n="117">cT Elektronik</man>
+        <man n="118">MÜT GmbH</man>
+        <man n="119">W. S. Ataras Engineering</man>
+        <man n="120">csikos-muhely</man>
+        <man n="122">Berros</man>
+        <man n="123">Massoth Elektronik, GmbH</man>
+        <man n="124">DCC-Gaspar-Electronic</man>
+        <man n="125">ProfiLok Modellbahntechnik GmbH</man>
+        <man n="126">Möllehem Gårdsproduktion</man>
+        <man n="127">Atlas Model Railroad Products</man>
+        <man n="128">Frateschi Model Trains</man>
+        <man n="129">Digitrax 10000001</man>
+        <man n="130">cmOS Engineering</man>
+        <man n="131">Trix Modelleisenbahn</man>
+        <man n="132">ZTC</man>
+        <man n="133">Intelligent Command Control</man>
+        <man n="134">LaisDCC</man>
+        <man n="135">CVP Products</man>
+        <man n="136">NYRS</man>
+        <man n="138">Train ID Systems</man>
+        <man n="139">RealRail Effects</man>
+        <man n="140">Desktop Station</man>
+        <man n="141">Throttle-Up (Soundtraxx)</man>
+        <man n="142">SLOMO Railroad Models</man>
+        <man n="143">Model Rectifier Corp.</man>
+        <man n="144">DCC Train Automation</man>
+        <man n="145">Zimo Elektronik</man>
+        <man n="146">Rails Europ Express</man>
+        <man n="147">Umelec Ing. Buero</man>
+        <man n="148">BLOCKsignalling</man>
+        <man n="149">Rock Junction Controls</man>
+        <man n="150">Wm. K. Walthers, Inc.</man>
+        <man n="151">Electronic Solutions Ulm GmbH</man>
+        <man n="152">Digi-CZ</man>
+        <man n="153">Train Control Systems</man>
+        <man n="154">Dapol Limited</man>
+        <man n="155">Gebr. Fleischmann GmbH &amp; Co.</man>
+        <man n="156">Nucky</man>
+        <man n="157">Kuehn Ing.</man>
+        <man n="158">Fucik</man>
+        <man n="159">LGB (Ernst Paul Lehmann Patentwerk)</man>
+        <man n="160">MD Electronics</man>
+        <man n="161">Modelleisenbahn GmbH (formerly Roco)</man>
+        <man n="162">PIKO</man>
+        <man n="163">WP Railshops</man>
+        <man n="164">drM</man>
+        <man n="165">Model Electronic Railway Group</man>
+        <man n="166">Maison de DCC</man>
+        <man n="167">Helvest Systems GmbH</man>
+        <man n="170">AuroTrains</man>
+        <man n="173">Arnold – Rivarossi</man>
+        <man n="186">BRAWA Modellspielwaren GmbH &amp; Co.</man>
+        <man n="204">Con-Com GmbH</man>
+        <man n="225">Blue Digital</man>
+        <!-- 238: NMRA Reserved for extended ID #’s -->
+
+        <!-- Test Manufacturer for Itokawa. NOT STANDARD!! -->
+        <man n="255">Itokawa</man>
+    </manufacturers>
+
+    <!-- Decoder profiles to define what CVs are available -->
+    <locoDecoders>
+        <!-- Hornby Decoders -->
+        <profile man="48" ver="131,133" name="R8249/R7150">
+            <cvs>1,3,4,10,17,18,29</cvs>
+        </profile>
+
+        <!-- Test Decoders -->
+        <profile man="255" ver="100" name="Test Decoder">
+            <cvs>1,2,3,4,5,6,17,18,29</cvs>
+        </profile>
+        <profile man="255" ver="200" name="Demo Decoder">
+            <cvs>1,2,3,4,5,6,17,18,29</cvs>
+        </profile>
+    </locoDecoders>
+</decoders>
