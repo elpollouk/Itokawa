@@ -6,7 +6,7 @@ export interface PromptButton {
     onclick?: ()=>void;
 }
 
-class PromptControl extends ControlBase {
+export class PromptControl extends ControlBase {
     constructor(private message: string,
                 private buttons: PromptButton[],
                 onclose?:()=>void) {
