@@ -94,43 +94,34 @@ class Application {
     //  * Write a pid file to the data directory
     //  * Open the local database
     //  * Start the command station mointoring process
-    start(args: CommanderStatic, savepid: boolean = false): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                this._args = args;
+    async start(args: CommanderStatic, savepid: boolean = false): Promise<void> {
+        this._args = args;
 
-                // We apply an initial log level based on the command line args so that we can debug
-                // directory initialisation and config loading if needed
-                applyLogLevel(args);
+        // We apply an initial log level based on the command line args so that we can debug
+        // directory initialisation and config loading if needed
+        applyLogLevel(args);
 
-                this._dataPath =_initDataDirectory(args.datadir);
-                this._configPath = this.getDataPath("config.xml");
-                this._config = await loadConfig(this._configPath);
+        this._dataPath =_initDataDirectory(args.datadir);
+        this._configPath = this.getDataPath("config.xml");
+        this._config = await loadConfig(this._configPath);
 
-                _applyLogConfig(this.config.getAs("application.log", new ConfigNode()));
+        _applyLogConfig(this.config.getAs("application.log", new ConfigNode()));
 
-                this._gitrev = await _getGitRevision();
+        this._gitrev = await _getGitRevision();
 
-                if (savepid) {
-                    const pid = process.pid;
-                    log.info(`pid=${pid}`);
-                    const pidPath = this.getDataPath("pid");
-                    fs.writeFileSync(pidPath, `${pid}`);
-                }
+        if (savepid) {
+            const pid = process.pid;
+            log.info(`pid=${pid}`);
+            const pidPath = this.getDataPath("pid");
+            fs.writeFileSync(pidPath, `${pid}`);
+        }
 
-                const dbPath = this.getDataPath(DATABASE_FILE);
-                this._db = await Database.open(dbPath);
+        const dbPath = this.getDataPath(DATABASE_FILE);
+        this._db = await Database.open(dbPath);
 
-                // Technically, we don't need this await, but it improves the experience if a
-                // device is already opened before starting the server
-                await this._initDevice();
-
-                resolve();
-            }
-            catch (ex) {
-                reject(ex);
-            }
-        });
+        // Technically, we don't need this await, but it improves the experience if a
+        // device is already opened before starting the server
+        await this._initDevice();
     }
 
     getDataPath(path?: string) {
