@@ -27,14 +27,13 @@ enum MessageType {
     LOCO_COMMAND = 0xE4
 }
 
-//const CV_SELECT_ERROR = 0x13;
-
 enum LocoCommand {
     SET_SPEED = 0x13
 }
 
 const SUPPORTED_VERSIONS = new Set([
-    0x6B // 1.07
+    0x69, // 1.05 - Untested by me but reported working (Issue #20)
+    0x6B  // 1.07
 ]);
 
 function ensureValidMessage(message: number[], type?:MessageType) {

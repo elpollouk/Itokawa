@@ -110,13 +110,34 @@ describe("eLink", () => {
             expect(setTimeoutStub.callCount).to.equal(1);
         })
 
-        it ("should handshake correctly when required", async () => {
+        it ("should handshake with firmware 1.07", async () => {
             portReads = [
                 [0x01],
                 [0x02, 0x03],
                 [0x35, 0x00, 0x00, 0x00, 0x00, 0x00, 0x35],
                 [0x01, 0x04, 0x05],
                 [0x63, 0x21, 0x6B, 0x01, 0x28]
+            ];
+
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            expect(cs.state).to.equal(CommandStationState.IDLE);
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0x21, 0x24, 0x05],
+                [0x3A, 0x36, 0x34, 0x4A, 0x4B, 0x44, 0x38, 0x39, 0x42, 0x53, 0x54, 0x39],
+                [0x35, 0x39, 0x39, 0x39, 0x39, 0x39, 0x0C],
+                [0x21, 0x21, 0x00]
+            ]);
+        });
+
+        it ("should handshake with firmware 1.05", async () => {
+            portReads = [
+                [0x01],
+                [0x02, 0x03],
+                [0x35, 0x00, 0x00, 0x00, 0x00, 0x00, 0x35],
+                [0x01, 0x04, 0x05],
+                [0x63, 0x21, 0x69, 0x01, 0x2A]
             ];
 
             const cs = await ELinkCommandStation.open(CONNECTION_STRING);
