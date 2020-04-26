@@ -46,7 +46,7 @@ function ensureValidMessage(message: number[], type?:MessageType) {
     if (type && message[0] != type) throw new CommandStationError(`Unexpected message type, expected ${type}, but got ${message[0]}`);
 }
 
-function applyChecksum(message: number[] | Buffer) {
+export function applyChecksum(message: number[] | Buffer) {
     // Interestingly, the eLink doesn't seem to verify checksums and will accept
     // any valid-ish message without complaining.
     let checkSum = 0;
@@ -54,6 +54,8 @@ function applyChecksum(message: number[] | Buffer) {
         checkSum ^= message[i];
 
     message[message.length - 1] = checkSum;
+
+    return message
 }
 
 function updateHandshakeMessage(data: number[]) {
@@ -189,8 +191,7 @@ export class ELinkCommandStation extends CommandStationBase {
             this._cancelHeartbeart();
 
             // Select the CV we want to read from
-            let reqMessage = [MessageType.CV_SELECT_REQUEST, 0x15, cv, 0];
-            applyChecksum(reqMessage);
+            let reqMessage = applyChecksum([MessageType.CV_SELECT_REQUEST, 0x15, cv, 0]);
             await this._port.write(reqMessage);
             await this._ensureCvSelected();
 
@@ -214,8 +215,7 @@ export class ELinkCommandStation extends CommandStationBase {
             this._cancelHeartbeart();
 
             // Select the CV we want to write to
-            let reqMessage = [MessageType.CV_WRITE_REQUEST, 0x16, cv, value, 0];
-            applyChecksum(reqMessage);
+            let reqMessage = applyChecksum([MessageType.CV_WRITE_REQUEST, 0x16, cv, value, 0]);
             await this._port.write(reqMessage);
             await this._ensureCvSelected();
 
