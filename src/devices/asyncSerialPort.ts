@@ -2,6 +2,8 @@ import { EventEmitter } from "events";
 import * as SerialPort from "serialport";
 import { Logger } from "../utils/logger";
 import { toHumanHex } from "../utils/hex";
+import { DebugSnapshot } from "../utils/debugSnapshot";
+import { application } from "../application";
 
 let log = new Logger("Serial");
 
@@ -21,6 +23,7 @@ export class AsyncSerialPort extends EventEmitter {
     private _closeRequested = false;
     private _buffer: number[] = [];
     private _updateReader: () => void = _nullUpdate;
+    private _debugSnapshot: DebugSnapshot = null;
 
     get bytesAvailable(): number {
         return this._buffer.length;
@@ -29,8 +32,16 @@ export class AsyncSerialPort extends EventEmitter {
     private constructor(private _port:SerialPort) {
         super();
 
+        if (application.config.has("debug.serialport")) {
+            const size = application.config.get("debug.serialport.snapshotsize", 10) as number;
+            this._debugSnapshot = new DebugSnapshot(size, (data) => {
+                return `${data[0]}: ${toHumanHex(data[1])}`;
+            });
+        }
+
         this._port.on("data", (data: Buffer) => {
             log.debug(() => `Received: ${toHumanHex(data)}`);
+            if (this._debugSnapshot) this._debugSnapshot.add("Recv", data);
             for (let i = 0; i < data.length; i++)
                 this._buffer.push(data[i]);
 
@@ -63,6 +74,7 @@ export class AsyncSerialPort extends EventEmitter {
                 });
             }
             
+            if (this._debugSnapshot) this._debugSnapshot.add("Sent", data);
             this._port.write(data, writeCallback);
         });
     }
@@ -94,5 +106,9 @@ export class AsyncSerialPort extends EventEmitter {
                 resolve();
             });
         });
+    }
+
+    saveDebugSanpshot() {
+        if (this._debugSnapshot) this._debugSnapshot.save("serialport.snapshot.txt");
     }
 }

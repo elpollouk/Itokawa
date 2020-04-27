@@ -2,10 +2,15 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 
 import "mocha";
-import { spy, SinonSpy, stub } from "sinon";
+import { spy, SinonSpy, stub, SinonStub } from "sinon";
 import { nextTick } from "../utils/promiseUtils";
+import * as fs from "fs";
+import * as time from "../common/time";
+import { application } from "../application";
 
 import { AsyncSerialPort } from "./asyncSerialPort";
+import { ConfigNode } from "../utils/config";
+import { Logger, LogLevel } from "../utils/logger";
 const SerialPort = require('@serialport/stream');
 const MockBinding = require('@serialport/binding-mock');
 
@@ -220,4 +225,121 @@ describe("AsyncSerialPort", () => {
             await expect(promise).to.eventually.be.rejected;
         });
     });
+
+    describe("saveDebugSanpshot", () => {
+        let applicationConfigStub: SinonStub;
+        let writeFileSyncStub: SinonStub;
+        let timestampStub: SinonStub;
+        let timestampCount = 0;
+        let config: ConfigNode;
+        let oldLogLevel: LogLevel;
+
+        beforeEach(() => {
+            timestampCount = 0;
+            config = new ConfigNode();
+
+            applicationConfigStub = stub(application, "config").value(config);
+            writeFileSyncStub = stub(fs, "writeFileSync");
+            timestampStub = stub(time, "timestamp").callsFake(() => {
+                return `${timestampCount++}`;
+            });
+
+            oldLogLevel = Logger.logLevel;
+            Logger.logLevel = LogLevel.NONE;
+        })
+
+        afterEach(() => {
+            applicationConfigStub.restore();
+            writeFileSyncStub.restore();
+            timestampStub.restore();
+
+            Logger.logLevel = oldLogLevel;
+        })
+
+        it("should do nothing if port debugging is not enabled", async () => {
+            const port = await open();
+            await port.write([1, 2, 3]);
+            emitData([4, 5, 6]);
+            await ticks(3);
+
+            port.saveDebugSanpshot();
+            expect(writeFileSyncStub.callCount).to.equal(0);
+        })
+
+        it("should write default of 10 entires if port debugging is enabled", async () => {
+            config.set("debug.serialport", "");
+
+            const port = await open();
+            await port.write([0]);
+            emitData([0]);
+            await ticks(3);
+            await port.write([0]);
+            emitData([0]);
+            await ticks(3);
+            await port.write([1, 2, 3]);
+            emitData([4, 5, 6]);
+            await ticks(3);
+            await port.write([7, 8, 9]);
+            emitData([10, 11, 12]);
+            await ticks(3);
+            await port.write([13, 14, 15]);
+            emitData([16, 17, 18]);
+            await ticks(3);
+            await port.write([19, 20, 21]);
+            emitData([22, 23, 24]);
+            await ticks(3);
+            await port.write([25, 26, 27]);
+            emitData([28, 29, 30]);
+            await ticks(3);
+
+            port.saveDebugSanpshot();
+            expect(writeFileSyncStub.callCount).to.equal(1);
+            expect(writeFileSyncStub.lastCall.args).to.eql(["serialport.snapshot.txt",
+"4: Sent: 01 02 03\n\
+5: Recv: 04 05 06\n\
+6: Sent: 07 08 09\n\
+7: Recv: 0a 0b 0c\n\
+8: Sent: 0d 0e 0f\n\
+9: Recv: 10 11 12\n\
+10: Sent: 13 14 15\n\
+11: Recv: 16 17 18\n\
+12: Sent: 19 1a 1b\n\
+13: Recv: 1c 1d 1e"]);
+        })
+
+        it("should write the configured number of entires if port debugging is enabled", async () => {
+            config.set("debug.serialport.snapshotsize", 4);
+
+            const port = await open();
+            await port.write([0]);
+            emitData([0]);
+            await ticks(3);
+            await port.write([0]);
+            emitData([0]);
+            await ticks(3);
+            await port.write([1, 2, 3]);
+            emitData([4, 5, 6]);
+            await ticks(3);
+            await port.write([7, 8, 9]);
+            emitData([10, 11, 12]);
+            await ticks(3);
+            await port.write([13, 14, 15]);
+            emitData([16, 17, 18]);
+            await ticks(3);
+            await port.write([19, 20, 21]);
+            emitData([22, 23, 24]);
+            await ticks(3);
+            await port.write([25, 26, 27]);
+            emitData([28, 29, 30]);
+            await ticks(3);
+
+            port.saveDebugSanpshot();
+            expect(writeFileSyncStub.callCount).to.equal(1);
+            expect(writeFileSyncStub.lastCall.args).to.eql(["serialport.snapshot.txt",
+"10: Sent: 13 14 15\n\
+11: Recv: 16 17 18\n\
+12: Sent: 19 1a 1b\n\
+13: Recv: 1c 1d 1e"]);
+        })
+    })
 });
