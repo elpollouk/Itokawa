@@ -6,7 +6,6 @@ import { toHumanHex } from "../../utils/hex";
 import { parseConnectionString } from "../../utils/parsers";
 import { padLeadingZero } from "../../utils/padding";
 import { timeout } from "../../utils/promiseUtils";
-import { registerHandlers } from "../../server/handlers/lifecycle";
 
 const log = new Logger("eLink");
 

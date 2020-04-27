@@ -33,7 +33,7 @@ export class AsyncSerialPort extends EventEmitter {
         super();
 
         if (application.config.has("debug.serialport")) {
-            const size = application.config.get("debug.serialport.snapshotsize", 10) as number;
+            const size = application.config.getAs("debug.serialport.snapshotsize", 10);
             log.info(() => `Enabling debug snap shots, size = ${size}`);
             this._debugSnapshot = new DebugSnapshot(size, (data) => {
                 return `${data[0]}: ${toHumanHex(data[1])}`;
