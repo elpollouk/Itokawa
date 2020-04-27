@@ -228,6 +228,7 @@ describe("AsyncSerialPort", () => {
 
     describe("saveDebugSanpshot", () => {
         let applicationConfigStub: SinonStub;
+        let applicationGetDataPathStub: SinonStub;
         let writeFileSyncStub: SinonStub;
         let timestampStub: SinonStub;
         let timestampCount = 0;
@@ -239,6 +240,7 @@ describe("AsyncSerialPort", () => {
             config = new ConfigNode();
 
             applicationConfigStub = stub(application, "config").value(config);
+            applicationGetDataPathStub = stub(application, "getDataPath").returns("data/serialport.snapshot.txt");
             writeFileSyncStub = stub(fs, "writeFileSync");
             timestampStub = stub(time, "timestamp").callsFake(() => {
                 return `${timestampCount++}`;
@@ -250,6 +252,7 @@ describe("AsyncSerialPort", () => {
 
         afterEach(() => {
             applicationConfigStub.restore();
+            applicationGetDataPathStub.restore();
             writeFileSyncStub.restore();
             timestampStub.restore();
 
@@ -294,7 +297,7 @@ describe("AsyncSerialPort", () => {
 
             port.saveDebugSanpshot();
             expect(writeFileSyncStub.callCount).to.equal(1);
-            expect(writeFileSyncStub.lastCall.args).to.eql(["serialport.snapshot.txt",
+            expect(writeFileSyncStub.lastCall.args).to.eql(["data/serialport.snapshot.txt",
 "4: Sent: 01 02 03\n\
 5: Recv: 04 05 06\n\
 6: Sent: 07 08 09\n\
@@ -305,6 +308,7 @@ describe("AsyncSerialPort", () => {
 11: Recv: 16 17 18\n\
 12: Sent: 19 1a 1b\n\
 13: Recv: 1c 1d 1e"]);
+            expect(applicationGetDataPathStub.lastCall.args).to.eql(["serialport.snapshot.txt"]);
         })
 
         it("should write the configured number of entires if port debugging is enabled", async () => {
@@ -335,11 +339,12 @@ describe("AsyncSerialPort", () => {
 
             port.saveDebugSanpshot();
             expect(writeFileSyncStub.callCount).to.equal(1);
-            expect(writeFileSyncStub.lastCall.args).to.eql(["serialport.snapshot.txt",
+            expect(writeFileSyncStub.lastCall.args).to.eql(["data/serialport.snapshot.txt",
 "10: Sent: 13 14 15\n\
 11: Recv: 16 17 18\n\
 12: Sent: 19 1a 1b\n\
 13: Recv: 1c 1d 1e"]);
+            expect(applicationGetDataPathStub.lastCall.args).to.eql(["serialport.snapshot.txt"]);
         })
     })
 });

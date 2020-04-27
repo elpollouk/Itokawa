@@ -109,6 +109,9 @@ export class AsyncSerialPort extends EventEmitter {
     }
 
     saveDebugSanpshot() {
-        if (this._debugSnapshot) this._debugSnapshot.save("serialport.snapshot.txt");
+        if (this._debugSnapshot) {
+            const path = application.getDataPath("serialport.snapshot.txt");
+            this._debugSnapshot.save(path);
+        }
     }
 }
