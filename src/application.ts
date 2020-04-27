@@ -171,6 +171,7 @@ class Application {
         };
 
         try {
+            if (this.commandStation) await this.commandStation.close();
             log.info("Attempting to open device...");
             this.commandStation = await this._openDevice();
             log.display(`Using ${this.commandStation.deviceId} ${this.commandStation.version}`);

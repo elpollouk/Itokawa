@@ -148,6 +148,7 @@ describe("eLink", () => {
             portReads.pop();
             portReads.push([0x63, 0x21, 0x6A, 0x01, 0x29]);
             await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Unsupported eLink version encountered, version=106");
+            expect(serialPortStub.close.callCount).to.equal(1);
         })
 
         it("should fail if unexpected message type received", async () => {
@@ -156,6 +157,7 @@ describe("eLink", () => {
                 [123]
             ];
             await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Unrecognised message type, got 123");
+            expect(serialPortStub.close.callCount).to.equal(1);
         })
 
         it("should raise an error if info message checksum is invalid", async () => {
@@ -165,6 +167,7 @@ describe("eLink", () => {
             ];
 
             await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Invalid checksum for received message");
+            expect(serialPortStub.close.callCount).to.equal(1);
         })
 
         it("should raise an error if unexpected handshake exchange message received", async () => {
@@ -175,6 +178,7 @@ describe("eLink", () => {
             ];
 
             await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Unexpected message type, expected 53, but got 54");
+            expect(serialPortStub.close.callCount).to.equal(1);
         })
 
         it("should raise an error if unexpected handshake complete message received", async () => {
@@ -186,6 +190,7 @@ describe("eLink", () => {
             ];
 
             await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("Handshake failed");
+            expect(serialPortStub.close.callCount).to.equal(1);
         })
     })
 
@@ -250,6 +255,11 @@ describe("eLink", () => {
 
             expect(handler.callCount).to.equal(1);
             expect(handler.lastCall.args[0].message).to.equal("Mock Error Event");
+
+            // Verify that an errored port can be closed to release resources
+            expect(serialPortStub.close.callCount).to.equal(0);
+            cs.close();
+            expect(serialPortStub.close.callCount).to.equal(1);
         })
     })
 

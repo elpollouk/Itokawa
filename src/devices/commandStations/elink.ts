@@ -32,8 +32,8 @@ enum LocoCommand {
 }
 
 const SUPPORTED_VERSIONS = new Set([
-    0x69, // 1.05 - Untested by me but reported working (Issue #20)
-    0x6B  // 1.07
+    105, // 1.05 - Untested by me but reported working (Issue #20)
+    107  // 1.07
 ]);
 
 function ensureValidMessage(message: number[], type?:MessageType) {
@@ -92,27 +92,36 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     async init() {
-        this._ensureState(CommandStationState.UNINITIALISED);
-        const config = parseConnectionString(this._connectionString);
-        if (!config.port) throw new CommandStationError("\"port\" not specified in connection string");
+        try {
+            this._ensureState(CommandStationState.UNINITIALISED);
+            const config = parseConnectionString(this._connectionString);
+            if (!config.port) throw new CommandStationError("\"port\" not specified in connection string");
 
-        this._setState(CommandStationState.INITIALISING);
-        log.info(`Opening port ${config.port}...`);
-        this._port = await AsyncSerialPort.open(config.port, {
-            baudRate: 115200
-        });
-        this._port.on("error", (err) => {
-            this._setState(CommandStationState.ERROR);
-            this.emit("error", err);
-        });
+            this._setState(CommandStationState.INITIALISING);
+            log.info(`Opening port ${config.port}...`);
+            this._port = await AsyncSerialPort.open(config.port, {
+                baudRate: 115200
+            });
+            this._port.on("error", (err) => {
+                this._setState(CommandStationState.ERROR);
+                this.emit("error", err);
+            });
 
-        await this._sendStatusRequest();   
-        await this._sendVersionInfoRequest();
+            await this._sendStatusRequest();   
+            await this._sendVersionInfoRequest();
 
-        this._scheduleHeartbeat();
-        this._setIdle();
+            this._scheduleHeartbeat();
+            this._setIdle();
 
-        log.info("Initialisation complete");
+            log.info("Initialisation complete");
+        }
+        catch (error) {
+            if (this._port) {
+                await this._port.close();
+                this._port = null;
+            }
+            throw error;
+        }
     }
 
     async close() {
