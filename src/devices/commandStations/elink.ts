@@ -6,7 +6,6 @@ import { toHumanHex } from "../../utils/hex";
 import { parseConnectionString } from "../../utils/parsers";
 import { padLeadingZero } from "../../utils/padding";
 import { timeout } from "../../utils/promiseUtils";
-import { registerHandlers } from "../../server/handlers/lifecycle";
 
 const log = new Logger("eLink");
 
@@ -102,10 +101,7 @@ export class ELinkCommandStation extends CommandStationBase {
             this._port = await AsyncSerialPort.open(config.port, {
                 baudRate: 115200
             });
-            this._port.on("error", (err) => {
-                this._setState(CommandStationState.ERROR);
-                this.emit("error", err);
-            });
+            this._port.on("error", (err) => this._onError(err));
 
             await this._sendStatusRequest();   
             await this._sendVersionInfoRequest();
@@ -117,11 +113,18 @@ export class ELinkCommandStation extends CommandStationBase {
         }
         catch (error) {
             if (this._port) {
+                this._port.saveDebugSanpshot();
                 await this._port.close();
                 this._port = null;
             }
             throw error;
         }
+    }
+
+    private _onError(error: Error) {
+        this._port.saveDebugSanpshot();
+        this._setState(CommandStationState.ERROR);
+        this.emit("error", error);
     }
 
     async close() {
@@ -293,8 +296,7 @@ export class ELinkCommandStation extends CommandStationBase {
                 // Heartbeat failed, so assume the device connection has also failed and flag error
                 log.error(`Failed sending heartbeat request: ${err}`);
                 log.error(err.stack);
-                this._setState(CommandStationState.ERROR);
-                this.emit("error", err);
+                this._onError(err);
 
             });
 

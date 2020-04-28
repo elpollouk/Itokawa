@@ -166,8 +166,10 @@ class Application {
 
             log.error("Command station error");
             log.error(err.stack);
-            log.info(`Schedulling retry in ${DEVICE_RETRY_TIME}ms`);
-            setTimeout(() => this._initDevice(), DEVICE_RETRY_TIME);
+
+            const retryTime = this.config.getAs("application.deviceRetryTime", DEVICE_RETRY_TIME);
+            log.info(`Schedulling retry in ${retryTime}ms`);
+            setTimeout(() => this._initDevice(), retryTime);
         };
 
         try {

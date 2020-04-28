@@ -2,12 +2,25 @@ import { EventEmitter } from "events";
 import * as SerialPort from "serialport";
 import { Logger } from "../utils/logger";
 import { toHumanHex } from "../utils/hex";
+import { DebugSnapshot } from "../utils/debugSnapshot";
+import { application } from "../application";
 
-let log = new Logger("Serial");
+const log = new Logger("Serial");
+let _debugSnapshot: DebugSnapshot = null;
 
 function _nullUpdate() {}
 
+function _snapshotAdd(...data: any[]) {
+    if (_debugSnapshot) _debugSnapshot.add(...data);
+}
+
 export class AsyncSerialPort extends EventEmitter {
+    
+    // This is for clearing out the log during testing
+    static _disableDebugSnapshot() {
+        _debugSnapshot = null;
+    }
+
     static open(path: string, options: SerialPort.OpenOptions): Promise<AsyncSerialPort> {
         log.debug(() => `Opening ${path} with options ${JSON.stringify(options)}`);
         return new Promise<AsyncSerialPort>((resolve, reject) => {
@@ -26,11 +39,22 @@ export class AsyncSerialPort extends EventEmitter {
         return this._buffer.length;
     }
 
-    private constructor(private _port:SerialPort) {
+    private constructor(private _port: SerialPort) {
         super();
+
+        if (application.config.has("debug.serialport") && !_debugSnapshot) {
+            const size = application.config.getAs("debug.serialport.snapshotsize", 10);
+            log.info(() => `Enabling debug snap shots, size=${size}`);
+            _debugSnapshot = new DebugSnapshot(size, (data) => {
+                const dataString = typeof(data[1]) === "string" ? data[1] : toHumanHex(data[1]);
+                return `${data[0]}: ${dataString}`;
+            });
+        }
+        _snapshotAdd("Open", _port.path);
 
         this._port.on("data", (data: Buffer) => {
             log.debug(() => `Received: ${toHumanHex(data)}`);
+            _snapshotAdd("Recv", data);
             for (let i = 0; i < data.length; i++)
                 this._buffer.push(data[i]);
 
@@ -63,6 +87,7 @@ export class AsyncSerialPort extends EventEmitter {
                 });
             }
             
+            _snapshotAdd("Sent", data);
             this._port.write(data, writeCallback);
         });
     }
@@ -88,11 +113,20 @@ export class AsyncSerialPort extends EventEmitter {
     close(): Promise<void> {
         this._closeRequested = true;
         return new Promise((resolve, reject) => {
+            _snapshotAdd("Close", this._port.path);
             this._port.close((err) => {
                 if (err) reject(err);
                 this._port = null;
                 resolve();
             });
         });
+    }
+
+    saveDebugSanpshot() {
+        if (_debugSnapshot) {
+            const path = application.getDataPath("serialport.snapshot.txt");
+            log.info(() => `Saving debug snap shot to ${path}`);
+            _debugSnapshot.save(path);
+        }
     }
 }
