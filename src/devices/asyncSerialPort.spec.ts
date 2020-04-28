@@ -248,6 +248,9 @@ describe("AsyncSerialPort", () => {
 
             oldLogLevel = Logger.logLevel;
             Logger.logLevel = LogLevel.NONE;
+
+            // We'll explicitly enable it again via an updated config on a per-test basis
+            AsyncSerialPort._disableDebugSnapshot();
         })
 
         afterEach(() => {
@@ -257,6 +260,8 @@ describe("AsyncSerialPort", () => {
             timestampStub.restore();
 
             Logger.logLevel = oldLogLevel;
+
+            AsyncSerialPort._disableDebugSnapshot();
         })
 
         it("should do nothing if port debugging is not enabled", async () => {
@@ -298,16 +303,16 @@ describe("AsyncSerialPort", () => {
             port.saveDebugSanpshot();
             expect(writeFileSyncStub.callCount).to.equal(1);
             expect(writeFileSyncStub.lastCall.args).to.eql(["data/serialport.snapshot.txt",
-"4: Sent: 01 02 03\n\
-5: Recv: 04 05 06\n\
-6: Sent: 07 08 09\n\
-7: Recv: 0a 0b 0c\n\
-8: Sent: 0d 0e 0f\n\
-9: Recv: 10 11 12\n\
-10: Sent: 13 14 15\n\
-11: Recv: 16 17 18\n\
-12: Sent: 19 1a 1b\n\
-13: Recv: 1c 1d 1e"]);
+"5: Sent: 01 02 03\n\
+6: Recv: 04 05 06\n\
+7: Sent: 07 08 09\n\
+8: Recv: 0a 0b 0c\n\
+9: Sent: 0d 0e 0f\n\
+10: Recv: 10 11 12\n\
+11: Sent: 13 14 15\n\
+12: Recv: 16 17 18\n\
+13: Sent: 19 1a 1b\n\
+14: Recv: 1c 1d 1e"]);
             expect(applicationGetDataPathStub.lastCall.args).to.eql(["serialport.snapshot.txt"]);
         })
 
@@ -340,10 +345,43 @@ describe("AsyncSerialPort", () => {
             port.saveDebugSanpshot();
             expect(writeFileSyncStub.callCount).to.equal(1);
             expect(writeFileSyncStub.lastCall.args).to.eql(["data/serialport.snapshot.txt",
-"10: Sent: 13 14 15\n\
-11: Recv: 16 17 18\n\
-12: Sent: 19 1a 1b\n\
-13: Recv: 1c 1d 1e"]);
+"11: Sent: 13 14 15\n\
+12: Recv: 16 17 18\n\
+13: Sent: 19 1a 1b\n\
+14: Recv: 1c 1d 1e"]);
+            expect(applicationGetDataPathStub.lastCall.args).to.eql(["serialport.snapshot.txt"]);
+        })
+
+        it("should preserve events across port close and reopen", async () => {
+            config.set("debug.serialport.snapshotsize", 6);
+
+            let port = await open();
+            await port.write([13, 14, 15]);
+            emitData([16, 17, 18]);
+            await ticks(3);
+            await port.write([19, 20, 21]);
+            emitData([22, 23, 24]);
+            await ticks(3);
+            await port.write([25, 26, 27]);
+            emitData([28, 29, 30]);
+            await ticks(3);
+
+            await port.close()
+            port = await open()
+
+            await port.write([31, 32, 33]);
+            emitData([34, 35, 36]);
+            await ticks(3);
+
+            port.saveDebugSanpshot();
+            expect(writeFileSyncStub.callCount).to.equal(1);
+            expect(writeFileSyncStub.lastCall.args).to.eql(["data/serialport.snapshot.txt",
+"5: Sent: 19 1a 1b\n\
+6: Recv: 1c 1d 1e\n\
+7: Close: /dev/ttyTest\n\
+8: Open: /dev/ttyTest\n\
+9: Sent: 1f 20 21\n\
+10: Recv: 22 23 24"]);
             expect(applicationGetDataPathStub.lastCall.args).to.eql(["serialport.snapshot.txt"]);
         })
     })
