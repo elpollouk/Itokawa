@@ -1,5 +1,8 @@
 import * as fs from "fs";
 import { timestamp } from "../common/time";
+import { Logger } from "./logger";
+
+const log = new Logger("DebugSnapshot");
 
 type EntryFormatter = (data: any[])=>string;
 
@@ -32,6 +35,7 @@ export class DebugSnapshot {
     }
 
     save(filename: string) {
+        log.info(() => `Saving ${filename}...`);
         const filedata: string[] = [];
         for (const entry of this._entries) {
             filedata.push(entry.format(this._formatter));
