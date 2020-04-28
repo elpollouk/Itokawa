@@ -19,6 +19,7 @@ describe("Logger", () => {
         logger.warning("Test warning");
         logger.display("Test display");
         logger.info("Test info");
+        logger.verbose("Test verbose");
         logger.debug("Test debug");
     }
 
@@ -99,6 +100,21 @@ describe("Logger", () => {
         ]);
     });
 
+    it("should log correctly if level is VERBOSE", () => {
+        Logger.logLevel = LogLevel.VERBOSE;
+        let logger = new Logger("Test");
+
+        writeLogs(logger);
+
+        expect(output).to.eql([
+            "2017-02-02T12:51:19.124Z:ERROR:Test: Test error",
+            "2017-02-02T12:51:19.124Z:WARNING:Test: Test warning",
+            "2017-02-02T12:51:19.124Z:DISPLAY:Test: Test display",
+            "2017-02-02T12:51:19.124Z:INFO:Test: Test info",
+            "2017-02-02T12:51:19.124Z:VERBOSE:Test: Test verbose"
+        ]);
+    });
+
     it("should log correctly if level is DEBUG", () => {
         Logger.logLevel = LogLevel.DEBUG;
         let logger = new Logger("Test");
@@ -110,6 +126,7 @@ describe("Logger", () => {
             "2017-02-02T12:51:19.124Z:WARNING:Test: Test warning",
             "2017-02-02T12:51:19.124Z:DISPLAY:Test: Test display",
             "2017-02-02T12:51:19.124Z:INFO:Test: Test info",
+            "2017-02-02T12:51:19.124Z:VERBOSE:Test: Test verbose",
             "2017-02-02T12:51:19.124Z:DEBUG:Test: Test debug"
         ]);
     });
