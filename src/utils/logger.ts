@@ -2,11 +2,12 @@ import { timestamp } from "../common/time";
 
 export enum LogLevel {
     NONE = 0,
-    ERROR = 1,
-    WARNING = 2,
-    DISPLAY = 3,
-    INFO = 4,
-    DEBUG = 5,
+    ERROR,      // Application errors
+    WARNING,    // Application warnings
+    DISPLAY,    // Messages the user should see but don't indicate errors or warnings
+    INFO,       // User interactions or external events
+    VERBOSE,    // Periodic automatic events
+    DEBUG,      // Everything including packet level logs
 }
 
 type messageBuilder = () => string;
@@ -43,6 +44,7 @@ export class Logger {
     }
 
     debug (message: string | messageBuilder) { this.log(LogLevel.DEBUG, message); }
+    verbose(message: string | messageBuilder) { this.log(LogLevel.VERBOSE, message); }
     info (message: string | messageBuilder) { this.log(LogLevel.INFO, message); }
     display (message: string | messageBuilder) { this.log(LogLevel.DISPLAY, message); }
     warning (message: string | messageBuilder) { this.log(LogLevel.WARNING, message); }
