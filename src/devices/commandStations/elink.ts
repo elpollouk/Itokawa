@@ -269,10 +269,10 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     private _scheduleHeartbeat() {
-        log.info(`Scheduling next heartbeat in ${Config.heartbeatTime}s`);
+        log.verbose(`Scheduling next heartbeat in ${Config.heartbeatTime}s`);
         this._heartbeatToken = setTimeout(() => {
 
-            log.info("Requesting hearbeat...");
+            log.verbose("Requesting hearbeat...");
             // It's theoretically possible for this event to fire while we're already writing to the port.
             // In this case, abort the request and rely on the current port user to schedule the next
             // heartbeat.
@@ -362,7 +362,7 @@ export class ELinkCommandStation extends CommandStationBase {
         if (data[1] != 0x22 || data[2] != 0x40)
             throw new CommandStationError(`Unrecognised INFO_RESPONSE, got ${toHumanHex(data)}`);
 
-        log.info("Received status OK response");
+        log.verbose("Received status OK response");
     }
 
     private async _sendVersionInfoRequest() {
