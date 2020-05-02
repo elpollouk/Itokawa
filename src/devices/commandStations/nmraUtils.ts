@@ -11,6 +11,18 @@ export function encodeLongAddress(address: number, buffer: number[] | Buffer, of
     buffer[offset + 1] = address & 0xFF;
 }
 
+export function decodeLongAddress(buffer: number[] | Buffer, offset?: number): number {
+    offset = offset || 0;
+
+    const upper = buffer[offset]
+    if ((upper & 0xC0) == 0xC0) {
+        return ((upper & 0x3F) << 8) | buffer[offset + 1];
+    }
+    else {
+        return buffer[offset + 1];
+    }
+}
+
 export function ensureWithinRange(value: number, minValue: number, maxValue: number, valueName: string) {
     if (value < minValue || value > maxValue) throw new Error(`${valueName} outside of valid range`);
 }

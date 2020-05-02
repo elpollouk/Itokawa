@@ -1,7 +1,7 @@
 import { Logger } from "../../utils/logger";
 import { CommandStationError, ICommandBatch, CommandStationState, CommandStationBase } from "./commandStation"
 import { AsyncSerialPort } from "../asyncSerialPort";
-import { encodeLongAddress, ensureCvNumber, ensureByte } from "./nmraUtils";
+import { encodeLongAddress, decodeLongAddress, ensureCvNumber, ensureByte } from "./nmraUtils";
 import { toHumanHex } from "../../utils/hex";
 import { parseConnectionString } from "../../utils/parsers";
 import { padLeadingZero } from "../../utils/padding";
@@ -27,13 +27,79 @@ enum MessageType {
 }
 
 enum LocoCommand {
-    SET_SPEED = 0x13
+    SET_SPEED = 0x13,
+    SET_FUNCTION_BANK_0 = 0x20,
+    SET_FUNCTION_BANK_1 = 0x21,
+    SET_FUNCTION_BANK_2 = 0x22,
+    SET_FUNCTION_BANK_3 = 0x23,
+    SET_FUNCTION_BANK_4 = 0x28
 }
 
 const SUPPORTED_VERSIONS = new Set([
     105, // 1.05 - Untested by me but reported working (Issue #20)
     107  // 1.07
 ]);
+
+// See https://github.com/elpollouk/Itokawa/wiki/eLink-Protocol#loco-function-control for an explaination
+// of how functions are mapped to bnaks and flags.
+interface LocoFunctionDefinition {
+    bank: number,
+    flag: number
+}
+
+const locoFunctionMap: LocoFunctionDefinition[] = [
+    { bank: LocoCommand.SET_FUNCTION_BANK_0, flag: 0x10 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_0, flag: 0x01 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_0, flag: 0x02 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_0, flag: 0x04 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_0, flag: 0x08 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_1, flag: 0x01 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_1, flag: 0x02 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_1, flag: 0x04 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_1, flag: 0x08 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_2, flag: 0x01 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_2, flag: 0x02 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_2, flag: 0x04 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_2, flag: 0x08 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_3, flag: 0x01 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_3, flag: 0x02 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_3, flag: 0x04 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_3, flag: 0x08 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_3, flag: 0x10 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_3, flag: 0x20 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_3, flag: 0x40 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_3, flag: 0x80 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_4, flag: 0x01 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_4, flag: 0x02 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_4, flag: 0x04 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_4, flag: 0x08 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_4, flag: 0x10 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_4, flag: 0x20 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_4, flag: 0x40 },
+    { bank: LocoCommand.SET_FUNCTION_BANK_4, flag: 0x80 },
+];
+
+function isLocoFunctionCommand(command: number[]): boolean {
+    if (command[0] != MessageType.LOCO_COMMAND) return false;
+    switch (command[1]) {
+        case LocoCommand.SET_FUNCTION_BANK_0:
+        case LocoCommand.SET_FUNCTION_BANK_1:
+        case LocoCommand.SET_FUNCTION_BANK_2:
+        case LocoCommand.SET_FUNCTION_BANK_3:
+        case LocoCommand.SET_FUNCTION_BANK_4:
+            return true;
+        default:
+            return false;
+    }
+}
+
+function setFlag(flags: number, flag: number): number {
+    return flags |= flag;
+}
+
+function clearFlag(flags: number, flag: number): number {
+    return flags &= (0xFF - flag);
+}
 
 function ensureValidMessage(message: number[], type?:MessageType) {
     let checkSum = 0;
@@ -83,6 +149,7 @@ export class ELinkCommandStation extends CommandStationBase {
     private _port: AsyncSerialPort = null;
     private _version: string = "";
     private _heartbeatToken: NodeJS.Timeout = null;
+    private readonly _locoFunctionStates = new Map<number, Map<number, number>>();
 
     get version(): string { return this._version; }
 
@@ -119,6 +186,32 @@ export class ELinkCommandStation extends CommandStationBase {
             }
             throw error;
         }
+    }
+
+    private _applyFunction(locoId: number, bank: number, func: number, active: boolean): number {
+        let functionState = this._getFunctionState(locoId, bank);
+        if (active)
+            functionState = setFlag(functionState, func);
+        else
+            functionState = clearFlag(functionState, func);
+        this._setFunctionState(locoId, bank, functionState);
+        return functionState;
+    }
+
+    private _getFunctionState(locoId: number, bank: number): number {
+        const locoState = this._locoFunctionStates.get(locoId);
+        if (!locoState) return 0;
+        const functionState = locoState.get(bank);
+        return functionState || 0;
+    }
+
+    private _setFunctionState(locoId: number, bank: number, state: number) {
+        let locoState = this._locoFunctionStates.get(locoId);
+        if (!locoState) {
+            locoState = new Map<number, number>();
+            this._locoFunctionStates.set(locoId, locoState);
+        }
+        locoState.set(bank, state);
     }
 
     private _onError(error: Error) {
@@ -259,8 +352,14 @@ export class ELinkCommandStation extends CommandStationBase {
             // at the end of the batch anyway.
             this._cancelHeartbeart();
 
-            for (let command of batch)
+            for (let command of batch) {
+                // Loco function commands need extra processing as we need to track the function state
+                // for the loco to build up the bit field representation
+                if (isLocoFunctionCommand(command))
+                    command = this._processLocoFunctionCommand(command);
+
                 await this._port.write(command);
+            }
 
             await this._sendStatusRequest();
             log.info("Committed command batch successfully")
@@ -269,6 +368,25 @@ export class ELinkCommandStation extends CommandStationBase {
             this._scheduleHeartbeat();
             this._setIdle();
         }
+    }
+
+    private _processLocoFunctionCommand(command: number[]): number[] {
+        const bank = command[1];
+        const locoId = decodeLongAddress(command, 2);
+        const func = command[4];
+        const active = !!command[5];
+        const state = this._applyFunction(locoId, bank, func, active);
+
+        command = [
+            command[0],
+            bank,
+            command[2],
+            command[3],
+            state,
+            0x00
+        ];
+        applyChecksum(command);
+        return command;
     }
 
     private _scheduleHeartbeat() {
@@ -419,6 +537,27 @@ export class ELinkCommandBatch implements ICommandBatch {
         if (!reverse) speed |= 0x80;
         command[4] = speed;
             
+        this._addCommand(command);
+    }
+
+    setLocomotiveFunction(locomotiveId: number, func: number, active: boolean) {
+        log.info(() => `Setting loco ${locomotiveId} function ${func}, active=${active}`);
+        if (func < 0 || func > 28) throw new CommandStationError(`Invalid function requested, function=${func}`);
+
+        // Because the command station needs to track the state of the loco functons, this is a pseudo command
+        // packet that the process while committing the batch to build the final command. This message
+        // contains the raw request details so that it can be combined with the current function states to
+        // build the final message to be sent to the eLink.
+        const def = locoFunctionMap[func];
+        let command = [ MessageType.LOCO_COMMAND, def.bank, 0x00, 0x00, def.flag, active ? 1 : 0, 0x00 ];
+        if (locomotiveId < 100) {
+            // Short addresses can be written directly into the packet
+            command[3] = locomotiveId;
+        }
+        else {
+            encodeLongAddress(locomotiveId, command, 2);
+        }
+
         this._addCommand(command);
     }
 
