@@ -1,5 +1,5 @@
 import { Logger } from "../../utils/logger";
-import { CommandStationError, ICommandBatch, CommandStationState, CommandStationBase } from "./commandStation"
+import { CommandStationError, ICommandBatch, CommandStationState, CommandStationBase, FunctionAction } from "./commandStation"
 import { AsyncSerialPort } from "../asyncSerialPort";
 import { encodeLongAddress, decodeLongAddress, ensureCvNumber, ensureByte } from "./nmraUtils";
 import { toHumanHex } from "../../utils/hex";
@@ -356,9 +356,9 @@ export class ELinkCommandStation extends CommandStationBase {
                 // Loco function commands need extra processing as we need to track the function state
                 // for the loco to build up the bit field representation
                 if (isLocoFunctionCommand(command))
-                    command = this._processLocoFunctionCommand(command);
-
-                await this._port.write(command);
+                    await this._handleLocoFunctionCommand(command);
+                else
+                    await this._port.write(command);
             }
 
             await this._sendStatusRequest();
@@ -370,11 +370,30 @@ export class ELinkCommandStation extends CommandStationBase {
         }
     }
 
-    private _processLocoFunctionCommand(command: number[]): number[] {
+    private async _handleLocoFunctionCommand(command: number[]) {
+        const action = command[5];
+        if (action == FunctionAction.TRIGGER) {
+            // With the eLink, triggered functions need to be explicitly latched on and then off otherwise
+            // they wont fire again.
+            let newCommand = this._createLocoFunctionCommand(command, FunctionAction.LATCH_ON);
+            await this._port.write(newCommand);
+            // We can't latch off immediately, so we need a slight delay
+            await timeout(1);
+            newCommand = this._createLocoFunctionCommand(command, FunctionAction.LATCH_OFF);
+            await this._port.write(newCommand);
+        }
+        else {
+            command = this._createLocoFunctionCommand(command, action);
+            await this._port.write(command);
+        }
+    }
+
+    private _createLocoFunctionCommand(command: number[], action: FunctionAction): number[] {
+        // Generate a valid eLink command from the original pseudo command 
         const bank = command[1];
         const locoId = decodeLongAddress(command, 2);
         const func = command[4];
-        const active = !!command[5];
+        const active = action != FunctionAction.LATCH_OFF;
         const state = this._applyFunction(locoId, bank, func, active);
 
         command = [
@@ -540,8 +559,8 @@ export class ELinkCommandBatch implements ICommandBatch {
         this._addCommand(command);
     }
 
-    setLocomotiveFunction(locomotiveId: number, func: number, active: boolean) {
-        log.info(() => `Setting loco ${locomotiveId} function ${func}, active=${active}`);
+    setLocomotiveFunction(locomotiveId: number, func: number, action: FunctionAction) {
+        log.info(() => `Setting loco ${locomotiveId} function ${func}, action=${FunctionAction[action]}`);
         if (func < 0 || func > 28) throw new CommandStationError(`Invalid function requested, function=${func}`);
 
         // Because the command station needs to track the state of the loco functons, this is a pseudo command
@@ -549,7 +568,7 @@ export class ELinkCommandBatch implements ICommandBatch {
         // contains the raw request details so that it can be combined with the current function states to
         // build the final message to be sent to the eLink.
         const def = locoFunctionMap[func];
-        let command = [ MessageType.LOCO_COMMAND, def.bank, 0x00, 0x00, def.flag, active ? 1 : 0, 0x00 ];
+        let command = [ MessageType.LOCO_COMMAND, def.bank, 0x00, 0x00, def.flag, action, 0x00 ];
         if (locomotiveId < 100) {
             // Short addresses can be written directly into the packet
             command[3] = locomotiveId;

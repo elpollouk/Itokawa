@@ -26,8 +26,6 @@
             ],
             "program": "${workspaceFolder}/dist/cli/main.js",
             "args": [
-                "-d",
-                "Null",
                 "--log-level",
                 "DEBUG",
                 "-x",

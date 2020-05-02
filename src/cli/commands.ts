@@ -4,6 +4,7 @@ import { timeout } from "../utils/promiseUtils";
 import * as fs from "fs";
 import { fromHex, toHumanHex } from "../utils/hex";
 import { application } from "../application";
+import { FunctionAction } from "../devices/commandStations/commandStation";
 
 // Maintain a list of locos we've sent commands to for the 'estop' command
 const _seenLocos = new Set<number>();
@@ -27,9 +28,22 @@ function resolveSpeed(context: CommandContext, speedStr: string): number {
 
 function resolveFunction(context: CommandContext, funcStr: string): number {
     let func = parseInt(funcStr);
-    if (isNaN(func)) context.error(`'${func}' is not a valid function`);
-    if (func < 0 || func > 28) context.error(`'${func}' is not a valid function`);
+    if (isNaN(func)) context.error(`'${funcStr}' is not a valid function`);
+    if (func < 0 || func > 28) context.error(`'${funcStr}' is not a valid function`);
     return func;
+}
+
+function resolveFunctionAction(context: CommandContext, request: string): FunctionAction {
+    request = request || "";
+    request = request.toLocaleLowerCase();
+    switch (request) {
+        case "off":
+            return FunctionAction.LATCH_OFF;
+        case "on":
+            return FunctionAction.LATCH_ON;
+        default:
+            return FunctionAction.TRIGGER;
+    }
 }
 
 //-----------------------------------------------------------------------------------------------//
@@ -148,17 +162,17 @@ loco_cv_write.help = "Write locomotive CV value.\n  Usage: loco_cv_write CV_NUMB
 
 // Loco Function Control
 export async function loco_function(context: CommandContext, args: string[]) {
-    let active = args[2] != "-";
+    let action = resolveFunctionAction(context, args[2]);
     let func = resolveFunction(context, args[1]);
     let address = resolveLocoAddress(context, args[0]);
 
     const batch = await application.commandStation.beginCommandBatch();
-    batch.setLocomotiveFunction(address, func, active);
+    batch.setLocomotiveFunction(address, func, action);
     await batch.commit();
 }
 loco_function.minArgs = 2;
 loco_function.maxArgs = 3;
-loco_function.help = "Set locomotive function.\n  Usage: loco_speed LOCO_ID SPEED [+|-]";
+loco_function.help = "Set locomotive function.\n  Usage: loco_speed LOCO_ID SPEED [on|off]";
 
 // Loco Speed Control
 export async function loco_speed(context: CommandContext, args: string[]) {
