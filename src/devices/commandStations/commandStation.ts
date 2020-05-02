@@ -14,6 +14,7 @@ export enum CommandStationState {
 export interface ICommandBatch {
     commit(): Promise<void>;
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean): void;
+    setLocomotiveFunction(locomotiveId: number, func: number, active: boolean): void;
     writeRaw(data: Buffer | number[]): void;
 }
 

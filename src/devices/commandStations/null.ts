@@ -96,6 +96,10 @@ export class NullCommandBatch implements ICommandBatch {
         log.debug(() => `setLocomotiveSpeed - locoId=${locomotiveId}, speed=${speed}, reverse=${!!reverse}`);
     }
 
+    setLocomotiveFunction(locomotiveId: number, func: number, active: boolean): void {
+        log.debug(() => `setLocomotiveFunction - locoId=${locomotiveId}, function=${func}, active=${active}`);
+    }
+
     writeRaw(data: Buffer | number[]): void {
         log.debug(() => `writeRaw - bytes=${data.length}, data=${toHumanHex(data)}`);
     }

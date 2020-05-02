@@ -25,6 +25,12 @@ function resolveSpeed(context: CommandContext, speedStr: string): number {
     return speed;
 }
 
+function resolveFunction(context: CommandContext, funcStr: string): number {
+    let func = parseInt(funcStr);
+    if (isNaN(func)) context.error(`'${func}' is not a valid function`);
+    if (func < 0 || func > 28) context.error(`'${func}' is not a valid function`);
+    return func;
+}
 
 //-----------------------------------------------------------------------------------------------//
 // Exported commands
@@ -139,6 +145,20 @@ export async function loco_cv_write(context: CommandContext, args: string[]) {
 loco_cv_write.minArgs = 2;
 loco_cv_write.maxArgs = 2;
 loco_cv_write.help = "Write locomotive CV value.\n  Usage: loco_cv_write CV_NUMBER CV_VALUE";
+
+// Loco Function Control
+export async function loco_function(context: CommandContext, args: string[]) {
+    let active = args[2] != "-";
+    let func = resolveFunction(context, args[1]);
+    let address = resolveLocoAddress(context, args[0]);
+
+    const batch = await application.commandStation.beginCommandBatch();
+    batch.setLocomotiveFunction(address, func, active);
+    await batch.commit();
+}
+loco_function.minArgs = 2;
+loco_function.maxArgs = 3;
+loco_function.help = "Set locomotive function.\n  Usage: loco_speed LOCO_ID SPEED [+|-]";
 
 // Loco Speed Control
 export async function loco_speed(context: CommandContext, args: string[]) {
