@@ -10,7 +10,8 @@ import { timeout } from "../../utils/promiseUtils";
 const log = new Logger("eLink");
 
 let Config = {
-    heartbeatTime: 5
+    heartbeatTime: 5,
+    triggerDuration: 1, // seconds
 }
 
 enum MessageType {
@@ -378,7 +379,7 @@ export class ELinkCommandStation extends CommandStationBase {
             let newCommand = this._createLocoFunctionCommand(command, FunctionAction.LATCH_ON);
             await this._port.write(newCommand);
             // We can't latch off immediately, so we need a slight delay
-            await timeout(1);
+            await timeout(Config.triggerDuration);
             newCommand = this._createLocoFunctionCommand(command, FunctionAction.LATCH_OFF);
             await this._port.write(newCommand);
         }
