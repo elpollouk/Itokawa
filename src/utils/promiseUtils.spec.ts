@@ -37,7 +37,7 @@ describe("Promise Utils", () => {
     });
 
     describe("firedEvent", () => {
-        it("should wait until event is raise with no args", async () => {
+        it("should wait until event is raised with no args", async () => {
             let emitter = new EventEmitter();
             let succeeded = mock();
             let rejected = mock();
@@ -53,7 +53,7 @@ describe("Promise Utils", () => {
             expect(rejected.callCount).to.equal(0);
         });
 
-        it("should wait until event is raise with args", async () => {
+        it("should wait until event is raised with args", async () => {
             let emitter = new EventEmitter();
             let succeeded = mock();
             let rejected = mock();
@@ -66,7 +66,7 @@ describe("Promise Utils", () => {
             expect(rejected.callCount).to.equal(0);
         });
 
-        it("should wait until event is raise with partial args", async () => {
+        it("should wait until event is raised with partial args", async () => {
             let emitter = new EventEmitter();
             let succeeded = mock();
             let rejected = mock();
@@ -92,7 +92,7 @@ describe("Promise Utils", () => {
             expect(rejected.callCount).to.equal(0);
         });
 
-        it("should not complete if some wrong args", async () => {
+        it("should not complete if some args are different", async () => {
             let emitter = new EventEmitter();
             let succeeded = mock();
             let rejected = mock();
@@ -105,7 +105,7 @@ describe("Promise Utils", () => {
             expect(rejected.callCount).to.equal(0);
         });
 
-        it("should be safe after if event fires again", async () => {
+        it("should be safe if event fires again", async () => {
             let emitter = new EventEmitter();
 
             let promise = firedEvent(emitter, "test");
@@ -115,9 +115,10 @@ describe("Promise Utils", () => {
             emitter.emit("test");
             await nextTick();
             await nextTick();
+            await nextTick();
         });
 
-        it("should not complete if wrong partial args", async () => {
+        it("should not complete if different partial args", async () => {
             let emitter = new EventEmitter();
             let succeeded = mock();
             let rejected = mock();

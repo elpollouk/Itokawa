@@ -513,21 +513,64 @@ describe("eLink", () => {
             expect(promiseTimeoutStub.lastCall.args).to.eql([1]);
         })
 
-        it("should not attempt to process non-loco control message for function latching", async () => {
+        it("should not attempt to process raw function requests", async () => {
             const cs = await ELinkCommandStation.open(CONNECTION_STRING);
 
             // Write a raw message that could be mistaken for a loco control message
             clearIoForAck();
             let batch = await cs.beginCommandBatch();
-            batch.writeRaw([0xE0, 0x23, 0xC1, 0x34, 0x02, 0xD4]);
+            batch.writeRaw([0xE4, 0x23, 0xC1, 0x34, 0x02, 0xD4]);
             await batch.commit();
 
             expect(portReads).to.be.empty;
             expect(portWrites).to.eql([
-                [0xE0, 0x23, 0xC1, 0x34, 0x02, 0xD4],
+                [0xE4, 0x23, 0xC1, 0x34, 0x02, 0xD4],
                 [0x21, 0x24, 0x05]
             ]);
         });
+
+        it("should map all functions to the correct bank and flag", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+            const batch = await cs.beginCommandBatch();
+
+            clearIoForAck();
+            for (let i = 0; i <  29; i++)
+                batch.setLocomotiveFunction(1234, i, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0xC4, 0xD2, 0x10, 194],
+                [0xE4, 0x20, 0xC4, 0xD2, 0x11, 195],
+                [0xE4, 0x20, 0xC4, 0xD2, 0x13, 193],
+                [0xE4, 0x20, 0xC4, 0xD2, 0x17, 197],
+                [0xE4, 0x20, 0xC4, 0xD2, 0x1F, 205],
+                [0xE4, 0x21, 0xC4, 0xD2, 0x01, 210],
+                [0xE4, 0x21, 0xC4, 0xD2, 0x03, 208],
+                [0xE4, 0x21, 0xC4, 0xD2, 0x07, 212],
+                [0xE4, 0x21, 0xC4, 0xD2, 0x0F, 220],
+                [0xE4, 0x22, 0xC4, 0xD2, 0x01, 209],
+                [0xE4, 0x22, 0xC4, 0xD2, 0x03, 211],
+                [0xE4, 0x22, 0xC4, 0xD2, 0x07, 215],
+                [0xE4, 0x22, 0xC4, 0xD2, 0x0F, 223],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x01, 208],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x03, 210],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x07, 214],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x0F, 222],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x1F, 206],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x3F, 238],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x7F, 174],
+                [0xE4, 0x23, 0xC4, 0xD2, 0xFF, 46],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x01, 219],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x03, 217],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x07, 221],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x0F, 213],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x1F, 197],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x3F, 229],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x7F, 165],
+                [0xE4, 0x28, 0xC4, 0xD2, 0xFF, 37],
+                [0x21, 0x24, 0x05]
+            ]);
+        })
     })
 
     describe("readLocoCv", () => {
@@ -1045,7 +1088,7 @@ describe("eLink", () => {
 
                 expect(commit.callCount).to.equal(1);
                 expect(commit.lastCall.args).to.eqls([[
-                    [0xE4, 0x20, 0xC4, 0xD2, 0x04, FunctionAction.TRIGGER, 0xD6]
+                    [-1, 1234, 3, FunctionAction.TRIGGER]
                 ]]);
             })
 
@@ -1058,7 +1101,7 @@ describe("eLink", () => {
 
                 expect(commit.callCount).to.equal(1);
                 expect(commit.lastCall.args).to.eqls([[
-                    [0xE4, 0x20, 0xC4, 0xD2, 0x04, FunctionAction.LATCH_ON, 0xD7]
+                    [-1, 1234, 3, FunctionAction.LATCH_ON]
                 ]]);
             })
 
@@ -1071,49 +1114,7 @@ describe("eLink", () => {
 
                 expect(commit.callCount).to.equal(1);
                 expect(commit.lastCall.args).to.eqls([[
-                    [0xE4, 0x20, 0xC4, 0xD2, 0x04, FunctionAction.LATCH_OFF, 0xD4]
-                ]]);
-            })
-
-            it("should map all functions to the correct eLink bank and bit flag", async () => {
-                const commit = stub().returns(Promise.resolve());
-                const batch = new ELinkCommandBatch(commit);
-
-                for (let i = 0; i <  29; i++)
-                    batch.setLocomotiveFunction(1234, i, FunctionAction.TRIGGER);
-                await batch.commit();
-
-                expect(commit.callCount).to.equal(1);
-                expect(commit.lastCall.args).to.eqls([[
-                    [0xE4, 0x20, 0xC4, 0xD2, 0x10, FunctionAction.TRIGGER, 194],
-                    [0xE4, 0x20, 0xC4, 0xD2, 0x01, FunctionAction.TRIGGER, 211],
-                    [0xE4, 0x20, 0xC4, 0xD2, 0x02, FunctionAction.TRIGGER, 208],
-                    [0xE4, 0x20, 0xC4, 0xD2, 0x04, FunctionAction.TRIGGER, 214],
-                    [0xE4, 0x20, 0xC4, 0xD2, 0x08, FunctionAction.TRIGGER, 218],
-                    [0xE4, 0x21, 0xC4, 0xD2, 0x01, FunctionAction.TRIGGER, 210],
-                    [0xE4, 0x21, 0xC4, 0xD2, 0x02, FunctionAction.TRIGGER, 209],
-                    [0xE4, 0x21, 0xC4, 0xD2, 0x04, FunctionAction.TRIGGER, 215],
-                    [0xE4, 0x21, 0xC4, 0xD2, 0x08, FunctionAction.TRIGGER, 219],
-                    [0xE4, 0x22, 0xC4, 0xD2, 0x01, FunctionAction.TRIGGER, 209],
-                    [0xE4, 0x22, 0xC4, 0xD2, 0x02, FunctionAction.TRIGGER, 210],
-                    [0xE4, 0x22, 0xC4, 0xD2, 0x04, FunctionAction.TRIGGER, 212],
-                    [0xE4, 0x22, 0xC4, 0xD2, 0x08, FunctionAction.TRIGGER, 216],
-                    [0xE4, 0x23, 0xC4, 0xD2, 0x01, FunctionAction.TRIGGER, 208],
-                    [0xE4, 0x23, 0xC4, 0xD2, 0x02, FunctionAction.TRIGGER, 211],
-                    [0xE4, 0x23, 0xC4, 0xD2, 0x04, FunctionAction.TRIGGER, 213],
-                    [0xE4, 0x23, 0xC4, 0xD2, 0x08, FunctionAction.TRIGGER, 217],
-                    [0xE4, 0x23, 0xC4, 0xD2, 0x10, FunctionAction.TRIGGER, 193],
-                    [0xE4, 0x23, 0xC4, 0xD2, 0x20, FunctionAction.TRIGGER, 241],
-                    [0xE4, 0x23, 0xC4, 0xD2, 0x40, FunctionAction.TRIGGER, 145],
-                    [0xE4, 0x23, 0xC4, 0xD2, 0x80, FunctionAction.TRIGGER, 81],
-                    [0xE4, 0x28, 0xC4, 0xD2, 0x01, FunctionAction.TRIGGER, 219],
-                    [0xE4, 0x28, 0xC4, 0xD2, 0x02, FunctionAction.TRIGGER, 216],
-                    [0xE4, 0x28, 0xC4, 0xD2, 0x04, FunctionAction.TRIGGER, 222],
-                    [0xE4, 0x28, 0xC4, 0xD2, 0x08, FunctionAction.TRIGGER, 210],
-                    [0xE4, 0x28, 0xC4, 0xD2, 0x10, FunctionAction.TRIGGER, 202],
-                    [0xE4, 0x28, 0xC4, 0xD2, 0x20, FunctionAction.TRIGGER, 250],
-                    [0xE4, 0x28, 0xC4, 0xD2, 0x40, FunctionAction.TRIGGER, 154],
-                    [0xE4, 0x28, 0xC4, 0xD2, 0x80, FunctionAction.TRIGGER, 90]
+                    [-1, 1234, 3, FunctionAction.LATCH_OFF]
                 ]]);
             })
 
@@ -1121,14 +1122,14 @@ describe("eLink", () => {
                 const commit = stub().returns(Promise.resolve());
                 const batch = new ELinkCommandBatch(commit);
 
-                expect(() => batch.setLocomotiveFunction(0, 0, FunctionAction.TRIGGER)).to.throw("Invalid locomotive address, address=0");
+                expect(() => batch.setLocomotiveFunction(0, 0, FunctionAction.TRIGGER)).to.throw("Address 0 outside of valid range");
             })
 
             it("should reject loco addresses above 9999", async () => {
                 const commit = stub().returns(Promise.resolve());
                 const batch = new ELinkCommandBatch(commit);
 
-                expect(() => batch.setLocomotiveFunction(10000, 0, FunctionAction.TRIGGER)).to.throw("Invalid long address, address=10000");
+                expect(() => batch.setLocomotiveFunction(10000, 0, FunctionAction.TRIGGER)).to.throw("Address 10000 outside of valid range");
             })
 
             it("should reject functions below 0", async () => {

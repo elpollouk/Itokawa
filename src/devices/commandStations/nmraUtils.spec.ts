@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 import "./nmraUtils";
-import { encodeLongAddress, decodeLongAddress, ensureWithinRange, ensureCvNumber, ensureByte } from "./nmraUtils";
+import { encodeLongAddress, decodeLongAddress, ensureWithinRange, ensureCvNumber, ensureByte, ensureAddress } from "./nmraUtils";
 
 describe("NMRA Utilities", () => {
     describe("encodeLongAddress", () => {
@@ -141,6 +141,28 @@ describe("NMRA Utilities", () => {
 
         it("should reject value below lower bound", () => {
             expect(() => ensureWithinRange(11, 2, 10, "Test Value")).to.throw("Test Value outside of valid range");
+        })
+    })
+
+    describe("ensureAddress", () => {
+        it("should accept value at lower bound", () => {
+            ensureAddress(1);
+        })
+
+        it("should accept value at upper bound", () => {
+            ensureAddress(9999);
+        })
+
+        it("should accept value within range", () => {
+            ensureAddress(5000);
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureAddress(0)).to.throw("Address 0 outside of valid range");
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureAddress(10000)).to.throw("Address 10000 outside of valid range");
         })
     })
 

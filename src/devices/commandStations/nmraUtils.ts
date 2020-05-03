@@ -27,6 +27,10 @@ export function ensureWithinRange(value: number, minValue: number, maxValue: num
     if (value < minValue || value > maxValue) throw new Error(`${valueName} outside of valid range`);
 }
 
+export function ensureAddress(address: number) {
+    ensureWithinRange(address, 1, 9999, `Address ${address}`);
+}
+
 export function ensureCvNumber(cv: number) {
     ensureWithinRange(cv, 1, 255, `CV ${cv}`);
 }
