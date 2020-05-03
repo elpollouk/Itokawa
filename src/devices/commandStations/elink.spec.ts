@@ -412,6 +412,122 @@ describe("eLink", () => {
                 [0x21, 0x24, 0x05]
             ]);
         })
+
+        it("should track function latching within the same bank correctly", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            // Turn on F0
+            clearIoForAck();
+            let batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 0, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0x00, 0x03, 0x10, 215],
+                [0x21, 0x24, 0x05]
+            ]);
+
+            // Turn on F1
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 1, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0x00, 0x03, 0x11, 214], // Both F0 and F1 are on
+                [0x21, 0x24, 0x05]
+            ]);
+
+            // Turn off F1
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 1, FunctionAction.LATCH_OFF);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0x00, 0x03, 0x10, 215],
+                [0x21, 0x24, 0x05]
+            ]);
+
+            // Turn off F0
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 0, FunctionAction.LATCH_OFF);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0x00, 0x03, 0x00, 199],
+                [0x21, 0x24, 0x05]
+            ]);
+        })
+
+        it("should track function banks independently", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            // Turn on F1
+            clearIoForAck();
+            let batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 1, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            // Turn on F28
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 28, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x28, 0x00, 0x03, 0x80, 79],
+                [0x21, 0x24, 0x05]
+            ]);
+        })
+
+        it("should generate latch-off message for triggered function", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            // Turn on F7
+            clearIoForAck();
+            let batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 7, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            // Trigger F5
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 5, FunctionAction.TRIGGER);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x21, 0x00, 0x03, 0x05, 195],
+                [0xE4, 0x21, 0x00, 0x03, 0x04, 194],
+                [0x21, 0x24, 0x05]
+            ]);
+
+            expect(promiseTimeoutStub.callCount).to.equal(1);
+            expect(promiseTimeoutStub.lastCall.args).to.eql([1]);
+        })
+
+        it("should not attempt to process non-loco control message for function latching", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            // Write a raw message that could be mistaken for a loco control message
+            clearIoForAck();
+            let batch = await cs.beginCommandBatch();
+            batch.writeRaw([0xE0, 0x23, 0xC1, 0x34, 0x02, 0xD4]);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE0, 0x23, 0xC1, 0x34, 0x02, 0xD4],
+                [0x21, 0x24, 0x05]
+            ]);
+        });
     })
 
     describe("readLocoCv", () => {
