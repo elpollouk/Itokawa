@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 import "./nmraUtils";
-import { encodeLongAddress, ensureWithinRange, ensureCvNumber, ensureByte } from "./nmraUtils";
+import { encodeLongAddress, decodeLongAddress, ensureWithinRange, ensureCvNumber, ensureByte } from "./nmraUtils";
 
 describe("NMRA Utilities", () => {
     describe("encodeLongAddress", () => {
@@ -87,9 +87,40 @@ describe("NMRA Utilities", () => {
             let buffer = Buffer.alloc(2);
 
             expect(() => encodeLongAddress(1234, buffer, -1)).to.throw("Attempt to write outside of range of buffer, offset=-1, buffer size=2");
-
         });
     });
+
+    describe("decodeLongAddress", () => {
+        it("should decode addresses below 100", () => {
+            const address = decodeLongAddress([0, 99]);
+            expect(address).to.equal(99);
+        })
+
+        it("should decode addresses below 100 with offset", () => {
+            const address = decodeLongAddress([0, 0, 99], 1);
+            expect(address).to.equal(99);
+        })
+
+        it("should decode addresses above 100", () => {
+            const address = decodeLongAddress([0xC0, 159]);
+            expect(address).to.equal(159);
+        })
+
+        it("should decode addresses below 100 with offset", () => {
+            const address = decodeLongAddress([0, 0, 0xC0, 159], 2);
+            expect(address).to.equal(159);
+        })
+
+        it("should decode address 9999", () => {
+            const address = decodeLongAddress([0xE7, 0x0F]);
+            expect(address).to.equal(9999);
+        })
+
+        it("should decode address 9999 with offset", () => {
+            const address = decodeLongAddress([0xFF, 0xE7, 0x0F], 1);
+            expect(address).to.equal(9999);
+        })
+    })
 
     describe("ensureWithinRange", () => {
         it("should accept value at lower bound", () => {
