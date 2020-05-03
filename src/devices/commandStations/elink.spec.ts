@@ -560,11 +560,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Select CV
-               [0x22, 0x15, 0x01, 0x36],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x22, 0x15, 0x01, 0x36],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
@@ -596,11 +596,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Select CV
-               [0x22, 0x15, 0x02, 0x35],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x22, 0x15, 0x02, 0x35],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
@@ -633,11 +633,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Select CV
-               [0x22, 0x15, 0x02, 0x35],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x22, 0x15, 0x02, 0x35],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
@@ -863,11 +863,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Write CV
-               [0x23, 0x16, 0x01, 0x10, 0x24],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x23, 0x16, 0x01, 0x10, 0x24],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
@@ -910,11 +910,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Write CV
-               [0x23, 0x16, 0x01, 0x10, 0x24],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x23, 0x16, 0x01, 0x10, 0x24],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
