@@ -8,6 +8,7 @@ import { TrainEditConstructor } from "./pages/trainEditor";
 import { AttributionsConstructor } from "./pages/attributions";
 import { CvEditorConstructor } from "./pages/cvEditor";
 import { FunctionSetuprConstructor } from "./pages/functionSetup";
+import { LocoPanelConstructor } from "./pages/locoPanel";
 
 window["main"] = function () {
     window["itokawa"] = client;
@@ -29,6 +30,7 @@ window["main"] = function () {
     Navigator.registerPage(AttributionsConstructor);
     Navigator.registerPage(CvEditorConstructor);
     Navigator.registerPage(FunctionSetuprConstructor);
+    Navigator.registerPage(LocoPanelConstructor);
 
     Navigator.initalOpen();
 }
