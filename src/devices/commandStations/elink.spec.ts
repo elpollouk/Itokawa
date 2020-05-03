@@ -7,7 +7,7 @@ import {  nextTick } from "../../utils/promiseUtils";
 import * as promiseUtils from "../../utils/promiseUtils";
 import { AsyncSerialPort } from "../asyncSerialPort"
 import { ELinkCommandStation, ELinkCommandBatch, applyChecksum } from "./elink";
-import { CommandStationState } from "./commandStation";
+import { CommandStationState, FunctionAction } from "./commandStation";
 
 const CONNECTION_STRING = "port=/dev/ttyACM0";
 
@@ -412,6 +412,165 @@ describe("eLink", () => {
                 [0x21, 0x24, 0x05]
             ]);
         })
+
+        it("should track function latching within the same bank correctly", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            // Turn on F0
+            clearIoForAck();
+            let batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 0, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0x00, 0x03, 0x10, 215],
+                [0x21, 0x24, 0x05]
+            ]);
+
+            // Turn on F1
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 1, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0x00, 0x03, 0x11, 214], // Both F0 and F1 are on
+                [0x21, 0x24, 0x05]
+            ]);
+
+            // Turn off F1
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 1, FunctionAction.LATCH_OFF);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0x00, 0x03, 0x10, 215],
+                [0x21, 0x24, 0x05]
+            ]);
+
+            // Turn off F0
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 0, FunctionAction.LATCH_OFF);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0x00, 0x03, 0x00, 199],
+                [0x21, 0x24, 0x05]
+            ]);
+        })
+
+        it("should track function banks independently", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            // Turn on F1
+            clearIoForAck();
+            let batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 1, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            // Turn on F28
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 28, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x28, 0x00, 0x03, 0x80, 79],
+                [0x21, 0x24, 0x05]
+            ]);
+        })
+
+        it("should generate latch-off message for triggered function", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            // Turn on F7
+            clearIoForAck();
+            let batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 7, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            // Trigger F5
+            clearIoForAck();
+            batch = await cs.beginCommandBatch();
+            batch.setLocomotiveFunction(3, 5, FunctionAction.TRIGGER);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x21, 0x00, 0x03, 0x05, 195],
+                [0xE4, 0x21, 0x00, 0x03, 0x04, 194],
+                [0x21, 0x24, 0x05]
+            ]);
+
+            expect(promiseTimeoutStub.callCount).to.equal(1);
+            expect(promiseTimeoutStub.lastCall.args).to.eql([1]);
+        })
+
+        it("should not attempt to process raw function requests", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+
+            // Write a raw message that could be mistaken for a loco control message
+            clearIoForAck();
+            let batch = await cs.beginCommandBatch();
+            batch.writeRaw([0xE4, 0x23, 0xC1, 0x34, 0x02, 0xD4]);
+            await batch.commit();
+
+            expect(portReads).to.be.empty;
+            expect(portWrites).to.eql([
+                [0xE4, 0x23, 0xC1, 0x34, 0x02, 0xD4],
+                [0x21, 0x24, 0x05]
+            ]);
+        });
+
+        it("should map all functions to the correct bank and flag", async () => {
+            const cs = await ELinkCommandStation.open(CONNECTION_STRING);
+            const batch = await cs.beginCommandBatch();
+
+            clearIoForAck();
+            for (let i = 0; i <  29; i++)
+                batch.setLocomotiveFunction(1234, i, FunctionAction.LATCH_ON);
+            await batch.commit();
+
+            expect(portWrites).to.eql([
+                [0xE4, 0x20, 0xC4, 0xD2, 0x10, 194],
+                [0xE4, 0x20, 0xC4, 0xD2, 0x11, 195],
+                [0xE4, 0x20, 0xC4, 0xD2, 0x13, 193],
+                [0xE4, 0x20, 0xC4, 0xD2, 0x17, 197],
+                [0xE4, 0x20, 0xC4, 0xD2, 0x1F, 205],
+                [0xE4, 0x21, 0xC4, 0xD2, 0x01, 210],
+                [0xE4, 0x21, 0xC4, 0xD2, 0x03, 208],
+                [0xE4, 0x21, 0xC4, 0xD2, 0x07, 212],
+                [0xE4, 0x21, 0xC4, 0xD2, 0x0F, 220],
+                [0xE4, 0x22, 0xC4, 0xD2, 0x01, 209],
+                [0xE4, 0x22, 0xC4, 0xD2, 0x03, 211],
+                [0xE4, 0x22, 0xC4, 0xD2, 0x07, 215],
+                [0xE4, 0x22, 0xC4, 0xD2, 0x0F, 223],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x01, 208],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x03, 210],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x07, 214],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x0F, 222],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x1F, 206],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x3F, 238],
+                [0xE4, 0x23, 0xC4, 0xD2, 0x7F, 174],
+                [0xE4, 0x23, 0xC4, 0xD2, 0xFF, 46],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x01, 219],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x03, 217],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x07, 221],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x0F, 213],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x1F, 197],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x3F, 229],
+                [0xE4, 0x28, 0xC4, 0xD2, 0x7F, 165],
+                [0xE4, 0x28, 0xC4, 0xD2, 0xFF, 37],
+                [0x21, 0x24, 0x05]
+            ]);
+        })
     })
 
     describe("readLocoCv", () => {
@@ -444,11 +603,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Select CV
-               [0x22, 0x15, 0x01, 0x36],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x22, 0x15, 0x01, 0x36],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
@@ -480,11 +639,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Select CV
-               [0x22, 0x15, 0x02, 0x35],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x22, 0x15, 0x02, 0x35],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
@@ -517,11 +676,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Select CV
-               [0x22, 0x15, 0x02, 0x35],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x22, 0x15, 0x02, 0x35],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
@@ -747,11 +906,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Write CV
-               [0x23, 0x16, 0x01, 0x10, 0x24],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x23, 0x16, 0x01, 0x10, 0x24],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
@@ -794,11 +953,11 @@ describe("eLink", () => {
 
             expect(portWrites).to.eql([
                 // Write CV
-               [0x23, 0x16, 0x01, 0x10, 0x24],
-               // Request Value
-               [0x21, 0x10, 0x31],
-               // Heartbeat
-               [0x21, 0x24, 0x05] 
+                [0x23, 0x16, 0x01, 0x10, 0x24],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
             ]);
             expect(portReads).to.be.empty;
         })
@@ -850,144 +1009,226 @@ describe("eLink", () => {
     })
 
     describe("Command Batch", () => {
-        it("should correctly set loco speed forward", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
+        describe("setLocomotiveSpeed", () => {
+            it("should correctly set loco speed forward", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
 
-            batch.setLocomotiveSpeed(1234, 56);
-            await batch.commit();
+                batch.setLocomotiveSpeed(1234, 56);
+                await batch.commit();
 
-            expect(commit.callCount).to.equal(1);
-            expect(commit.lastCall.args).to.eqls([[
-                [0xE4, 0x13, 0xC4, 0xD2, 0xB8, 0x59]
-            ]]);
+                expect(commit.callCount).to.equal(1);
+                expect(commit.lastCall.args).to.eqls([[
+                    [0xE4, 0x13, 0xC4, 0xD2, 0xB8, 0x59]
+                ]]);
+            })
+
+            it("should correctly set loco speed reverse", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                batch.setLocomotiveSpeed(1234, 56, true);
+                await batch.commit();
+
+                expect(commit.callCount).to.equal(1);
+                expect(commit.lastCall.args).to.eqls([[
+                    [0xE4, 0x13, 0xC4, 0xD2, 0x38, 0xD9]
+                ]]);
+            })
+
+            it("should correctly encode loco addesses below 100", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                batch.setLocomotiveSpeed(3, 127, true);
+                await batch.commit();
+
+                expect(commit.callCount).to.equal(1);
+                expect(commit.lastCall.args).to.eqls([[
+                    [0xE4, 0x13, 0x00, 0x03, 0x7F, 0x8B]
+                ]]);
+            })
+
+            it("should reject loco addresses below 1", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.setLocomotiveSpeed(0, 0)).to.throw("Invalid locomotive address, address=0");
+            })
+
+            it("should reject loco addresses above 9999", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.setLocomotiveSpeed(10000, 0)).to.throw("Invalid long address, address=10000");
+            })
+
+            it("should reject speeds below 0", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.setLocomotiveSpeed(9999, -1)).to.throw("Invalid speed requested, speed=-1");
+            })
+
+            it("should reject speeds above 127", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.setLocomotiveSpeed(9999, 128)).to.throw("Invalid speed requested, speed=128");
+            })
         })
 
-        it("should correctly set loco speed reverse", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
+        describe("setLocomotiveFunction", () => {
+            it("should generate pseudo message for triggered function", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
 
-            batch.setLocomotiveSpeed(1234, 56, true);
-            await batch.commit();
+                batch.setLocomotiveFunction(1234, 3, FunctionAction.TRIGGER);
+                await batch.commit();
 
-            expect(commit.callCount).to.equal(1);
-            expect(commit.lastCall.args).to.eqls([[
-                [0xE4, 0x13, 0xC4, 0xD2, 0x38, 0xD9]
-            ]]);
+                expect(commit.callCount).to.equal(1);
+                expect(commit.lastCall.args).to.eqls([[
+                    [-1, 1234, 3, FunctionAction.TRIGGER]
+                ]]);
+            })
+
+            it("should generate pseudo message for latch-on function", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                batch.setLocomotiveFunction(1234, 3, FunctionAction.LATCH_ON);
+                await batch.commit();
+
+                expect(commit.callCount).to.equal(1);
+                expect(commit.lastCall.args).to.eqls([[
+                    [-1, 1234, 3, FunctionAction.LATCH_ON]
+                ]]);
+            })
+
+            it("should generate pseudo message for latch-off function", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                batch.setLocomotiveFunction(1234, 3, FunctionAction.LATCH_OFF);
+                await batch.commit();
+
+                expect(commit.callCount).to.equal(1);
+                expect(commit.lastCall.args).to.eqls([[
+                    [-1, 1234, 3, FunctionAction.LATCH_OFF]
+                ]]);
+            })
+
+            it("should reject loco addresses below 1", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.setLocomotiveFunction(0, 0, FunctionAction.TRIGGER)).to.throw("Address 0 outside of valid range");
+            })
+
+            it("should reject loco addresses above 9999", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.setLocomotiveFunction(10000, 0, FunctionAction.TRIGGER)).to.throw("Address 10000 outside of valid range");
+            })
+
+            it("should reject functions below 0", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.setLocomotiveFunction(3, -1, FunctionAction.TRIGGER)).to.throw("Invalid function requested, function=-1");
+            })
+
+            it("should reject functions above 28", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.setLocomotiveFunction(3, 29, FunctionAction.TRIGGER)).to.throw("Invalid function requested, function=29");
+            })
         })
 
-        it("should correctly encode loco addesses belowe 100", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
+        describe("writeRaw", () => {
+            it("should correctly add a raw number[] command to the batch", async() => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
 
-            batch.setLocomotiveSpeed(3, 127, true);
-            await batch.commit();
+                batch.writeRaw([9, 7, 6, 5]);
+                await batch.commit();
 
-            expect(commit.callCount).to.equal(1);
-            expect(commit.lastCall.args).to.eqls([[
-                [0xE4, 0x13, 0x00, 0x03, 0x7F, 0x8B]
-            ]]);
+                expect(commit.callCount).to.equal(1);
+                expect(commit.lastCall.args).to.eqls([[
+                    [0x09, 0x07, 0x06, 0x05]
+                ]]);
+            })
+
+            it("should correctly add a raw buffer command to the batch", async() => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                batch.writeRaw(Buffer.from([9, 7, 8]));
+                await batch.commit();
+
+                expect(commit.callCount).to.equal(1);
+                expect(commit.lastCall.args).to.eqls([[
+                    [0x09, 0x07, 0x08]
+                ]]);
+            })
+
+            it("should reject a null raw write", async() => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.writeRaw(null)).to.throw("Attempted to write null/undefined data");
+            })
+
+            it("should reject an empty raw write", async() => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+
+                expect(() => batch.writeRaw([])).to.throw("Attempted to write empty data");
+            })
         })
 
-        it("should reject loco addresses above 9999", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
+        describe("commit", () => {
+            it("should correctly handle multiple commands", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
 
-            expect(() => batch.setLocomotiveSpeed(10000, 0)).to.throw("Invalid long address, address=10000");
-        })
+                batch.setLocomotiveSpeed(1234, 56, true);
+                batch.writeRaw([3, 7, 11]);
+                await batch.commit();
 
-        it("should reject speeds below 0", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
+                expect(commit.callCount).to.equal(1);
+                expect(commit.lastCall.args).to.eqls([[
+                    [0xE4, 0x13, 0xC4, 0xD2, 0x38, 0xD9],
+                    [0x03, 0x07, 0x0B]
+                ]]);
+            })
 
-            expect(() => batch.setLocomotiveSpeed(9999, -1)).to.throw("Invalid speed requested, speed=-1");
-        })
+            it("should reject committing an empty batch ", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
 
-        it("should reject speeds above 127", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
+                await expect(batch.commit()).to.be.eventually.rejectedWith("Attempted to commit empty batch");
+            })
 
-            expect(() => batch.setLocomotiveSpeed(9999, 128)).to.throw("Invalid speed requested, speed=128");
-        })
+            it("should reject double committing batch", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+                batch.setLocomotiveSpeed(9999, 0);
+                await batch.commit();
 
-        it("should correctly add a raw number[] command to the batch", async() => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
+                await expect(batch.commit()).to.be.eventually.rejectedWith("Batch has already been committed");
+            })
 
-            batch.writeRaw([9, 7, 6, 5]);
-            await batch.commit();
+            it("should reject new command on already committed batch", async () => {
+                const commit = stub().returns(Promise.resolve());
+                const batch = new ELinkCommandBatch(commit);
+                batch.setLocomotiveSpeed(9999, 0);
+                await batch.commit();
 
-            expect(commit.callCount).to.equal(1);
-            expect(commit.lastCall.args).to.eqls([[
-                [0x09, 0x07, 0x06, 0x05]
-            ]]);
-        })
-
-        it("should correctly add a raw buffer command to the batch", async() => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-
-            batch.writeRaw(Buffer.from([9, 7, 8]));
-            await batch.commit();
-
-            expect(commit.callCount).to.equal(1);
-            expect(commit.lastCall.args).to.eqls([[
-                [0x09, 0x07, 0x08]
-            ]]);
-        })
-
-        it("should reject a null raw write", async() => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-
-            expect(() => batch.writeRaw(null)).to.throw("Attempted to write null/undefined data");
-        })
-
-        it("should reject an empty raw write", async() => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-
-            expect(() => batch.writeRaw([])).to.throw("Attempted to write empty data");
-        })
-
-        it("should correctly handle multiple commands", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-
-            batch.setLocomotiveSpeed(1234, 56, true);
-            batch.writeRaw([3, 7, 11]);
-            await batch.commit();
-
-            expect(commit.callCount).to.equal(1);
-            expect(commit.lastCall.args).to.eqls([[
-                [0xE4, 0x13, 0xC4, 0xD2, 0x38, 0xD9],
-                [0x03, 0x07, 0x0B]
-            ]]);
-        })
-
-        it("should reject committing an empty batch ", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-
-            await expect(batch.commit()).to.be.eventually.rejectedWith("Attempted to commit empty batch");
-        })
-
-        it("should reject double committing batch", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-            batch.setLocomotiveSpeed(9999, 0);
-            await batch.commit();
-
-            await expect(batch.commit()).to.be.eventually.rejectedWith("Batch has already been committed");
-        })
-
-        it("should reject new command on already committed batch", async () => {
-            const commit = stub().returns(Promise.resolve());
-            const batch = new ELinkCommandBatch(commit);
-            batch.setLocomotiveSpeed(9999, 0);
-            await batch.commit();
-
-            expect(() => batch.setLocomotiveSpeed(1000, 0)).to.throw("Batch has already been committed");
+                expect(() => batch.setLocomotiveSpeed(1000, 0)).to.throw("Batch has already been committed");
+            })
         })
     })
 })

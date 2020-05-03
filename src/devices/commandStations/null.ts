@@ -1,5 +1,5 @@
 import { Logger } from "../../utils/logger";
-import { CommandStationBase, ICommandBatch, CommandStationState, ICommandStation } from "./commandStation";
+import { CommandStationBase, ICommandBatch, CommandStationState, ICommandStation, FunctionAction } from "./commandStation";
 import { toHumanHex } from "../../utils/hex";
 import { parseConnectionString, parseFloatStrict } from "../../utils/parsers";
 import { timeout } from "../../utils/promiseUtils";
@@ -94,6 +94,10 @@ export class NullCommandBatch implements ICommandBatch {
     
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?: boolean): void {
         log.debug(() => `setLocomotiveSpeed - locoId=${locomotiveId}, speed=${speed}, reverse=${!!reverse}`);
+    }
+
+    setLocomotiveFunction(locomotiveId: number, func: number, action: FunctionAction): void {
+        log.debug(() => `setLocomotiveFunction - locoId=${locomotiveId}, function=${func}, action=${FunctionAction[action]}`);
     }
 
     writeRaw(data: Buffer | number[]): void {

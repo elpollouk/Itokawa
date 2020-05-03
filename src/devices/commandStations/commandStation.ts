@@ -11,9 +11,16 @@ export enum CommandStationState {
     SHUTTING_DOWN
 }
 
+export enum FunctionAction {
+    TRIGGER,
+    LATCH_ON,
+    LATCH_OFF
+}
+
 export interface ICommandBatch {
     commit(): Promise<void>;
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?:boolean): void;
+    setLocomotiveFunction(locomotiveId: number, func: number, action: FunctionAction): void;
     writeRaw(data: Buffer | number[]): void;
 }
 

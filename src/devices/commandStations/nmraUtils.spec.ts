@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 import "./nmraUtils";
-import { encodeLongAddress, ensureWithinRange, ensureCvNumber, ensureByte } from "./nmraUtils";
+import { encodeLongAddress, decodeLongAddress, ensureWithinRange, ensureCvNumber, ensureByte, ensureAddress } from "./nmraUtils";
 
 describe("NMRA Utilities", () => {
     describe("encodeLongAddress", () => {
@@ -87,9 +87,40 @@ describe("NMRA Utilities", () => {
             let buffer = Buffer.alloc(2);
 
             expect(() => encodeLongAddress(1234, buffer, -1)).to.throw("Attempt to write outside of range of buffer, offset=-1, buffer size=2");
-
         });
     });
+
+    describe("decodeLongAddress", () => {
+        it("should decode addresses below 100", () => {
+            const address = decodeLongAddress([0, 99]);
+            expect(address).to.equal(99);
+        })
+
+        it("should decode addresses below 100 with offset", () => {
+            const address = decodeLongAddress([0, 0, 99], 1);
+            expect(address).to.equal(99);
+        })
+
+        it("should decode addresses above 100", () => {
+            const address = decodeLongAddress([0xC0, 159]);
+            expect(address).to.equal(159);
+        })
+
+        it("should decode addresses below 100 with offset", () => {
+            const address = decodeLongAddress([0, 0, 0xC0, 159], 2);
+            expect(address).to.equal(159);
+        })
+
+        it("should decode address 9999", () => {
+            const address = decodeLongAddress([0xE7, 0x0F]);
+            expect(address).to.equal(9999);
+        })
+
+        it("should decode address 9999 with offset", () => {
+            const address = decodeLongAddress([0xFF, 0xE7, 0x0F], 1);
+            expect(address).to.equal(9999);
+        })
+    })
 
     describe("ensureWithinRange", () => {
         it("should accept value at lower bound", () => {
@@ -110,6 +141,28 @@ describe("NMRA Utilities", () => {
 
         it("should reject value below lower bound", () => {
             expect(() => ensureWithinRange(11, 2, 10, "Test Value")).to.throw("Test Value outside of valid range");
+        })
+    })
+
+    describe("ensureAddress", () => {
+        it("should accept value at lower bound", () => {
+            ensureAddress(1);
+        })
+
+        it("should accept value at upper bound", () => {
+            ensureAddress(9999);
+        })
+
+        it("should accept value within range", () => {
+            ensureAddress(5000);
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureAddress(0)).to.throw("Address 0 outside of valid range");
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureAddress(10000)).to.throw("Address 10000 outside of valid range");
         })
     })
 

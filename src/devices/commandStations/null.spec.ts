@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 
-import { CommandStationState } from "./commandStation"
+import { CommandStationState, FunctionAction } from "./commandStation"
 import { NullCommandStation, NullCommandBatch } from "./null";
 import { ensureCvNumber } from "./nmraUtils";
 
@@ -38,6 +38,13 @@ describe("Null Command Station", () => {
         const batch = await cs.beginCommandBatch();
 
         batch.setLocomotiveSpeed(123, 45, true);
+    })
+
+    it("should be possible to request loco function without error", async () => {
+        const cs = await NullCommandStation.open(null);
+        const batch = await cs.beginCommandBatch();
+
+        batch.setLocomotiveFunction(123, 1, FunctionAction.LATCH_ON);
     })
 
     it("should be possible write a raw command", async () => {
