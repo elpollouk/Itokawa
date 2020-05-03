@@ -1,6 +1,7 @@
 import { Page, IPageConstructor } from "./page";
 import { parseHtml, getById } from "../utils/dom";
-import { FunctionConfigControl, FunctionMode } from "../controls/functionConfigControl";
+import { FunctionConfigControl } from "../controls/functionConfigControl";
+import { FunctionMode, FunctionConfig } from "../../common/api";
 
 const html = require("./functionSetup.html");
 
@@ -8,6 +9,10 @@ export class FunctionSetupPage extends Page {
     path: string = FunctionSetuprConstructor.path;
     content: HTMLElement;
     private readonly _functionControls: FunctionConfigControl[] = [];
+
+    get functions(): FunctionConfig[] {
+        return [];
+    }
 
     constructor (params: any) {
         super();

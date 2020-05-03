@@ -1,12 +1,7 @@
 import { ControlBase } from "./control";
 import { parseHtml, getById } from "../utils/dom";
+import { FunctionMode } from "../../common/api";
 const html = require("./functionConfigControl.html");
-
-export enum FunctionMode {
-    NotSet,
-    Trigger,
-    Latch
-}
 
 export class FunctionConfigControl extends ControlBase {
     constructor (parent: HTMLElement, private readonly _functionId: number, private readonly _originalMode: FunctionMode) {
