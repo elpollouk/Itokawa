@@ -112,6 +112,20 @@ function ensureValidMessage(message: number[], type?:MessageType) {
     if (type && message[0] != type) throw new CommandStationError(`Unexpected message type, expected ${type}, but got ${message[0]}`);
 }
 
+function writeLocomotiveAddress(locomotiveId: number, message: number[], offset: number) {
+    if (locomotiveId < 1) {
+        throw new CommandStationError(`Invalid locomotive address, address=${locomotiveId}`);
+    }
+    else if (locomotiveId < 100) {
+        // Short addresses can be written directly into the packet
+        message[offset] = 0;
+        message[offset + 1] = locomotiveId;
+    }
+    else {
+        encodeLongAddress(locomotiveId, message, offset);
+    }
+}
+
 export function applyChecksum(message: number[] | Buffer) {
     // Interestingly, the eLink doesn't seem to verify checksums and will accept
     // any valid-ish message without complaining.
@@ -545,13 +559,7 @@ export class ELinkCommandBatch implements ICommandBatch {
         if (speed < 0 || speed > 127) throw new CommandStationError(`Invalid speed requested, speed=${speed}`);
 
         let command = [ MessageType.LOCO_COMMAND, LocoCommand.SET_SPEED, 0x00, 0x00, 0x00, 0x00 ];
-        if (locomotiveId < 100) {
-            // Short addresses can be written directly into the packet
-            command[3] = locomotiveId;
-        }
-        else {
-            encodeLongAddress(locomotiveId, command, 2);
-        }
+        writeLocomotiveAddress(locomotiveId, command, 2);
 
         speed &= 0x7F;
         if (!reverse) speed |= 0x80;
@@ -570,13 +578,7 @@ export class ELinkCommandBatch implements ICommandBatch {
         // build the final message to be sent to the eLink.
         const def = locoFunctionMap[func];
         let command = [ MessageType.LOCO_COMMAND, def.bank, 0x00, 0x00, def.flag, action, 0x00 ];
-        if (locomotiveId < 100) {
-            // Short addresses can be written directly into the packet
-            command[3] = locomotiveId;
-        }
-        else {
-            encodeLongAddress(locomotiveId, command, 2);
-        }
+        writeLocomotiveAddress(locomotiveId, command, 2);
 
         this._addCommand(command);
     }
