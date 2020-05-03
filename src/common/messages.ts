@@ -1,10 +1,11 @@
 export enum RequestType {
     LifeCycle = 1,
     LocoSpeed = 2,
-    EmergencyStop = 3,
-    LocoSpeedRefresh = 4,
-    LocoCvRead = 5,
-    LocoCvWrite = 6,
+    LocoFunction = 3,
+    EmergencyStop = 4,
+    LocoSpeedRefresh = 5,
+    LocoCvRead = 6,
+    LocoCvWrite = 7,
     CommandResponse = 1000,
 }
 
@@ -19,6 +20,18 @@ export interface LocoSpeedRequest {
     locoId: number,
     speed: number,
     reverse: boolean
+}
+
+export enum FunctionAction {
+    Trigger = 0,
+    LatchOn = 1,
+    LatchOff = 2
+}
+
+export interface LocoFunctionRequest {
+    locoId: number,
+    function: number,
+    action: FunctionAction
 }
 
 export enum LifeCycleAction {

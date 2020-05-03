@@ -1,7 +1,8 @@
 import { Logger } from "../../utils/logger";
 import { HandlerMap, Sender, ok, clientBroadcast } from "./handlers"
 import { application } from "../../application";
-import { RequestType, LocoSpeedRequest } from "../../common/messages";
+import { RequestType, LocoSpeedRequest, LocoFunctionRequest, FunctionAction } from "../../common/messages";
+import * as CommandStation from "../../devices/commandStations/commandStation";
 
 const log = new Logger("LocoHandler");
 
@@ -37,6 +38,25 @@ async function onLocoSpeed(request: LocoSpeedRequest, send: Sender): Promise<voi
 
     await ok(send);
     await broadcastSpeedChange(request.locoId, request.speed, !!request.reverse);
+};
+
+function ActionApiToCommandStation(action: FunctionAction) {
+    switch (action) {
+        case FunctionAction.Trigger: return CommandStation.FunctionAction.TRIGGER;
+        case FunctionAction.LatchOn: return CommandStation.FunctionAction.LATCH_ON;
+        case FunctionAction.LatchOff: return CommandStation.FunctionAction.LATCH_OFF;
+        default: throw new Error(`Invalid action ${action}`);
+    }
+};
+
+async function onLocoFunction(request: LocoFunctionRequest, send: Sender): Promise<void> {
+    if (!application.commandStation) throw new Error("No command station connected");
+
+    const batch = await application.commandStation.beginCommandBatch();
+    batch.setLocomotiveFunction(request.locoId, request.function, ActionApiToCommandStation(request.action));
+    await batch.commit();
+
+    await ok(send);
 };
 
 async function onEmergencyStop(data: any, send: Sender): Promise<void> {
@@ -83,6 +103,7 @@ export function resetSeenLocos() {
 
 export function registerHandlers(map: HandlerMap) {
     map.set(RequestType.LocoSpeed, onLocoSpeed);
+    map.set(RequestType.LocoFunction, onLocoFunction);
     map.set(RequestType.EmergencyStop, onEmergencyStop);
     map.set(RequestType.LocoSpeedRefresh, onLocoSpeedRefresh);
 }

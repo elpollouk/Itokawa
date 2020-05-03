@@ -1,5 +1,7 @@
 import { ControlBase } from "./control";
 import { FunctionConfig, FunctionMode } from "../../common/api";
+import { client } from "../client";
+import { FunctionAction, LocoFunctionRequest, RequestType } from "../../common/messages";
 
 const LATCHED_CLASS = "latchedOn";
 
@@ -46,10 +48,23 @@ export class FunctionControl extends ControlBase {
         if (this._function.mode === FunctionMode.Latched) {
             if (this._toggleLatchedStatus()) {
                 this._element.classList.add(LATCHED_CLASS);
+                this._sendRequest(FunctionAction.LatchOn);
             }
             else {
                 this._element.classList.remove(LATCHED_CLASS);
+                this._sendRequest(FunctionAction.LatchOff);
             }
         }
+        else {
+            this._sendRequest(FunctionAction.Trigger);
+        }
+    }
+
+    private _sendRequest(action: FunctionAction) {
+        client.connection.request<LocoFunctionRequest>(RequestType.LocoFunction, {
+            locoId: this._locoId,
+            function: parseInt(this._function.exec),
+            action: action
+        });
     }
 }
