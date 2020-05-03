@@ -399,11 +399,21 @@ a:visited {
 
 .trainControl .title {
     font-size: large;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
 }
 
 .trainControl .title:hover,
 .trainControl .title:active {
-    text-decoration: underline;
+    background-color: rgba(196, 196, 196, 0.3);
+}
+
+.trainControl .title::after {
+    color: gray;
+    font-family: monospace;
+    font-size: x-large;
+    content: ">";
+    margin-left: 1.0em;
 }
 
 .trainControl .discreteButtons {
