@@ -386,7 +386,7 @@ export class ELinkCommandStation extends CommandStationBase {
         const action = command[3];
         if (action == FunctionAction.TRIGGER) {
             // With the eLink, triggered functions need to be explicitly latched on and then off otherwise
-            // they wont fire again.
+            // they won't fire again.
             command = this._createLocoFunctionCommand(locoId, func, FunctionAction.LATCH_ON);
             await this._port.write(command);
             // We can't latch off immediately, so we need a slight delay
