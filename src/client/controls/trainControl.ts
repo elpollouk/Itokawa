@@ -22,8 +22,9 @@ export class TrainControl extends ControlBase {
     _buildUi() {
         const control = parseHtml(html);
 
-        getById(control, "title").innerText = this.loco.name;
-        getById(control, "title").onclick = () => this._openLocoPanel();
+        const title = getById(control, "title");
+        title.innerText = this.loco.name;
+        title.onclick = () => this._openLocoPanel();
 
         this._directionButton = getById(control, "direction");
         this._directionButton.onclick = () => {

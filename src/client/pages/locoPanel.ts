@@ -1,6 +1,7 @@
 import { Page, IPageConstructor } from "./page";
 import { parseHtml, getById } from "../utils/dom";
-import { Loco } from "../../common/api";
+import { Loco, FunctionMode } from "../../common/api";
+import { FunctionControl } from "../controls/functionControl";
 const html = require("./locoPanel.html");
 
 export class LocoPanelPage extends Page {
@@ -19,6 +20,10 @@ export class LocoPanelPage extends Page {
 
         getById(page, "trainTitle").innerText = this._loco.name;
         const functionsContainer = getById(page, "functionsContainer");
+        for (const config of this._loco.functions || []) {
+            if (config.mode === FunctionMode.NotSet) continue;
+            new FunctionControl(functionsContainer, this._loco.address, config);
+        }
 
         return page;
     }

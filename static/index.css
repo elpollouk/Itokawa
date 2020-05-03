@@ -425,6 +425,15 @@ a:visited {
 
 
 /*
+ * Loco Control Panel
+ */
+
+button.latchedOn {
+    background-color: green;
+}
+
+
+/*
  * QR Code Control
  */
 .qrcode {
