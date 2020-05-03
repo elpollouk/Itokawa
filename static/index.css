@@ -428,8 +428,13 @@ a:visited {
  * Loco Control Panel
  */
 
-button.latchedOn {
-    background-color: green;
+.function {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.function.latchedOn {
+    background-color: lightgreen;
 }
 
 

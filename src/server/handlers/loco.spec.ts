@@ -2,10 +2,11 @@ import { expect } from "chai";
 import "mocha";
 import { stub, SinonStub } from "sinon";
 import {createStubCommandStation } from "../../utils/testUtils";
-import { RequestType } from "../../common/messages";
+import { RequestType, LocoFunctionRequest, FunctionAction } from "../../common/messages";
 import * as handlers from "./handlers";
 import { application } from "../../application";
 import { registerHandlers, resetSeenLocos } from "./loco";
+import * as commandStation from "../../devices/commandStations/commandStation";
 
 function createHandlerMap(): handlers.HandlerMap {
     return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();
@@ -108,6 +109,87 @@ describe("Loco Handler", () => {
                 speed: 127,
                 reverse: true
             }, senderStub)).to.be.eventually.rejectedWith("No command station connected");
+        })
+    })
+
+    describe("onLocoFunctionRequest", () => {
+        it("should respond correctly to a valid trigger function request", async () => {
+            const handler = getHandler(RequestType.LocoFunction);
+            await handler({
+                locoId: 3,
+                function: 28,
+                action: FunctionAction.Trigger
+            } as LocoFunctionRequest, senderStub);
+
+            expect(senderStub.callCount).to.equal(1);
+            expect(senderStub.lastCall.args).eql([{
+                lastMessage: true,
+                data: "OK"
+            }]);
+
+            // Verify the command was sent to the command station
+            expect(commandStationStub.beginCommandBatch.callCount).to.equal(1);
+            const commandBatch = commandStationStub.lastCommandBatch;
+            expect(commandBatch.setLocomotiveFunction .callCount).to.equal(1);
+            expect(commandBatch.setLocomotiveFunction.lastCall.args).to.eql([
+                3,
+                28,
+                commandStation.FunctionAction.TRIGGER
+            ]);
+            expect(commandBatch.commit.callCount).to.equal(1);
+        })
+
+        it("should respond correctly to a valid latch-on function request", async () => {
+            const handler = getHandler(RequestType.LocoFunction);
+            await handler({
+                locoId: 100,
+                function: 10,
+                action: FunctionAction.LatchOn
+            } as LocoFunctionRequest, senderStub);
+
+            // Verify the command was sent to the command station
+            const commandBatch = commandStationStub.lastCommandBatch;
+            expect(commandBatch.setLocomotiveFunction.lastCall.args).to.eql([
+                100,
+                10,
+                commandStation.FunctionAction.LATCH_ON
+            ]);
+        })
+
+        it("should respond correctly to a valid latch-off function request", async () => {
+            const handler = getHandler(RequestType.LocoFunction);
+            await handler({
+                locoId: 9999,
+                function: 0,
+                action: FunctionAction.LatchOff
+            } as LocoFunctionRequest, senderStub);
+
+            // Verify the command was sent to the command station
+            const commandBatch = commandStationStub.lastCommandBatch;
+            expect(commandBatch.setLocomotiveFunction.lastCall.args).to.eql([
+                9999,
+                0,
+                commandStation.FunctionAction.LATCH_OFF
+            ]);
+        })
+
+        it("should reject the request if the action is invalid", async () => {
+            const handler = getHandler(RequestType.LocoFunction);
+            await expect(handler({
+                locoId: 3,
+                function: 1,
+                action: -1
+            } as LocoFunctionRequest, senderStub)).to.be.eventually.rejectedWith("Invalid action -1");
+        })
+
+        it("should reject the request if no command station is connected", async () => {
+            application.commandStation = null;
+            const handler = getHandler(RequestType.LocoFunction);
+            await expect(handler({
+                locoId: 3,
+                function: 28,
+                action: FunctionAction.Trigger
+            } as LocoFunctionRequest, senderStub)).to.be.eventually.rejectedWith("No command station connected");
         })
     })
 
