@@ -1,20 +1,43 @@
 import { ControlBase } from "./control";
 import { parseHtml, getById } from "../utils/dom";
-import { FunctionMode } from "../../common/api";
+import { FunctionMode, FunctionConfig } from "../../common/api";
 const html = require("./functionConfigControl.html");
 
 export class FunctionConfigControl extends ControlBase {
-    constructor (parent: HTMLElement, private readonly _functionId: number, private readonly _originalMode: FunctionMode) {
+    private _modeControl: HTMLSelectElement;
+
+    get name() {
+        return this._originalConfig.name;
+    }
+
+    get mode(): FunctionMode {
+        const value = this._modeControl.value;
+        switch (value) {
+            case "1":
+                return FunctionMode.Trigger;
+            case "2":
+                return FunctionMode.Latched;
+            default:
+                return FunctionMode.NotSet;
+        }
+    }
+
+    get exec() {
+        return this._originalConfig.exec;
+    }
+
+    constructor (parent: HTMLElement, private readonly _originalConfig: FunctionConfig) {
         super();
-        if (_functionId < 0 || _functionId > 28) throw new Error("Invalid function number");
         this._init(parent);
     }
 
     protected _buildUi(): HTMLElement {
         const control = parseHtml(html);
 
-        getById(control, "functionId").innerText = `F${this._functionId}`;
-        
+        getById(control, "functionId").innerText = this._originalConfig.name;
+        this._modeControl = getById(control, "mode");
+        this._modeControl.options[this._originalConfig.mode].selected = true;
+
         return control
     }
 }

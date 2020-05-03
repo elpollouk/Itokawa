@@ -8,14 +8,37 @@ const html = require("./functionSetup.html");
 export class FunctionSetupPage extends Page {
     path: string = FunctionSetuprConstructor.path;
     content: HTMLElement;
+    private _functions: FunctionConfig[];
     private readonly _functionControls: FunctionConfigControl[] = [];
 
     get functions(): FunctionConfig[] {
-        return [];
+        const value: FunctionConfig[] = [];
+        for (const control of this._functionControls) {
+            //if (control.mode == FunctionMode.NotSet) continue;
+            value.push({
+                name: control.name,
+                mode: control.mode,
+                exec: control.exec
+            });
+        }
+        return value;
     }
 
     constructor (params: any) {
         super();
+        if (params.length === 0) {
+            this._functions = [];
+            for (let i = 0; i < 29; i++) {
+                this._functions.push({
+                    name: `F${i}`,
+                    mode: FunctionMode.NotSet,
+                    exec: `${i}`
+                });
+            }
+        }
+        else {
+            this._functions = params as FunctionConfig[];
+        }
         this.content = this._buildUi();
     }
 
@@ -23,8 +46,8 @@ export class FunctionSetupPage extends Page {
         const page = parseHtml(html);
         
         const functionContainer = getById(page, "functionContainer");
-        for (let i = 0; i < 29; i++) {
-            const control = new FunctionConfigControl(functionContainer, i, FunctionMode.NotSet);
+        for (const config of this._functions) {
+            const control = new FunctionConfigControl(functionContainer, config);
             this._functionControls.push(control);
         }
 

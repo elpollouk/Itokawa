@@ -26,12 +26,13 @@ export class DemoApiClient implements IApiClient {
         return Promise.resolve(this._locos);
     }
 
-    addLoco(name: string, address: number, speed: number | number[], cvs: api.CvMap): Promise<api.Loco> {
+    addLoco(name: string, address: number, speed: number | number[], functions: api.FunctionConfig[], cvs: api.CvMap): Promise<api.Loco> {
         const loco: api.Loco = {
             id: this._nextLocoId++,
             name: name,
             address: address,
             discrete: Array.isArray(speed),
+            functions: functions,
             cvs: cvs
         }
 
@@ -70,11 +71,12 @@ export class DemoApiClient implements IApiClient {
         return Promise.resolve();
     }
 
-    updateLoco(id: number, name: string, address: number, speed: number | number[], cvs: api.CvMap): Promise<void> {
+    updateLoco(id: number, name: string, address: number, speed: number | number[], functions: api.FunctionConfig[], cvs: api.CvMap): Promise<void> {
         for (const loco of this._locos) {
             if (loco.id === id) {
                 loco.name = name;
                 loco.address = address;
+                loco.functions = functions;
                 loco.cvs = cvs;
                 if (Array.isArray(speed)) {
                     loco.discrete = true;

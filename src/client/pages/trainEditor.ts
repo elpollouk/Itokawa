@@ -184,10 +184,10 @@ export class TrainEditPage extends Page {
 
             let promise: Promise<any>;
             if (this._id) {
-                promise = this._api.updateLoco(this._id, name, address, speed, this._cvs);
+                promise = this._api.updateLoco(this._id, name, address, speed, this._functions, this._cvs);
             }
             else {
-                promise = this._api.addLoco(name, address, speed, this._cvs).then((loco) => {
+                promise = this._api.addLoco(name, address, speed, this._functions, this._cvs).then((loco) => {
                     this._id = loco.id;
                     nav.replaceParams({
                         id: loco.id

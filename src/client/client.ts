@@ -9,10 +9,10 @@ import { CommandStationState } from "../devices/commandStations/commandStation";
 
 export interface IApiClient {
     getLocos(): Promise<api.Loco[]>;
-    addLoco(name: string, address: number, speed: number[] | number, cvs: api.CvMap): Promise<api.Loco>;
+    addLoco(name: string, address: number, speed: number[] | number, functions: api.FunctionConfig[], cvs: api.CvMap): Promise<api.Loco>;
     getLoco(id: number): Promise<api.Loco>;
     deleteLoco(id: number): Promise<void>;
-    updateLoco(id: number, name: string, address: number, speed: number[] | number, cvs: api.CvMap): Promise<void>;
+    updateLoco(id: number, name: string, address: number, speed: number[] | number, functions: api.FunctionConfig[], cvs: api.CvMap): Promise<void>;
 }
 
 export type RequestCallback = (err: Error, response?: messages.CommandResponse)=>void;
