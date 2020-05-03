@@ -401,6 +401,11 @@ a:visited {
     font-size: large;
 }
 
+.trainControl .title:hover,
+.trainControl .title:active {
+    text-decoration: underline;
+}
+
 .trainControl .discreteButtons {
     display: none;
 }
