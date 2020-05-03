@@ -589,6 +589,26 @@ a:visited {
 }
 
 /*
+ * Function Setup
+ */
+
+.functionConfigControl {
+    margin: 2px;
+    padding: 2px;
+}
+
+.functionConfigControl span {
+    display: inline-block;
+    width: 2em;
+    text-align: right;
+    box-sizing: border-box;
+}
+
+.functionConfigControl select {
+    margin-left: 4px;
+}
+
+/*
  * CV Editor
  */
 
