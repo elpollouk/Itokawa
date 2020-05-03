@@ -584,6 +584,10 @@ a:visited {
     text-align: right;
 }
 
+.trainEditor .buttons button {
+    margin-bottom: 4px;
+}
+
 /*
  * CV Editor
  */

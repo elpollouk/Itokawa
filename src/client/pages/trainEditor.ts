@@ -4,6 +4,7 @@ import { parseHtml, getById, vaildateIntInput, vaildateNotEmptyInput } from "../
 import * as prompt from "../controls/promptControl";
 import { CvEditorConstructor, CvEditorPage } from "./cvEditor";
 import { CvMap } from "../../common/api";
+import { FunctionSetuprConstructor } from "./functionSetup";
 const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
@@ -57,6 +58,7 @@ export class TrainEditPage extends Page {
             }
         }
 
+        getById(page, "functionSetup").onclick = () => this._functionSetup();
         getById(page, "editCVs").onclick = () => this._editCvs();
         getById(page, "save").onclick = () => this._save(true);
         getById(page, "cancel").onclick = () => nav.back();
@@ -94,7 +96,7 @@ export class TrainEditPage extends Page {
         })
     }
 
-    _haveCVsChanged(newCVs: CvMap) {
+    private _haveCVsChanged(newCVs: CvMap) {
         for (const key in newCVs) {
             if (this._cvs[key] !== newCVs[key])
                 return true;
@@ -102,7 +104,7 @@ export class TrainEditPage extends Page {
         return false;
     }
 
-    _delete() {
+    private _delete() {
         prompt.confirm("Are you sure you want to delete this train?").then(async (yes) => {
             if (!yes) return;
             try {
@@ -115,7 +117,7 @@ export class TrainEditPage extends Page {
         });
     }
 
-    _validate(): boolean {
+    private _validate(): boolean {
         if (!vaildateNotEmptyInput(this._nameElement, "Name must be set.")) return false;
         if (!vaildateIntInput(this._addressElement, "Address must be in the range 1-9999.")) return false;
         if (this._discreteElement.checked) {
@@ -130,12 +132,17 @@ export class TrainEditPage extends Page {
         return true;
     }
 
-    _editCvs() {
+    private _functionSetup() {
+        nav.open(FunctionSetuprConstructor.path, {});
+        return false;
+    }
+
+    private _editCvs() {
         nav.open(CvEditorConstructor.path, this._cvs);
         return false;
     }
 
-    _save(navBackOnSuccess: boolean) {
+    private _save(navBackOnSuccess: boolean) {
         // TODO - Add protections against overlapped actions
         if (!this._validate()) return;
 
