@@ -5,6 +5,7 @@ import { FunctionAction, LocoFunctionRequest, RequestType } from "../../common/m
 
 const LATCHED_CLASS = "latchedOn";
 
+// This is temporary until I implement a more generic loco state tracker on the server side
 const _latchStatus = new Map<number, Map<string, boolean>>();
 
 export class FunctionControl extends ControlBase {
