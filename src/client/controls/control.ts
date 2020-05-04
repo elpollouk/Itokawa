@@ -11,8 +11,8 @@ export interface IControl {
 }
 
 export abstract class ControlBase implements IControl {
-    private _parent: HTMLElement = null;
-    private _element: HTMLElement;
+    protected _parent: HTMLElement = null;
+    protected _element: HTMLElement;
 
     get parent() { return this._parent; }
     set parent(value: HTMLElement) {

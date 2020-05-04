@@ -399,6 +399,21 @@ a:visited {
 
 .trainControl .title {
     font-size: large;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+}
+
+.trainControl .title:hover,
+.trainControl .title:active {
+    background-color: rgba(196, 196, 196, 0.3);
+}
+
+.trainControl .title::after {
+    color: gray;
+    font-family: monospace;
+    font-size: x-large;
+    content: ">";
+    margin-left: 1.0em;
 }
 
 .trainControl .discreteButtons {
@@ -421,6 +436,20 @@ a:visited {
     margin-left: 2px;
     margin-right: 2px;
     width: calc(60% - 1em);
+}
+
+
+/*
+ * Loco Control Panel
+ */
+
+.function {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.function.latchedOn {
+    background-color: lightgreen;
 }
 
 
@@ -582,6 +611,30 @@ a:visited {
 
 .trainEditor .buttons {
     text-align: right;
+}
+
+.trainEditor .buttons button {
+    margin-bottom: 4px;
+}
+
+/*
+ * Function Setup
+ */
+
+.functionConfigControl {
+    margin: 2px;
+    padding: 2px;
+}
+
+.functionConfigControl span {
+    display: inline-block;
+    width: 2em;
+    text-align: right;
+    box-sizing: border-box;
+}
+
+.functionConfigControl select {
+    margin-left: 8px;
 }
 
 /*

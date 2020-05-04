@@ -1,8 +1,10 @@
 import { ControlBase } from "./control";
+import { Navigator as nav } from "../pages/page";
 import { RequestType, LocoSpeedRequest } from "../../common/messages";
 import { parseHtml, getById } from "../utils/dom";
 import { Loco } from "../../common/api";
 import { client } from "../client";
+import { LocoPanelConstructor } from "../pages/locoPanel";
 const html = require("./trainControl.html");
 
 export class TrainControl extends ControlBase {
@@ -20,7 +22,9 @@ export class TrainControl extends ControlBase {
     _buildUi() {
         const control = parseHtml(html);
 
-        getById(control, "title").innerText = this.loco.name;
+        const title = getById(control, "title");
+        title.innerText = this.loco.name;
+        title.onclick = () => this._openLocoPanel();
 
         this._directionButton = getById(control, "direction");
         this._directionButton.onclick = () => {
@@ -105,5 +109,10 @@ export class TrainControl extends ControlBase {
             speed: this._speed,
             reverse: this._reverse
         });
+    }
+
+    private _openLocoPanel() {
+        nav.open(LocoPanelConstructor.path, this.loco);
+        return false;
     }
 }

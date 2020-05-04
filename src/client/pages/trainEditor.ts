@@ -3,7 +3,8 @@ import { IApiClient, client } from "../client";
 import { parseHtml, getById, vaildateIntInput, vaildateNotEmptyInput } from "../utils/dom";
 import * as prompt from "../controls/promptControl";
 import { CvEditorConstructor, CvEditorPage } from "./cvEditor";
-import { CvMap } from "../../common/api";
+import { CvMap, FunctionConfig } from "../../common/api";
+import { FunctionSetuprConstructor, FunctionSetupPage } from "./functionSetup";
 const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
@@ -16,6 +17,7 @@ export class TrainEditPage extends Page {
 
     private _id: number;
     private readonly _api: IApiClient;
+    private _functions: FunctionConfig[] = [];
     private _cvs: CvMap = {};
 
     private _nameElement: HTMLInputElement;
@@ -57,6 +59,7 @@ export class TrainEditPage extends Page {
             }
         }
 
+        getById(page, "functionSetup").onclick = () => this._functionSetup();
         getById(page, "editCVs").onclick = () => this._editCvs();
         getById(page, "save").onclick = () => this._save(true);
         getById(page, "cancel").onclick = () => nav.back();
@@ -69,6 +72,7 @@ export class TrainEditPage extends Page {
         if (this._id) this._api.getLoco(this._id).then((loco) => {
             this._nameElement.value = loco.name;
             this._addressElement.value = `${loco.address}`;
+            this._functions = loco.functions || [];
             this._cvs = loco.cvs || {};
             if (loco.discrete) {
                 this._slowElement.value = `${loco.speeds[0]}`;
@@ -82,7 +86,13 @@ export class TrainEditPage extends Page {
             }
             this._deleteButton.style.display = "";
 
-            if (previousPage && previousPage instanceof CvEditorPage) {
+            if (previousPage instanceof FunctionSetupPage) {
+                if (this._haveFunctionsChanged(previousPage.functions)) {
+                    this._functions = previousPage.functions;
+                    this._save(false);
+                }
+            }
+            else if (previousPage instanceof CvEditorPage) {
                 if (this._haveCVsChanged(previousPage.cvs)) {
                     this._cvs = previousPage.cvs;
                     this._save(false);
@@ -94,15 +104,25 @@ export class TrainEditPage extends Page {
         })
     }
 
-    _haveCVsChanged(newCVs: CvMap) {
+    private _haveFunctionsChanged(newFunctions: FunctionConfig[]) {
+        if (this._functions.length != newFunctions.length) return true;
+        for (let i = 0; i < newFunctions.length; i++) {
+            if (this._functions[i].name != newFunctions[i].name) return true;
+            if (this._functions[i].mode != newFunctions[i].mode) return true;
+            if (this._functions[i].exec != newFunctions[i].exec) return true;
+        }
+        return false;
+    }
+
+    private _haveCVsChanged(newCVs: CvMap) {
         for (const key in newCVs) {
             if (this._cvs[key] !== newCVs[key])
                 return true;
         }
         return false;
     }
-
-    _delete() {
+    
+    private _delete() {
         prompt.confirm("Are you sure you want to delete this train?").then(async (yes) => {
             if (!yes) return;
             try {
@@ -115,7 +135,7 @@ export class TrainEditPage extends Page {
         });
     }
 
-    _validate(): boolean {
+    private _validate(): boolean {
         if (!vaildateNotEmptyInput(this._nameElement, "Name must be set.")) return false;
         if (!vaildateIntInput(this._addressElement, "Address must be in the range 1-9999.")) return false;
         if (this._discreteElement.checked) {
@@ -130,12 +150,17 @@ export class TrainEditPage extends Page {
         return true;
     }
 
-    _editCvs() {
+    private _functionSetup() {
+        nav.open(FunctionSetuprConstructor.path, this._functions);
+        return false;
+    }
+
+    private _editCvs() {
         nav.open(CvEditorConstructor.path, this._cvs);
         return false;
     }
 
-    _save(navBackOnSuccess: boolean) {
+    private _save(navBackOnSuccess: boolean) {
         // TODO - Add protections against overlapped actions
         if (!this._validate()) return;
 
@@ -159,10 +184,10 @@ export class TrainEditPage extends Page {
 
             let promise: Promise<any>;
             if (this._id) {
-                promise = this._api.updateLoco(this._id, name, address, speed, this._cvs);
+                promise = this._api.updateLoco(this._id, name, address, speed, this._functions, this._cvs);
             }
             else {
-                promise = this._api.addLoco(name, address, speed, this._cvs).then((loco) => {
+                promise = this._api.addLoco(name, address, speed, this._functions, this._cvs).then((loco) => {
                     this._id = loco.id;
                     nav.replaceParams({
                         id: loco.id
