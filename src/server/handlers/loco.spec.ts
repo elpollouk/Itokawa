@@ -530,6 +530,21 @@ describe("Loco Handler", () => {
             }]);
         })
 
+        it("should be safe to call if the loco has never received a command request", async () => {
+            await setLocoSpeed(3, 96);
+            resetCommandStation();
+            clientBroadcastStub.resetHistory();
+
+            const handler = getHandler(RequestType.LocoFunctionRefresh);
+            await handler({ locoId: 3 }, senderStub);
+
+            expect(senderStub.callCount).to.equal(1);
+            expect(senderStub.lastCall.args).to.eql([{
+                lastMessage: true,
+                data: "OK"
+            }]);
+        })
+
         it("should be safe to call if the loco has never been seen", async () => {
             const handler = getHandler(RequestType.LocoFunctionRefresh);
             await handler({ locoId: 3 }, senderStub);
