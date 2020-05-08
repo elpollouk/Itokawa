@@ -64,6 +64,8 @@ async function broadcastSpeedChange(locoId: number, speed: number, reverse: bool
 }
 
 async function broadcastFunctionChange(locoId: number, func: number, action: FunctionAction) {
+    log.info(() => `broadcastFunctionChange: locoId=${locoId}, function=${func}, action=${action}`);
+
     setLocoFunction(locoId, func, action === FunctionAction.LatchOn);
     await clientBroadcast<LocoFunctionRequest>(RequestType.LocoFunction, {
         locoId: locoId,
@@ -94,6 +96,8 @@ function ActionApiToCommandStation(action: FunctionAction) {
 
 async function onLocoFunction(request: LocoFunctionRequest, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
+
+    log.info(() => `onLocoFunction: locoId=${request.locoId}, function=${request.function}, action=${request.action}`);
 
     const batch = await application.commandStation.beginCommandBatch();
     batch.setLocomotiveFunction(request.locoId, request.function, ActionApiToCommandStation(request.action));
