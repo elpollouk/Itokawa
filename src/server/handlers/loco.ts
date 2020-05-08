@@ -42,7 +42,7 @@ function setLocoFunction(locoId: number, func: number, state: boolean) {
     loco.functions[func] = state;
 }
 
-function isStatefullAction(action: FunctionAction) {
+function isStatefulAction(action: FunctionAction) {
     switch (action) {
         case FunctionAction.LatchOn:
         case FunctionAction.LatchOff:
@@ -104,7 +104,7 @@ async function onLocoFunction(request: LocoFunctionRequest, send: Sender): Promi
 
     await ok(send);
 
-    if (isStatefullAction(request.action)) {
+    if (isStatefulAction(request.action)) {
         broadcastFunctionChange(request.locoId, request.function, request.action);
     }
 };
