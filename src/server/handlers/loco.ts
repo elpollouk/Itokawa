@@ -168,7 +168,7 @@ async function onLocoFunctionRefresh(request: LocoFunctionRefreshRequest, send: 
     await ok(send);
 }
 
-// This is mainly used for testing
+// This is used for testing
 export function resetSeenLocos() {
     _seenLocos.clear();
 }
