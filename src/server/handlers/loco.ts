@@ -6,26 +6,69 @@ import * as CommandStation from "../../devices/commandStations/commandStation";
 
 const log = new Logger("LocoHandler");
 
+const NUM_FUNCTIONS = 29;
+
 interface LocoSetting {
     speed: number,
-    reverse: boolean
+    reverse: boolean,
+    functions: boolean[]
 }
 
 const _seenLocos = new Map<number, LocoSetting>();
 
-function setLocoDetails(locoId: number, speed: number, reverse: boolean) {
-    _seenLocos.set(locoId, {
+function createLoco(): LocoSetting {
+    return {
+        functions: new Array(NUM_FUNCTIONS).fill(false)
+    } as LocoSetting;
+}
+
+function getLocoState(locoId: number) {
+    let loco = _seenLocos.get(locoId);
+    if (!loco) {
+        loco = createLoco();
+    }
+    return loco;
+}
+
+function setLocoSpeedAndDirection(locoId: number, speed: number, reverse: boolean) {
+    let loco = getLocoState(locoId);
+    loco.speed = speed;
+    loco.reverse = reverse
+    _seenLocos.set(locoId, loco);
+}
+
+function setLocoFunction(locoId: number, func: number, state: boolean) {
+    let loco = getLocoState(locoId);
+    loco.functions[func] = state;
+    _seenLocos.set(locoId, loco);
+}
+
+function isStatefullAction(action: FunctionAction) {
+    switch (action) {
+        case FunctionAction.LatchOn:
+        case FunctionAction.LatchOff:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+async function broadcastSpeedChange(locoId: number, speed: number, reverse: boolean) {
+    setLocoSpeedAndDirection(locoId, speed, reverse);
+    await clientBroadcast<LocoSpeedRequest>(RequestType.LocoSpeed, {
+        locoId: locoId,
         speed: speed,
         reverse: reverse
     });
 }
 
-async function broadcastSpeedChange(locoId: number, speed: number, reverse: boolean) {
-    setLocoDetails(locoId, speed, reverse);
-    await clientBroadcast<LocoSpeedRequest>(RequestType.LocoSpeed, {
+async function broadcastFunctionChange(locoId: number, func: number, action: FunctionAction) {
+    setLocoFunction(locoId, func, action === FunctionAction.LatchOn);
+    await clientBroadcast<LocoFunctionRequest>(RequestType.LocoFunction, {
         locoId: locoId,
-        speed: speed,
-        reverse: reverse
+        function: func,
+        action: action
     });
 }
 
@@ -57,6 +100,10 @@ async function onLocoFunction(request: LocoFunctionRequest, send: Sender): Promi
     await batch.commit();
 
     await ok(send);
+
+    if (isStatefullAction(request.action)) {
+        broadcastFunctionChange(request.locoId, request.function, request.action);
+    }
 };
 
 async function onEmergencyStop(data: any, send: Sender): Promise<void> {
