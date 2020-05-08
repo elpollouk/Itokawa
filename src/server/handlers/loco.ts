@@ -1,31 +1,77 @@
 import { Logger } from "../../utils/logger";
 import { HandlerMap, Sender, ok, clientBroadcast } from "./handlers"
 import { application } from "../../application";
-import { RequestType, LocoSpeedRequest, LocoFunctionRequest, FunctionAction } from "../../common/messages";
+import { RequestType, LocoSpeedRequest, LocoFunctionRequest, FunctionAction, LocoFunctionRefreshRequest } from "../../common/messages";
 import * as CommandStation from "../../devices/commandStations/commandStation";
 
 const log = new Logger("LocoHandler");
 
-interface LocoSetting {
+const NUM_FUNCTIONS = 29;
+
+interface LocoState {
     speed: number,
-    reverse: boolean
+    reverse: boolean,
+    functions: boolean[]
 }
 
-const _seenLocos = new Map<number, LocoSetting>();
+const _seenLocos = new Map<number, LocoState>();
 
-function setLocoDetails(locoId: number, speed: number, reverse: boolean) {
-    _seenLocos.set(locoId, {
+function createLoco(): LocoState {
+    return {
+        speed: 0,
+        reverse: false,
+        functions: new Array(NUM_FUNCTIONS).fill(false)
+    };
+}
+
+function getLocoState(locoId: number) {
+    let loco = _seenLocos.get(locoId);
+    if (!loco) {
+        loco = createLoco();
+        _seenLocos.set(locoId, loco);
+    }
+    return loco;
+}
+
+function setLocoSpeedAndDirection(locoId: number, speed: number, reverse: boolean) {
+    let loco = getLocoState(locoId);
+    loco.speed = speed;
+    loco.reverse = reverse
+}
+
+function setLocoFunction(locoId: number, func: number, state: boolean) {
+    let loco = getLocoState(locoId);
+    loco.functions[func] = state;
+}
+
+function isStatefulAction(action: FunctionAction) {
+    switch (action) {
+        case FunctionAction.LatchOn:
+        case FunctionAction.LatchOff:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+async function broadcastSpeedChange(locoId: number, speed: number, reverse: boolean) {
+    setLocoSpeedAndDirection(locoId, speed, reverse);
+    await clientBroadcast<LocoSpeedRequest>(RequestType.LocoSpeed, {
+        locoId: locoId,
         speed: speed,
         reverse: reverse
     });
 }
 
-async function broadcastSpeedChange(locoId: number, speed: number, reverse: boolean) {
-    setLocoDetails(locoId, speed, reverse);
-    await clientBroadcast<LocoSpeedRequest>(RequestType.LocoSpeed, {
+async function broadcastFunctionChange(locoId: number, func: number, action: FunctionAction) {
+    log.info(() => `broadcastFunctionChange: locoId=${locoId}, function=${func}, action=${action}`);
+
+    setLocoFunction(locoId, func, action === FunctionAction.LatchOn);
+    await clientBroadcast<LocoFunctionRequest>(RequestType.LocoFunction, {
         locoId: locoId,
-        speed: speed,
-        reverse: reverse
+        function: func,
+        action: action
     });
 }
 
@@ -52,11 +98,17 @@ function ActionApiToCommandStation(action: FunctionAction) {
 async function onLocoFunction(request: LocoFunctionRequest, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
 
+    log.info(() => `onLocoFunction: locoId=${request.locoId}, function=${request.function}, action=${request.action}`);
+
     const batch = await application.commandStation.beginCommandBatch();
     batch.setLocomotiveFunction(request.locoId, request.function, ActionApiToCommandStation(request.action));
     await batch.commit();
 
     await ok(send);
+
+    if (isStatefulAction(request.action)) {
+        broadcastFunctionChange(request.locoId, request.function, request.action);
+    }
 };
 
 async function onEmergencyStop(data: any, send: Sender): Promise<void> {
@@ -65,17 +117,17 @@ async function onEmergencyStop(data: any, send: Sender): Promise<void> {
 
     if (_seenLocos.size !== 0) {
         const batch = await application.commandStation.beginCommandBatch();
-        for (const locoId of _seenLocos.keys()) {
+        for (const [locoId, loco] of _seenLocos.entries()) {
             log.debug(() => `Stopping loco ${locoId}`);
-            batch.setLocomotiveSpeed(locoId, 0);
+            batch.setLocomotiveSpeed(locoId, 0, loco.reverse);
         }
         await batch.commit();
     }
     
     await ok(send);
 
-    for (const locoId of _seenLocos.keys())
-        await broadcastSpeedChange(locoId, 0, false);
+    for (const [locoId, loco] of _seenLocos.entries())
+        await broadcastSpeedChange(locoId, 0, loco.reverse);
 }
 
 async function onLocoSpeedRefresh(data: any, send: Sender): Promise<void> {
@@ -96,7 +148,29 @@ async function onLocoSpeedRefresh(data: any, send: Sender): Promise<void> {
     await ok(send);
 }
 
-// This is mainly used for testing
+async function onLocoFunctionRefresh(request: LocoFunctionRefreshRequest, send: Sender): Promise<void> {
+    if (!application.commandStation) throw new Error("No command station connected");
+
+    log.info(() => `onLocoFunctionRefresh: locoId=${request.locoId}`);
+
+    const loco = _seenLocos.get(request.locoId);
+    const functions = loco?.functions || []
+    for (let i = 0; i < functions.length; i++) {
+        if (!functions[i]) continue;
+        await send({
+            lastMessage: false,
+            data: {
+                locoId: request.locoId,
+                function: i,
+                action: FunctionAction.LatchOn
+            } as LocoFunctionRequest
+        });
+    }
+
+    await ok(send);
+}
+
+// This is used for testing
 export function resetSeenLocos() {
     _seenLocos.clear();
 }
@@ -106,4 +180,5 @@ export function registerHandlers(map: HandlerMap) {
     map.set(RequestType.LocoFunction, onLocoFunction);
     map.set(RequestType.EmergencyStop, onEmergencyStop);
     map.set(RequestType.LocoSpeedRefresh, onLocoSpeedRefresh);
+    map.set(RequestType.LocoFunctionRefresh, onLocoFunctionRefresh);
 }
