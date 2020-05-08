@@ -314,7 +314,7 @@ describe("Loco Handler", () => {
             ]);
         })
 
-        it("should handle locos that have only see function requests", async () => {
+        it("should handle locos that have only seen function requests", async () => {
             await setLocoFunction(5, 1, true);
             resetCommandStation();
             clientBroadcastStub.resetHistory();
