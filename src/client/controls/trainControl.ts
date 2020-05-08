@@ -14,7 +14,7 @@ export class TrainControl extends ControlBase {
     private _directionButton: HTMLButtonElement;
     private _speedSlider: HTMLInputElement;
 
-    constructor (parent: HTMLElement, readonly loco: Loco) {
+    constructor (parent: HTMLElement, readonly loco: Loco, private readonly _expanded = false) {
         super();
         this._init(parent);
     }
@@ -23,8 +23,13 @@ export class TrainControl extends ControlBase {
         const control = parseHtml(html);
 
         const title = getById(control, "title");
-        title.innerText = this.loco.name;
-        title.onclick = () => this._openLocoPanel();
+        if (this._expanded) {
+            title.parentNode.removeChild(title);
+        }
+        else {
+            title.innerText = this.loco.name;
+            title.onclick = () => this._openLocoPanel();
+        }
 
         this._directionButton = getById(control, "direction");
         this._directionButton.onclick = () => {
