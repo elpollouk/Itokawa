@@ -1,7 +1,7 @@
 import { Logger } from "../../utils/logger";
 import { HandlerMap, Sender, ok, clientBroadcast } from "./handlers"
 import { application } from "../../application";
-import { RequestType, LocoSpeedRequest, LocoFunctionRequest, FunctionAction } from "../../common/messages";
+import { RequestType, LocoSpeedRequest, LocoFunctionRequest, FunctionAction, LocoFunctionRefreshRequest } from "../../common/messages";
 import * as CommandStation from "../../devices/commandStations/commandStation";
 
 const log = new Logger("LocoHandler");
@@ -26,6 +26,7 @@ function getLocoState(locoId: number) {
     let loco = _seenLocos.get(locoId);
     if (!loco) {
         loco = createLoco();
+        _seenLocos.set(locoId, loco);
     }
     return loco;
 }
@@ -34,13 +35,11 @@ function setLocoSpeedAndDirection(locoId: number, speed: number, reverse: boolea
     let loco = getLocoState(locoId);
     loco.speed = speed;
     loco.reverse = reverse
-    _seenLocos.set(locoId, loco);
 }
 
 function setLocoFunction(locoId: number, func: number, state: boolean) {
     let loco = getLocoState(locoId);
     loco.functions[func] = state;
-    _seenLocos.set(locoId, loco);
 }
 
 function isStatefullAction(action: FunctionAction) {
@@ -147,6 +146,28 @@ async function onLocoSpeedRefresh(data: any, send: Sender): Promise<void> {
     await ok(send);
 }
 
+async function onLocoFunctionRefresh(request: LocoFunctionRefreshRequest, send: Sender): Promise<void> {
+    if (!application.commandStation) throw new Error("No command station connected");
+
+    log.info(() => `onLocoFunctionRefresh: locoId=${request.locoId}`);
+
+    const loco = _seenLocos.get(request.locoId);
+    const functions = loco?.functions || []
+    for (let i = 0; i < functions.length; i++) {
+        if (!functions[i]) continue;
+        await send({
+            lastMessage: false,
+            data: {
+                locoId: request.locoId,
+                function: i,
+                action: FunctionAction.LatchOn
+            } as LocoFunctionRequest
+        });
+    }
+
+    await ok(send);
+}
+
 // This is mainly used for testing
 export function resetSeenLocos() {
     _seenLocos.clear();
@@ -157,4 +178,5 @@ export function registerHandlers(map: HandlerMap) {
     map.set(RequestType.LocoFunction, onLocoFunction);
     map.set(RequestType.EmergencyStop, onEmergencyStop);
     map.set(RequestType.LocoSpeedRefresh, onLocoSpeedRefresh);
+    map.set(RequestType.LocoFunctionRefresh, onLocoFunctionRefresh);
 }
