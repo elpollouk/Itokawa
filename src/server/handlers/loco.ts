@@ -18,6 +18,8 @@ const _seenLocos = new Map<number, LocoSetting>();
 
 function createLoco(): LocoSetting {
     return {
+        speed: 0,
+        reverse: false,
         functions: new Array(NUM_FUNCTIONS).fill(false)
     } as LocoSetting;
 }
@@ -115,9 +117,9 @@ async function onEmergencyStop(data: any, send: Sender): Promise<void> {
 
     if (_seenLocos.size !== 0) {
         const batch = await application.commandStation.beginCommandBatch();
-        for (const locoId of _seenLocos.keys()) {
+        for (const [locoId, loco] of _seenLocos.entries()) {
             log.debug(() => `Stopping loco ${locoId}`);
-            batch.setLocomotiveSpeed(locoId, 0);
+            batch.setLocomotiveSpeed(locoId, 0, loco.reverse);
         }
         await batch.commit();
     }
@@ -137,8 +139,8 @@ async function onLocoSpeedRefresh(data: any, send: Sender): Promise<void> {
             lastMessage: false,
             data: {
                 locoId: locoId,
-                speed: detals.speed || 0,
-                reverse: !!detals.reverse
+                speed: detals.speed,
+                reverse: detals.reverse
             } as LocoSpeedRequest
         });
     }

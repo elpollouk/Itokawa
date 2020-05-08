@@ -247,11 +247,13 @@ describe("Loco Handler", () => {
             expect(commandBatch.setLocomotiveSpeed.callCount).to.equal(2);
             expect(commandBatch.setLocomotiveSpeed.getCall(0).args).to.eql([
                 4,
-                0
+                0,
+                false
             ]);
             expect(commandBatch.setLocomotiveSpeed.getCall(1).args).to.eql([
                 6,
-                0
+                0,
+                true
             ]);
             expect(commandBatch.commit.callCount).to.equal(1);
 
@@ -295,7 +297,8 @@ describe("Loco Handler", () => {
             expect(commandBatch.setLocomotiveSpeed.callCount).to.equal(1);
             expect(commandBatch.setLocomotiveSpeed.getCall(0).args).to.eql([
                 5,
-                0
+                0,
+                true
             ]);
             expect(commandBatch.commit.callCount).to.equal(1);
 
@@ -307,6 +310,42 @@ describe("Loco Handler", () => {
                     locoId: 5,
                     speed: 0,
                     reverse: true
+                }
+            ]);
+        })
+
+        it("should handle locos that have only see function requests", async () => {
+            await setLocoFunction(5, 1, true);
+            resetCommandStation();
+            clientBroadcastStub.resetHistory();
+
+            const handler = getHandler(RequestType.EmergencyStop);
+            await handler({}, senderStub);
+
+            expect(senderStub.lastCall.args).to.eql([{
+                lastMessage: true,
+                data: "OK"
+            }]);
+
+            // Verify stop commands were sent to the command station
+            expect(commandStationStub.beginCommandBatch.callCount).to.equal(1);
+            const commandBatch = commandStationStub.lastCommandBatch;
+            expect(commandBatch.setLocomotiveSpeed.callCount).to.equal(1);
+            expect(commandBatch.setLocomotiveSpeed.getCall(0).args).to.eql([
+                5,
+                0,
+                false
+            ]);
+            expect(commandBatch.commit.callCount).to.equal(1);
+
+            // Verify clients are notified of speed change
+            expect(clientBroadcastStub.callCount).to.equal(1);
+            expect(clientBroadcastStub.getCall(0).args).to.eql([
+                RequestType.LocoSpeed,
+                {
+                    locoId: 5,
+                    speed: 0,
+                    reverse: false
                 }
             ]);
         })
