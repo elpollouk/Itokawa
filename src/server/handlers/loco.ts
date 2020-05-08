@@ -8,15 +8,15 @@ const log = new Logger("LocoHandler");
 
 const NUM_FUNCTIONS = 29;
 
-interface LocoSetting {
+interface LocoState {
     speed: number,
     reverse: boolean,
     functions: boolean[]
 }
 
-const _seenLocos = new Map<number, LocoSetting>();
+const _seenLocos = new Map<number, LocoState>();
 
-function createLoco(): LocoSetting {
+function createLoco(): LocoState {
     return {
         speed: 0,
         reverse: false,
