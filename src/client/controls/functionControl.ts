@@ -37,15 +37,9 @@ export class FunctionControl extends ControlBase {
         return button;
     }
 
-    private _toggleLatchedStatus() {
-        if (this._function.mode !== FunctionMode.Latched) return;
-        this._latchedOn = !this._latchedOn;
-        return this._latchedOn;
-    }
-
     private _onExecute() {
         if (this._function.mode === FunctionMode.Latched) {
-            this.latchedOn = this._toggleLatchedStatus();
+            this.latchedOn = !this.latchedOn;
             if (this.latchedOn) {
                 this._sendRequest(FunctionAction.LatchOn);
             }
