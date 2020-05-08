@@ -26,6 +26,14 @@ async function setLocoSpeed(locoId: number, speed: number, reverse?: boolean) {
     }, stub());
 }
 
+async function setLocoFunction(locoId: number, func: number, active: boolean) {
+    await getHandler(RequestType.LocoFunction)({
+        locoId: locoId,
+        function: func,
+        action: active ? FunctionAction.LatchOn : FunctionAction.LatchOff
+    }, stub());
+}
+
 describe("Loco Handler", () => {
     let applicationCommandStationStub: SinonStub;
     let commandStationStub: any;
@@ -127,6 +135,9 @@ describe("Loco Handler", () => {
                 data: "OK"
             }]);
 
+            // Verify the function request wasn't sent to all clients
+            expect(clientBroadcastStub.callCount).to.equal(0);
+            
             // Verify the command was sent to the command station
             expect(commandStationStub.beginCommandBatch.callCount).to.equal(1);
             const commandBatch = commandStationStub.lastCommandBatch;
@@ -147,6 +158,17 @@ describe("Loco Handler", () => {
                 action: FunctionAction.LatchOn
             } as LocoFunctionRequest, senderStub);
 
+            // Verify the function request was sent to all clients
+            expect(clientBroadcastStub.callCount).to.equal(1);
+            expect(clientBroadcastStub.lastCall.args).to.eql([
+                RequestType.LocoFunction,
+                {
+                    locoId: 100,
+                    function: 10,
+                    action: FunctionAction.LatchOn
+                }
+            ]);
+            
             // Verify the command was sent to the command station
             const commandBatch = commandStationStub.lastCommandBatch;
             expect(commandBatch.setLocomotiveFunction.lastCall.args).to.eql([
@@ -163,6 +185,17 @@ describe("Loco Handler", () => {
                 function: 0,
                 action: FunctionAction.LatchOff
             } as LocoFunctionRequest, senderStub);
+
+            // Verify the function request was sent to all clients
+            expect(clientBroadcastStub.callCount).to.equal(1);
+            expect(clientBroadcastStub.lastCall.args).to.eql([
+                RequestType.LocoFunction,
+                {
+                    locoId: 9999,
+                    function: 0,
+                    action: FunctionAction.LatchOff
+                }
+            ]);
 
             // Verify the command was sent to the command station
             const commandBatch = commandStationStub.lastCommandBatch;
@@ -386,10 +419,67 @@ describe("Loco Handler", () => {
         it("should reject the request if no command station is connected", async () => {
             application.commandStation = null;
             const handler = getHandler(RequestType.LocoSpeedRefresh);
+            await expect(handler({}, senderStub)).to.be.eventually.rejectedWith("No command station connected");
+        })
+    })
+
+    describe("onLocoFunctionRefresh", () => {
+        it("should only report active functions", async () => {
+            await setLocoFunction(3, 1, false);
+            await setLocoFunction(3, 3, true);
+            await setLocoFunction(3, 5, true);
+            await setLocoFunction(4, 3, false);
+            await setLocoFunction(4, 4, true);
+            resetCommandStation();
+            clientBroadcastStub.resetHistory();
+
+            const handler = getHandler(RequestType.LocoFunctionRefresh);
+            await handler({ locoId: 3 }, senderStub);
+
+            // Verify client is notified of current speed
+            expect(senderStub.callCount).to.equal(3);
+            expect(senderStub.getCall(0).args).to.eql([
+                {
+                    lastMessage: false,
+                    data: {
+                        locoId: 3,
+                        function: 3,
+                        action: FunctionAction.LatchOn
+                    }
+                }
+            ]);
+            expect(senderStub.getCall(1).args).to.eql([
+                {
+                    lastMessage: false,
+                    data: {
+                        locoId: 3,
+                        function: 5,
+                        action: FunctionAction.LatchOn
+                    }
+                }
+            ]);
+            expect(senderStub.lastCall.args).to.eql([{
+                lastMessage: true,
+                data: "OK"
+            }]);
+        })
+
+        it("should be safe to call if the loco has never been seen", async () => {
+            const handler = getHandler(RequestType.LocoFunctionRefresh);
+            await handler({ locoId: 3 }, senderStub);
+
+            expect(senderStub.callCount).to.equal(1);
+            expect(senderStub.lastCall.args).to.eql([{
+                lastMessage: true,
+                data: "OK"
+            }]);
+        })
+
+        it("should reject the request if no command station is connected", async () => {
+            application.commandStation = null;
+            const handler = getHandler(RequestType.LocoFunctionRefresh);
             await expect(handler({
-                locoId: 3,
-                speed: 127,
-                reverse: true
+                locoId: 3
             }, senderStub)).to.be.eventually.rejectedWith("No command station connected");
         })
     })
