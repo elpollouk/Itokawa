@@ -1,7 +1,7 @@
 {
   "name": "itokawa",
-  "version": "0.2.3",
-  "description": "",
+  "version": "0.2.4",
+  "description": "DCC Train Control",
   "private": true,
   "scripts": {
     "start": "node dist/server/main.js",
@@ -13,7 +13,7 @@
     "dev-update": "git pull && npm install && npm run build && npm test",
     "prod-update": "git pull && npm install && npm run build"
   },
-  "author": "",
+  "author": "Adrian O'Grady",
   "license": "MIT",
   "devDependencies": {
     "@serialport/list": "^8.0.7",

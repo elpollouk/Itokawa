@@ -23,6 +23,10 @@ export interface LocoSpeedRequest {
     reverse: boolean
 }
 
+export interface LocoSpeedRefreshRequest {
+    locoId?: number
+}
+
 export enum FunctionAction {
     Trigger = 0,
     LatchOn = 1,

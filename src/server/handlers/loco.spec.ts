@@ -378,7 +378,7 @@ describe("Loco Handler", () => {
     })
 
     describe("onLocoSpeedRefresh", () => {
-        it("should report all seen locomotives", async () => {
+        it("should report all seen locomotives if no locoId is provided", async () => {
             await setLocoSpeed(7, 50, true);
             await setLocoSpeed(8, 55);
             resetCommandStation();
@@ -408,6 +408,95 @@ describe("Loco Handler", () => {
                     data: {
                         locoId: 8,
                         speed: 55,
+                        reverse: false
+                    }
+                }
+            ]);
+            expect(senderStub.lastCall.args).to.eql([{
+                lastMessage: true,
+                data: "OK"
+            }]);
+        })
+
+        it("should report all seen locomotives if the request data is null", async () => {
+            await setLocoSpeed(7, 50, true);
+            await setLocoSpeed(8, 55);
+            resetCommandStation();
+            clientBroadcastStub.resetHistory();
+
+            const handler = getHandler(RequestType.LocoSpeedRefresh);
+            await handler(null, senderStub);
+
+            // Verify no commands were sent to the command station
+            expect(commandStationStub.beginCommandBatch.callCount).to.equal(0);
+
+            // Verify client is notified of current speed
+            expect(senderStub.callCount).to.equal(3);
+            expect(senderStub.getCall(0).args).to.eql([
+                {
+                    lastMessage: false,
+                    data: {
+                        locoId: 7,
+                        speed: 50,
+                        reverse: true
+                    }
+                }
+            ]);
+            expect(senderStub.getCall(1).args).to.eql([
+                {
+                    lastMessage: false,
+                    data: {
+                        locoId: 8,
+                        speed: 55,
+                        reverse: false
+                    }
+                }
+            ]);
+            expect(senderStub.lastCall.args).to.eql([{
+                lastMessage: true,
+                data: "OK"
+            }]);
+        })
+
+        it("should report only the loco specified if a locoId is provided", async () => {
+            await setLocoSpeed(7, 50);
+            await setLocoSpeed(8, 55, true);
+            resetCommandStation();
+            clientBroadcastStub.resetHistory();
+
+            const handler = getHandler(RequestType.LocoSpeedRefresh);
+            await handler({ locoId: 8 }, senderStub);
+
+            // Verify client is notified of current speed
+            expect(senderStub.callCount).to.equal(2);
+            expect(senderStub.getCall(0).args).to.eql([
+                {
+                    lastMessage: false,
+                    data: {
+                        locoId: 8,
+                        speed: 55,
+                        reverse: true
+                    }
+                }
+            ]);
+            expect(senderStub.lastCall.args).to.eql([{
+                lastMessage: true,
+                data: "OK"
+            }]);
+        })
+
+        it("should report 0 forwards speed if the loco hasn't been seen", async () => {
+            const handler = getHandler(RequestType.LocoSpeedRefresh);
+            await handler({ locoId: 8 }, senderStub);
+
+            // Verify client is notified of current speed
+            expect(senderStub.callCount).to.equal(2);
+            expect(senderStub.getCall(0).args).to.eql([
+                {
+                    lastMessage: false,
+                    data: {
+                        locoId: 8,
+                        speed: 0,
                         reverse: false
                     }
                 }

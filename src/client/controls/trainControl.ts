@@ -14,8 +14,12 @@ export class TrainControl extends ControlBase {
     private _directionButton: HTMLButtonElement;
     private _speedSlider: HTMLInputElement;
 
-    constructor (parent: HTMLElement, readonly loco: Loco) {
+    private _speedDisplay: HTMLElement;
+    private readonly _maxSpeed: number;
+
+    constructor (parent: HTMLElement, readonly loco: Loco, private readonly _expanded = false) {
         super();
+        this._maxSpeed = loco.discrete ? loco.speeds[2] : loco.maxSpeed;
         this._init(parent);
     }
 
@@ -23,13 +27,21 @@ export class TrainControl extends ControlBase {
         const control = parseHtml(html);
 
         const title = getById(control, "title");
-        title.innerText = this.loco.name;
-        title.onclick = () => this._openLocoPanel();
+        if (this._expanded) {
+            // We don't need the title in expanded mode as we are most likely on the loco panel
+            // page which has its own title for the loco
+            title.parentNode.removeChild(title);
+        }
+        else {
+            title.innerText = this.loco.name;
+            title.onclick = () => this._openLocoPanel();
+        }
 
         this._directionButton = getById(control, "direction");
         this._directionButton.onclick = () => {
             this._reverse = !this._reverse;
             this._directionButton.innerText = this._reverse ? "REV" : "FWD";
+            this._updateSpeedDisplay();
             this._sendRequest();
         };
 
@@ -37,6 +49,7 @@ export class TrainControl extends ControlBase {
             const button = getById(control, id);
             button.onclick = () => {
                 this._speed = speed;
+                this._updateSpeedDisplay();
                 this._sendRequest();
             };
         };
@@ -53,8 +66,20 @@ export class TrainControl extends ControlBase {
             this._speedSlider.max = `${this.loco.maxSpeed}`;
             this._speedSlider.onchange = () => {
                 this._speed = parseInt(this._speedSlider.value);
+                this._updateSpeedDisplay();
                 this._sendRequest();
             }
+            this._speedSlider.oninput = () => this._updateSpeedDisplay();
+        }
+
+        const expandedControls = getById(control, "expandedControls");
+        if (this._expanded) {
+            this._speedDisplay = getById(control, "speedDisplay");
+            getById(control, "incSpeed").onclick = () => this._incSpeed();
+            getById(control, "decSpeed").onclick = () => this._decSpeed();
+        }
+        else {
+            expandedControls.parentNode.removeChild(expandedControls);
         }
 
         return control;
@@ -63,7 +88,7 @@ export class TrainControl extends ControlBase {
     updateSpeed(speed: number, reverse: boolean) {
         this._speed = speed;
         this._reverse = reverse;
-        this._updateSpeed();
+        this._updateSpeedUi();
     }
 
     private _animateSlider(frames: number) {
@@ -86,21 +111,45 @@ export class TrainControl extends ControlBase {
                 if (frames !== 0)
                     requestAnimationFrame(sliderUpdate);
             }
+            this._updateSpeedDisplay();
         };
         sliderUpdate();
     }
 
-    private _updateSpeed() {
+    private _updateSpeedUi() {
         // We always have a direction button
         this._directionButton.innerText = this._reverse ? "REV" : "FWD";        
 
         // We won't have a slider if we're using discrete speeds
         const slider = this._speedSlider;
-        if (!slider) return;
+        if (!slider) {
+            this._updateSpeedDisplay();
+            return;
+        }
 
         const uiSpeed = parseInt(this._speedSlider.value);
         if (uiSpeed != this._speed)
             this._animateSlider(20);
+    }
+
+    private _updateSpeedDisplay() {
+        if (!this._speedDisplay) return;
+
+        if (this._speedSlider) {
+            this._speedDisplay.innerText = this._speedSlider.value;
+        }
+        else {
+            this._speedDisplay.innerText = `${this._speed}`;
+        }
+
+        if (this._reverse) {
+            this._speedDisplay.classList.remove("forward");
+            this._speedDisplay.classList.add("reverse");
+        }
+        else {
+            this._speedDisplay.classList.add("forward");
+            this._speedDisplay.classList.remove("reverse");
+        }
     }
 
     private _sendRequest() {
@@ -114,5 +163,19 @@ export class TrainControl extends ControlBase {
     private _openLocoPanel() {
         nav.open(LocoPanelConstructor.path, this.loco);
         return false;
+    }
+
+    private _incSpeed() {
+        if (this._speed >= this._maxSpeed) return;
+        this._speed++;
+        this._speedDisplay.innerText = `${this._speed}`;
+        this._sendRequest();
+    }
+
+    private _decSpeed() {
+        if (this._speed <= 0) return;
+        this._speed--;
+        this._speedDisplay.innerText = `${this._speed}`;
+        this._sendRequest();
     }
 }

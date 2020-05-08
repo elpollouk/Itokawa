@@ -438,6 +438,44 @@ a:visited {
     width: calc(60% - 1em);
 }
 
+.trainControl .expandedControls {
+    margin-top: 4px;
+}
+
+.trainControl .speedDisplay {
+    display: inline-block;
+    text-align: center;
+    vertical-align: top;
+    margin-left: 2px;
+    margin-right: 2px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    width: calc(60% - 6px);
+    height: calc(2.5em + 1px);
+
+    border-color: rgb(118, 118, 118);
+    border-style: solid;
+    border-width: 1px;
+    background-color: lightgray;
+    line-height: calc(2.5em + 1px);
+}
+
+.trainControl .speedDisplay > span.forward {
+    color: darkgreen;
+}
+
+.trainControl .speedDisplay > span.reverse {
+    color: darkred;
+}
+
+.trainControl .speedDisplay > span {
+    display: inline-block;
+    vertical-align: middle;
+    height: 100%;
+    font-size: x-large;
+    font-weight: bold;
+}
+
 
 /*
  * Loco Control Panel
@@ -450,6 +488,15 @@ a:visited {
 
 .function.latchedOn {
     background-color: lightgreen;
+}
+
+.locoPanel .speedContainer {
+    margin-top: 1.0em;
+}
+
+.locoPanel hr {
+    margin-top: 1.0em;
+    margin-bottom: 1.0em;
 }
 
 

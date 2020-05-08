@@ -14,7 +14,9 @@ export function parseHtml(content: string): HTMLElement {
 }
 
 export function getById<T extends HTMLElement>(element: HTMLElement, id: string): T {
-    return element.querySelector(`[data-id="${id}"]`);
+    const result = element.querySelector(`[data-id="${id}"]`) as T;
+    if (!result) throw new Error(`Unable to find element with data-id "${id}"`)
+    return result;
 }
 
 export function vaildateNotEmptyInput(input: HTMLInputElement, message: string) {

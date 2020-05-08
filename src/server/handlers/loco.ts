@@ -1,7 +1,7 @@
 import { Logger } from "../../utils/logger";
 import { HandlerMap, Sender, ok, clientBroadcast } from "./handlers"
 import { application } from "../../application";
-import { RequestType, LocoSpeedRequest, LocoFunctionRequest, FunctionAction, LocoFunctionRefreshRequest } from "../../common/messages";
+import { RequestType, LocoSpeedRequest, LocoFunctionRequest, FunctionAction, LocoFunctionRefreshRequest, LocoSpeedRefreshRequest } from "../../common/messages";
 import * as CommandStation from "../../devices/commandStations/commandStation";
 
 const log = new Logger("LocoHandler");
@@ -130,19 +130,31 @@ async function onEmergencyStop(data: any, send: Sender): Promise<void> {
         await broadcastSpeedChange(locoId, 0, loco.reverse);
 }
 
-async function onLocoSpeedRefresh(data: any, send: Sender): Promise<void> {
+async function onLocoSpeedRefresh(request: LocoSpeedRefreshRequest, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
 
-    for (const locoId of _seenLocos.keys()) {
-        const detals = _seenLocos.get(locoId);
+    if (request && !!request.locoId) {
+        const loco = getLocoState(request.locoId);
         await send({
             lastMessage: false,
             data: {
-                locoId: locoId,
-                speed: detals.speed,
-                reverse: detals.reverse
+                locoId: request.locoId,
+                speed: loco.speed,
+                reverse: loco.reverse
             } as LocoSpeedRequest
         });
+    }
+    else {
+        for (const [locoId, loco] of _seenLocos.entries()) {
+            await send({
+                lastMessage: false,
+                data: {
+                    locoId: locoId,
+                    speed: loco.speed,
+                    reverse: loco.reverse
+                } as LocoSpeedRequest
+            });
+        }
     }
 
     await ok(send);
