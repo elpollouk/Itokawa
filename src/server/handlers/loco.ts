@@ -21,7 +21,7 @@ function createLoco(): LocoSetting {
         speed: 0,
         reverse: false,
         functions: new Array(NUM_FUNCTIONS).fill(false)
-    } as LocoSetting;
+    };
 }
 
 function getLocoState(locoId: number) {
