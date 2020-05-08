@@ -231,23 +231,17 @@ describe("AsyncSerialPort", () => {
         let applicationGetDataPathStub: SinonStub;
         let writeFileSyncStub: SinonStub;
         let timestampStub: SinonStub;
-        let timestampCount = 0;
         let config: ConfigNode;
-        let oldLogLevel: LogLevel;
 
         beforeEach(() => {
-            timestampCount = 0;
             config = new ConfigNode();
 
             applicationConfigStub = stub(application, "config").value(config);
             applicationGetDataPathStub = stub(application, "getDataPath").returns("data/serialport.snapshot.txt");
             writeFileSyncStub = stub(fs, "writeFileSync");
             timestampStub = stub(time, "timestamp").callsFake(() => {
-                return `${timestampCount++}`;
+                return "timestamp";
             });
-
-            oldLogLevel = Logger.logLevel;
-            Logger.logLevel = LogLevel.NONE;
 
             // We'll explicitly enable it again via an updated config on a per-test basis
             AsyncSerialPort._disableDebugSnapshot();
@@ -258,8 +252,6 @@ describe("AsyncSerialPort", () => {
             applicationGetDataPathStub.restore();
             writeFileSyncStub.restore();
             timestampStub.restore();
-
-            Logger.logLevel = oldLogLevel;
 
             AsyncSerialPort._disableDebugSnapshot();
         })
@@ -303,16 +295,16 @@ describe("AsyncSerialPort", () => {
             port.saveDebugSanpshot();
             expect(writeFileSyncStub.callCount).to.equal(1);
             expect(writeFileSyncStub.lastCall.args).to.eql(["data/serialport.snapshot.txt",
-"5: Sent: 01 02 03\n\
-6: Recv: 04 05 06\n\
-7: Sent: 07 08 09\n\
-8: Recv: 0a 0b 0c\n\
-9: Sent: 0d 0e 0f\n\
-10: Recv: 10 11 12\n\
-11: Sent: 13 14 15\n\
-12: Recv: 16 17 18\n\
-13: Sent: 19 1a 1b\n\
-14: Recv: 1c 1d 1e"]);
+"timestamp: Sent: 01 02 03\n\
+timestamp: Recv: 04 05 06\n\
+timestamp: Sent: 07 08 09\n\
+timestamp: Recv: 0a 0b 0c\n\
+timestamp: Sent: 0d 0e 0f\n\
+timestamp: Recv: 10 11 12\n\
+timestamp: Sent: 13 14 15\n\
+timestamp: Recv: 16 17 18\n\
+timestamp: Sent: 19 1a 1b\n\
+timestamp: Recv: 1c 1d 1e"]);
             expect(applicationGetDataPathStub.lastCall.args).to.eql(["serialport.snapshot.txt"]);
         })
 
@@ -345,10 +337,10 @@ describe("AsyncSerialPort", () => {
             port.saveDebugSanpshot();
             expect(writeFileSyncStub.callCount).to.equal(1);
             expect(writeFileSyncStub.lastCall.args).to.eql(["data/serialport.snapshot.txt",
-"11: Sent: 13 14 15\n\
-12: Recv: 16 17 18\n\
-13: Sent: 19 1a 1b\n\
-14: Recv: 1c 1d 1e"]);
+"timestamp: Sent: 13 14 15\n\
+timestamp: Recv: 16 17 18\n\
+timestamp: Sent: 19 1a 1b\n\
+timestamp: Recv: 1c 1d 1e"]);
             expect(applicationGetDataPathStub.lastCall.args).to.eql(["serialport.snapshot.txt"]);
         })
 
@@ -376,12 +368,12 @@ describe("AsyncSerialPort", () => {
             port.saveDebugSanpshot();
             expect(writeFileSyncStub.callCount).to.equal(1);
             expect(writeFileSyncStub.lastCall.args).to.eql(["data/serialport.snapshot.txt",
-"5: Sent: 19 1a 1b\n\
-6: Recv: 1c 1d 1e\n\
-7: Close: /dev/ttyTest\n\
-8: Open: /dev/ttyTest\n\
-9: Sent: 1f 20 21\n\
-10: Recv: 22 23 24"]);
+"timestamp: Sent: 19 1a 1b\n\
+timestamp: Recv: 1c 1d 1e\n\
+timestamp: Close: /dev/ttyTest\n\
+timestamp: Open: /dev/ttyTest\n\
+timestamp: Sent: 1f 20 21\n\
+timestamp: Recv: 22 23 24"]);
             expect(applicationGetDataPathStub.lastCall.args).to.eql(["serialport.snapshot.txt"]);
         })
     })
