@@ -124,8 +124,8 @@ async function onEmergencyStop(data: any, send: Sender): Promise<void> {
     
     await ok(send);
 
-    for (const locoId of _seenLocos.keys())
-        await broadcastSpeedChange(locoId, 0, false);
+    for (const [locoId, loco] of _seenLocos.entries())
+        await broadcastSpeedChange(locoId, 0, loco.reverse);
 }
 
 async function onLocoSpeedRefresh(data: any, send: Sender): Promise<void> {

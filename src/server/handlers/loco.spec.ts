@@ -237,7 +237,7 @@ describe("Loco Handler", () => {
                 {
                     locoId: 6,
                     speed: 0,
-                    reverse: false
+                    reverse: true
                 }
             ]);
         })
@@ -273,7 +273,7 @@ describe("Loco Handler", () => {
                 {
                     locoId: 5,
                     speed: 0,
-                    reverse: false
+                    reverse: true
                 }
             ]);
         })
