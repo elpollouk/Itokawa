@@ -490,6 +490,15 @@ a:visited {
     background-color: lightgreen;
 }
 
+.locoPanel .speedContainer {
+    margin-top: 1.0em;
+}
+
+.locoPanel hr {
+    margin-top: 1.0em;
+    margin-bottom: 1.0em;
+}
+
 
 /*
  * QR Code Control
