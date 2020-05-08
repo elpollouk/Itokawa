@@ -468,7 +468,6 @@ describe("Loco Handler", () => {
                 lastMessage: true,
                 data: "OK"
             }]);
-
         })
 
         it("should be safe to call even if there have been no loco speed requests", async () => {
