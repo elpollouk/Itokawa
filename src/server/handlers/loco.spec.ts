@@ -405,6 +405,33 @@ describe("Loco Handler", () => {
             }]);
         })
 
+        it("should report 0 forward speed for locos that have only seen function requests", async () => {
+            await setLocoFunction(3, 1, true);
+            resetCommandStation();
+            clientBroadcastStub.resetHistory();
+
+            const handler = getHandler(RequestType.LocoSpeedRefresh);
+            await handler({}, senderStub);
+
+            // Verify client is notified of current speed
+            expect(senderStub.callCount).to.equal(2);
+            expect(senderStub.getCall(0).args).to.eql([
+                {
+                    lastMessage: false,
+                    data: {
+                        locoId: 3,
+                        speed: 0,
+                        reverse: false
+                    }
+                }
+            ]);
+            expect(senderStub.lastCall.args).to.eql([{
+                lastMessage: true,
+                data: "OK"
+            }]);
+
+        })
+
         it("should be safe to call even if there have been no loco speed requests", async () => {
             const handler = getHandler(RequestType.LocoSpeedRefresh);
             await handler({}, senderStub);

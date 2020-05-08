@@ -137,8 +137,8 @@ async function onLocoSpeedRefresh(data: any, send: Sender): Promise<void> {
             lastMessage: false,
             data: {
                 locoId: locoId,
-                speed: detals.speed,
-                reverse: detals.reverse
+                speed: detals.speed || 0,
+                reverse: !!detals.reverse
             } as LocoSpeedRequest
         });
     }
