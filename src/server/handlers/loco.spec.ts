@@ -485,7 +485,7 @@ describe("Loco Handler", () => {
             }]);
         })
 
-        it("should report 0 and forwards if the loco hasn't been seen", async () => {
+        it("should report 0 forwards speed if the loco hasn't been seen", async () => {
             const handler = getHandler(RequestType.LocoSpeedRefresh);
             await handler({ locoId: 8 }, senderStub);
 
