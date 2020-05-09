@@ -22,6 +22,10 @@ export class DemoApiClient implements IApiClient {
         this._loadData();
     }
 
+    getConfig() {
+        return Promise.resolve({});
+    }
+
     getLocos(): Promise<api.Loco[]> {
         return Promise.resolve(this._locos);
     }
