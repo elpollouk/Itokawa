@@ -39,10 +39,6 @@ async function main()
     const ews = expressWs(express());
     const app = ews.app;
 
-    /*app.get("/", (req, res) => {
-        res.send("<h1>Hello World</h1>");
-    });*/
-
     app.ws("/control/v1", getControlWebSocketRoute());
     app.use("/api/v1", (await getRouter()));
     app.use(express.static("static"));
