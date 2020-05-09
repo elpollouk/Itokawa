@@ -510,7 +510,7 @@ describe("eLink", () => {
             ]);
 
             expect(promiseTimeoutStub.callCount).to.equal(1);
-            expect(promiseTimeoutStub.lastCall.args).to.eql([1]);
+            expect(promiseTimeoutStub.lastCall.args).to.eql([0.3]);
         })
 
         it("should not attempt to process raw function requests", async () => {
