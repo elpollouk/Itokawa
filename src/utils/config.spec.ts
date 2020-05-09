@@ -251,6 +251,25 @@ describe("Config", () => {
                 expect(node.has("foo.bar.baz")).to.be.true;
             })
         })
+
+        describe("keys", () => {
+            it("should return an emptry itorator if node is empty", () => {
+                const node = new ConfigNode();
+                const itor = node.keys();
+                expect(itor.next()).to.eql({ value: undefined, done: true });
+            })
+
+            it("should return an itorator over set items", () => {
+                const node = new ConfigNode();
+                node.set("foo", "test");
+                node.set("bar.baz", "test");
+
+                const set = new Set(node.keys());
+                expect(set.size).to.equal(2);
+                expect(set).to.contain("foo");
+                expect(set).to.contain("bar");
+            })
+        })
     })
 
     describe("loadConfig", () => {

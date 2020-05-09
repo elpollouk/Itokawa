@@ -10,6 +10,7 @@ import { execAsync } from "./utils/exec";
 import { ICommandStation } from "./devices/commandStations/commandStation"
 import { Database } from "./model/database";
 import { DeviceEnumerator } from "./devices/deviceEnumerator";
+import { ServerFeatureFlags } from "./server/serverFeatureFlags";
 
 const log = new Logger("Application");
 
@@ -58,6 +59,7 @@ class Application {
     onrestart: ()=>Promise<void> = null;
     commandStation: ICommandStation = null;
     publicUrl: string = "";
+    readonly featureFlags = new ServerFeatureFlags();
     
     get config() {
         return this._config;
@@ -89,6 +91,7 @@ class Application {
     // Initialise server life cycle handling
     //  * Initialise the data directory
     //  * Load the config file
+    //  * Load the feature flags
     //  * Configure logging
     //  * Fetch the current git revision
     //  * Write a pid file to the data directory
@@ -104,6 +107,13 @@ class Application {
         this._dataPath =_initDataDirectory(args.datadir);
         this._configPath = this.getDataPath("config.xml");
         this._config = await loadConfig(this._configPath);
+
+        // Load up the feature flags from the config and the command line
+        this.featureFlags.setFromConfig(this._config.getAs("featureFlags", new ConfigNode()));
+        if (args.features) this.featureFlags.setFromCommandLine(args.features);
+        for (const flag of this.featureFlags.getFlags())
+            log.display(`Feature ${flag} enabled`);
+
 
         _applyLogConfig(this.config.getAs("application.log", new ConfigNode()));
 

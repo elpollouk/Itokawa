@@ -11,6 +11,15 @@ describe("Feature Flags", () => {
             flags.set("foo");
         })
 
+        it("should accept an array for strings", () => {
+            const flags = new FeatureFlags();
+            flags.set(["a", "b", "c"]);
+
+            expect(flags.isSet("a")).to.be.true;
+            expect(flags.isSet("b")).to.be.true;
+            expect(flags.isSet("c")).to.be.true;
+        })
+
         it("should reject an empty string", () => {
             const flags = new FeatureFlags();
             expect(() => flags.set("")).to.throw('Invalid flag name, "" is not a valid string');
@@ -78,7 +87,7 @@ describe("Feature Flags", () => {
             const set = new Set(itor);
             expect(set.size).to.equal(2);
             expect(set.has("foo")).to.be.true;
-            expect(set.has("bar")).to.be.true;
+            expect(set).to.contain("bar");
         })
     })
 })

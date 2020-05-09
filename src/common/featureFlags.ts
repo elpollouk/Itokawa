@@ -6,9 +6,15 @@ function enusureValidFlag(flag: string) {
 export class FeatureFlags {
     private readonly _flags = new Set<string>();
 
-    set(flag: string) {
-        enusureValidFlag(flag);
-        this._flags.add(flag);
+    set(flag: string | string[]) {
+        if (Array.isArray(flag)) {
+            for (const f of flag)
+                this.set(f);
+        }
+        else {
+            enusureValidFlag(flag);
+            this._flags.add(flag);
+        }
     }
 
     isSet(flag: string) {
