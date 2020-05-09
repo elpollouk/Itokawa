@@ -60,10 +60,18 @@ export class ApiClient implements IApiClient {
     }
 
     ensureIdle(): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            const start = new Date();
             const check = () => {
                 if (this.isBusy) {
-                    window.requestAnimationFrame(check);
+                    const timeMs = new Date().getTime() - start.getTime();
+                    if (timeMs < 30000) {
+                        // Allow a tick of the event loop before checking again
+                        window.requestAnimationFrame(check);
+                    }
+                    else {
+                        reject(new Error("Timed out waiting for previous request to complete"));
+                    }
                 }
                 else {
                     resolve();
