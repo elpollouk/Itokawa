@@ -6,8 +6,10 @@ import * as api from "../common/api";
 import * as messages from "../common/messages";
 import { IBindable } from "./utils/bindable";
 import { CommandStationState } from "../devices/commandStations/commandStation";
+import { FeatureFlags } from "../common/featureFlags";
 
 export interface IApiClient {
+    getConfig(): Promise<api.Config>;
     getLocos(): Promise<api.Loco[]>;
     addLoco(name: string, address: number, speed: number[] | number, functions: api.FunctionConfig[], cvs: api.CvMap): Promise<api.Loco>;
     getLoco(id: number): Promise<api.Loco>;
@@ -40,6 +42,7 @@ export interface ICommandConnection extends IBindable{
 export class Client {
     readonly connection: ICommandConnection;
     readonly api: IApiClient;
+    readonly featureFlags: FeatureFlags = new FeatureFlags();
 
     constructor() {
         if (window.location.search === "?demo") {
@@ -50,6 +53,13 @@ export class Client {
             this.connection = new CommandConnection("/control/v1");
             this.api = new ApiClient("/api/v1");
         }
+
+        this.api.getConfig().then((config) => {
+            if (config.features) this.featureFlags.set(config.features);
+        }, (err) => {
+            console.error("Failed to retrieve client config");
+            console.error(err);
+        })
     }
 }
 

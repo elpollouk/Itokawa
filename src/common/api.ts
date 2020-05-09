@@ -23,3 +23,8 @@ export interface Loco {
     functions?: FunctionConfig[],
     cvs?: CvMap;
 }
+
+export interface Config {
+    client?: any;
+    features?: string[]
+}

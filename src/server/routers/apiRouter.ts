@@ -1,6 +1,7 @@
 import { Logger } from "../../utils/logger";
 import * as express from "express";
 import * as api from "../../common/api";
+import * as config from "./configRoutes";
 import { application } from "../../application";
 import { LocoRepository } from "../../model/locoRepository";
 import expressWs = require("express-ws");
@@ -90,6 +91,8 @@ _apiRouter.route("/locos/:id")
         next(err);
     }
 });
+
+config.registerRoutes(_apiRouter, log);
 
 export async function getRouter(): Promise<expressWs.Router> {
     _locoRepo = await application.database.openRepository(LocoRepository);

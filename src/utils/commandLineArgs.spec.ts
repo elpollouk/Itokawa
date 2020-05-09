@@ -21,10 +21,11 @@ describe("Command Line args", () => {
             commandLineArgs.addCommonOptions(commander as CommanderStatic);
 
             expect(commander["version"].lastCall.args).to.eql([ pjson.version ]);
-            expect(options.size).to.equal(3);
+            expect(options.size).to.equal(4);
             expect(options).to.contain("-d --device <device>");
             expect(options).to.contain("-c --connection-string <connectionString>");
             expect(options).to.contain("--log-level <loglevel>");
+            expect(options).to.contain("--features <feature flags>");
         })
     })
 

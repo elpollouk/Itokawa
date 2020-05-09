@@ -59,8 +59,26 @@ export class ApiClient implements IApiClient {
         return this.pathRoot + path;
     }
 
-    ensureIdle() {
-        if (this.isBusy) throw new Error("API client is currently busy");
+    ensureIdle(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const start = new Date();
+            const check = () => {
+                if (this.isBusy) {
+                    const timeMs = new Date().getTime() - start.getTime();
+                    if (timeMs < 30000) {
+                        // Allow a tick of the event loop before checking again
+                        window.requestAnimationFrame(check);
+                    }
+                    else {
+                        reject(new Error("Timed out waiting for previous request to complete"));
+                    }
+                }
+                else {
+                    resolve();
+                }
+            };
+            check();
+        });
     }
 
     private registerAwaiter<T>(resolve: (value:T)=>void, reject: (erro:Error)=>void) {
@@ -74,8 +92,8 @@ export class ApiClient implements IApiClient {
         };
     }
 
-    private request<T>(method: string, path: string, data?: any): Promise<T> {
-        this.ensureIdle();
+    private async request<T>(method: string, path: string, data?: any): Promise<T> {
+        await this.ensureIdle();
         return new Promise((resolve, reject) => {
             try {
                 path = this.getFullPath(path);
@@ -90,6 +108,10 @@ export class ApiClient implements IApiClient {
                 reject(err);
             }
         });
+    }
+
+    getConfig() {
+        return this.request("GET", "/config");
     }
 
     getLocos(): Promise<api.Loco[]> {

@@ -5,9 +5,10 @@ let pjson = require('../../package.json');
 export function addCommonOptions(commander: CommanderStatic) {
     commander
         .version(pjson.version)
-        .option("-d --device <device>", "Device type to open.")
-        .option("-c --connection-string <connectionString>", "Connection configuration string.")
-        .option("--log-level <loglevel>", "Log level");
+        .option("-d --device <device>", "Device type to open")
+        .option("-c --connection-string <connectionString>", "Connection configuration string")
+        .option("--log-level <loglevel>", "Log level")
+        .option("--features <feature flags>", "Pre-release feature flags");
 }
 
 export function applyLogLevel(commander: CommanderStatic) {

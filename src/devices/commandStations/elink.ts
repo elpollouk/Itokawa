@@ -11,7 +11,7 @@ const log = new Logger("eLink");
 
 let Config = {
     heartbeatTime: 5,
-    triggerDuration: 1, // seconds
+    triggerDuration: 0.3, // seconds
 }
 
 enum MessageType {

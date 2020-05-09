@@ -21,6 +21,12 @@ export class ConfigNode {
         return this.get(path, defaultValue) as T;
     }
 
+    *keys(): IterableIterator<string> {
+        for (const key of Object.getOwnPropertyNames(this)) {
+            yield key;
+        }
+    }
+
     private _get(path: string[], defaultValue?: Value): Value {
         const key = path.shift();
         if (!(key in this)) return defaultValue;
