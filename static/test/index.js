@@ -8,7 +8,7 @@ let listItems = [];
 
 // Current drag state
 let startY;
-let currentTop = null;
+let currentMid = null;
 let draggingElement = null;
 let draggingElementTop;
 let draggingElementBottom;
@@ -23,7 +23,7 @@ function getPageY(evnt) {
 function onPointerDown(element, evnt) {
     element.classList.add("dragging");
     startY = getPageY(evnt);
-    currentTop = null;
+    currentMid = null;
 
     // Fetch and cache the current list item positions and sizes
     for (const item of listItems) {
@@ -37,8 +37,6 @@ function onPointerDown(element, evnt) {
         else {
             item.element.classList.add("shiftable");
         }
-        // We use the top for the final sorting order
-        item.top = rect.top;
         // The midpoint is used to calculate if we've dragged the item above or below this item
         item.mid = (rect.top + rect.bottom) / 2;
         // The height is used to update the top value after shifting
@@ -66,22 +64,22 @@ function onPointerUp(element, evnt) {
     // utility classes as we go
     for (const item of listItems) {
         if (item.element === element) {
-            item.top = currentTop;
+            item.mid = currentMid;
         }
         else if (item.element.classList.contains("shiftUp")) {
             item.element.classList.remove("shiftUp");
-            item.top -= item.height;
+            item.mid -= item.height;
         }
         else if (item.element.classList.contains("shiftDown")) {
             item.element.classList.remove("shiftDown");
-            item.top += item.height;
+            item.mid += item.height;
         }
         item.element.classList.remove("shiftable");
     }
 
-    // If we actually dragged the element, sort the list based on each elements top value
-    if (currentTop !== null) {
-        listItems.sort((a, b) => a.top - b.top);
+    // If we actually dragged the element, sort the list based on each elements mid value
+    if (currentMid !== null) {
+        listItems.sort((a, b) => a.mid - b.mid);
         // Clear out the elements from the UI and re-add them in their new order
         listElement.innerHTML = "";
         for (const item of listItems) {
@@ -107,8 +105,9 @@ function onPointerMove(element, evnt) {
 
     // Are we processing elements originally above the element being dragged?
     let above = true;
-    currentTop = draggingElementTop + dY;
+    let currentTop = draggingElementTop + dY;
     let currentBottom = draggingElementBottom + dY;
+    currentMid = (currentTop + currentBottom) / 2;
     for (const item of listItems) {
         if (item.element === element) {
             // We've hit the element being dragged, so everything else in the list was originally
@@ -155,7 +154,6 @@ function addItem(parent, text) {
 
     listItems.push({
         element: item,
-        top: null,
         mid: null,
         height: null
     });
