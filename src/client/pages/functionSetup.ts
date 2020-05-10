@@ -24,15 +24,15 @@ export class FunctionSetupPage extends Page {
     private _functionList: DraggableList<FunctionConfig>;
 
     get functions(): FunctionConfig[] {
-        const funcs: FunctionConfig[] = [];
+        const value: FunctionConfig[] = [];
         for (const content of this._functionList.content()) {
-            funcs.push({
+            value.push({
                 name: getById<HTMLInputElement>(content, "name").value,
                 mode: _getMode(content),
                 exec: getById<HTMLInputElement>(content, "function").value
             });
         }
-        return funcs;
+        return value;
     }
 
     constructor (params: FunctionConfig[]) {

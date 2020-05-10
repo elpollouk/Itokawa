@@ -737,27 +737,11 @@ a:visited {
  * Function Setup
  */
 
-.functionConfigControl {
-    margin: 2px;
-    padding: 2px;
-}
-
-.functionConfigControl span {
-    display: inline-block;
-    width: 2em;
-    text-align: right;
-    box-sizing: border-box;
-}
-
-.functionConfigControl select {
-    margin-left: 8px;
-}
-
-.functionSetup2 .pageContent {
+.functionSetup .pageContent {
     padding-right: 6px;
 }
 
-.functionSetup2 .buttons {
+.functionSetup .buttons {
     margin-bottom: 0.5em;
 }
 

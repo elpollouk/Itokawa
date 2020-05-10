@@ -25,7 +25,7 @@ export class DraggableList<T> extends ControlBase {
     private readonly _listItems: ListItem<T>[] = [];
 
     // Active drag state
-    // Allowed extends of dragging
+    // Allowed extents of dragging
     private _minY: number;
     private _maxY: number;
     // Original Y value we started dragging from
@@ -38,7 +38,7 @@ export class DraggableList<T> extends ControlBase {
     private _draggingElementTop: number;
     private _draggingElementBottom: number;
 
-    // Event handles to capture mouse events which can be missed by the elements themselves
+    // Event handlers to capture mouse events which can be missed by the elements themselves
     private _windowOnMouseUp: (event: PointerEvent) => void;
     private _windowOnMouseMove: (event: PointerEvent) => boolean;
 
@@ -133,7 +133,7 @@ export class DraggableList<T> extends ControlBase {
             }
             // The midpoint is used to calculate if we've dragged the item above or below this item
             item.mid = (rect.top + rect.bottom) / 2;
-            // The height is used to update the top value after shifting
+            // The height is used to update the mid value after shifting
             item.height = rect.bottom - rect.top;
         }
     
@@ -195,8 +195,7 @@ export class DraggableList<T> extends ControlBase {
         element.classList.remove("dragging");
         element.style.transform = "";
     
-        // First pass over the list to update the top values to ensure the correct sort order, removing
-        // utility classes as we go
+        // First pass over the list to update the top values to ensure the correct sort order
         for (const item of this._listItems) {
             if (item.element === element) {
                 item.mid = this._currentMid;
@@ -209,7 +208,7 @@ export class DraggableList<T> extends ControlBase {
             }
         }
     
-        // If we actually dragged the element, sort the list based on each elements mid value
+        // If we actually dragged the element, sort the list based on each elements' mid value
         if (this._currentMid !== null) {
             this._listItems.sort((a, b) => a.mid - b.mid);
             this._rebuildUi();
