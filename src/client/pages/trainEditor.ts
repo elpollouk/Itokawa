@@ -5,7 +5,7 @@ import * as prompt from "../controls/promptControl";
 import { CvEditorConstructor, CvEditorPage } from "./cvEditor";
 import { CvMap, FunctionConfig } from "../../common/api";
 import { FunctionSetuprConstructor, FunctionSetupPage } from "./functionSetup";
-import { FunctionSetup2Constructor } from "./functionSetup2";
+import { FunctionSetup2Constructor, FunctionSetup2Page } from "./functionSetup2";
 const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
@@ -87,7 +87,7 @@ export class TrainEditPage extends Page {
             }
             this._deleteButton.style.display = "";
 
-            if (previousPage instanceof FunctionSetupPage) {
+            if (previousPage instanceof FunctionSetup2Page) {
                 if (this._haveFunctionsChanged(previousPage.functions)) {
                     this._functions = previousPage.functions;
                     this._save(false);

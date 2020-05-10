@@ -545,10 +545,18 @@ a:visited {
 .function {
     margin-top: 2px;
     margin-bottom: 2px;
+    width: calc(50% - 4px);
+    height: 2.7em;
+    overflow: hidden;
+    vertical-align: middle;
 }
 
 .function.latchedOn {
     background-color: lightgreen;
+}
+
+.locoPanel .pageContent {
+    padding-right: 0.5em;
 }
 
 .locoPanel .speedContainer {
