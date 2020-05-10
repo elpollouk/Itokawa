@@ -744,9 +744,51 @@ a:visited {
     padding-right: 6px;
 }
 
-.functionSetup2 .dragContent span {
-    display: block;
-    height: 60px;
+.functionSetup2 .buttons {
+    margin-bottom: 0.5em;
+}
+
+.functionConfig {
+    display: flex;
+    width: 100%;
+    font-size: large;
+}
+
+.functionConfig .deleteContainer {
+    width: 1.5em;
+    margin: -2px;
+    margin-left: -4px;
+    margin-right: 6px;
+}
+
+.functionConfig button {
+    width: 100%;
+    height: 100%;
+    background-color: tomato;
+}
+
+.functionConfig .configContainer {
+    flex-grow: 1;
+}
+
+.functionConfig .inputLine {
+    display: flex;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.functionConfig label {
+    display: inline-block;
+    width: 20%;
+}
+
+.functionConfig input {
+    flex-grow: 1;
+    font-size: large;
+}
+
+.functionConfig select {
+    font-size: large;
 }
 
 /*

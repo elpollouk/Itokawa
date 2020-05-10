@@ -3,6 +3,7 @@ import { parseHtml, getById } from "../utils/dom";
 import { DraggableList } from "../controls/draggableList";
 
 const html = require("./functionSetup2.html");
+const controlHtml = require("../controls/functionConfigControl2.html");
 
 interface FunctionData {
     name: string;
@@ -19,9 +20,9 @@ export class FunctionSetup2Page extends Page {
     }
 
     private _createFunctionUi(data: FunctionData) {
-        const span = document.createElement("span");
-        span.innerText = data.name;
-        return span;
+        const content = parseHtml(controlHtml);
+        getById<HTMLInputElement>(content, "name").value = data.name;
+        return content;
     }
 
     private _buildUi(): HTMLElement {
@@ -30,9 +31,7 @@ export class FunctionSetup2Page extends Page {
         const functionList = getById(page, "functionList");
         this._functionList = new DraggableList(functionList, (data) => this._createFunctionUi(data));
 
-        this._functionList.addItem({ name: "A" });
-        this._functionList.addItem({ name: "B" });
-        this._functionList.addItem({ name: "C" });
+        getById(page, "addFunction").onclick = () => this._functionList.addItem({ name: "" });
 
         return page;
     }
