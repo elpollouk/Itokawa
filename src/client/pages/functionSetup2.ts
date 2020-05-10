@@ -1,6 +1,7 @@
 import { Page, IPageConstructor } from "./page";
 import { parseHtml, getById } from "../utils/dom";
 import { DraggableList } from "../controls/draggableList";
+import { FunctionConfig } from "../../common/api";
 
 const html = require("./functionSetup2.html");
 const controlHtml = require("../controls/functionConfigControl2.html");
@@ -14,7 +15,7 @@ export class FunctionSetup2Page extends Page {
     content: HTMLElement;
     private _functionList: DraggableList<FunctionData>;
 
-    constructor (params: any) {
+    constructor (params: FunctionConfig[]) {
         super();
         this.content = this._buildUi();
     }

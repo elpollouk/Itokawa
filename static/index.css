@@ -126,6 +126,11 @@ a:visited {
     transform: translateY(calc(-100% - 2px));
 }
 
+.dragItem.deleting {
+    transition: 0.2s ease-in-out;
+    transform: translateY(-50%) scale(0, 0);
+}
+
 /*
  * System Drawer
  * Visible statis bar height: 1.5em + 10px

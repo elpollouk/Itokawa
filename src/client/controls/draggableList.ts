@@ -71,14 +71,22 @@ export class DraggableList<T> extends ControlBase {
     }
 
     removeItem(data: T) {
+        let removed = false;
         for (let i = 0; i < this._listItems.length; i++) {
-            if (this._listItems[i].data === data) {
-                this._listItems.splice(i, 1);
-                i--;
+            const item = this._listItems[i];
+            if (removed) {
+                item.element.classList.add("shiftable");
+                item.element.classList.add("shiftUp");
+            }
+            else if (item.data === data) {
+                // We splice out immediately so that requests for data are valid while the
+                // animations are playing
+                this._listItems.splice(i--, 1);
+                item.element.classList.add("deleting");
+                item.element.ontransitionend = () => this._rebuildUi();
+                removed = true;
             }
         }
-
-        this._rebuildUi();
     }
 
     getItem(index: number): T {
@@ -193,14 +201,11 @@ export class DraggableList<T> extends ControlBase {
                 item.mid = this._currentMid;
             }
             else if (item.element.classList.contains("shiftUp")) {
-                item.element.classList.remove("shiftUp");
                 item.mid -= item.height;
             }
             else if (item.element.classList.contains("shiftDown")) {
-                item.element.classList.remove("shiftDown");
                 item.mid += item.height;
             }
-            item.element.classList.remove("shiftable");
         }
     
         // If we actually dragged the element, sort the list based on each elements mid value
@@ -218,6 +223,9 @@ export class DraggableList<T> extends ControlBase {
         this.element.innerHTML = "";
         for (const item of this._listItems) {
             this.element.appendChild(item.element);
+            item.element.classList.remove("shiftUp");
+            item.element.classList.remove("shiftDown");
+            item.element.classList.remove("shiftable");
         }
     }
 
