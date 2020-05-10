@@ -3,6 +3,8 @@
 let minY;
 let maxY;
 
+let listElements = [];
+
 // Current drag state
 let startY;
 let draggingElement = null;
@@ -17,10 +19,27 @@ function onPointerDown(element, evnt) {
     else {
         startY = evnt.pageY;
     }
+
+    for (const item of listElements) {
+        const rect = item.element.getBoundingClientRect();
+        if (item.element === element) {
+            draggingElementTop = rect.top;
+            draggingElementBottom = rect.bottom;
+        }
+        else {
+            item.element.classList.add("shiftable");
+        }
+        item.top = rect.top;
+        item.bottom = rect.bottom;
+    }
+
+    // Calculate new list extents
+    const rect = element.parentElement.getBoundingClientRect();
+    console.log(`top=${rect.top}, bottom=${rect.bottom}`);
+    minY = rect.top - 10;
+    maxY = rect.bottom + 10;
+
     draggingElement = element;
-    const rect = draggingElement.getBoundingClientRect();
-    draggingElementTop = rect.top;
-    draggingElementBottom = rect.bottom;
 
     evnt.stopImmediatePropagation();
     return false;
@@ -31,6 +50,12 @@ function onPointerUp(element, evnt) {
 
     element.classList.remove("dragging");
     element.style.transform = "";
+    for (const item of listElements) {
+        item.element.classList.remove("shiftUp");
+        item.element.classList.remove("shiftDown");
+        item.element.classList.remove("shiftable");
+    }
+
     draggingElement = null;
     return false;
 }
@@ -52,6 +77,26 @@ function onPointerMove(element, evnt) {
     else if ((draggingElementBottom + dY) > maxY) dY = maxY - draggingElementBottom;
 
     element.style.transform = `translateY(${dY}px)`;
+
+    let above = true;
+    let currentTop = draggingElementTop + dY;
+    let currentBottom = draggingElementBottom + dY;
+    for (const item of listElements) {
+        if (item.element === element) {
+            above = false;
+        }
+        else if (above && currentTop < item.top) {
+            item.element.classList.add("shiftDown");
+        }
+        else if (!above && currentBottom > item.bottom) {
+            item.element.classList.add("shiftUp");
+        }
+        else {
+            item.element.classList.remove("shiftUp");
+            item.element.classList.remove("shiftDown");
+        }
+    }
+
     evnt.stopImmediatePropagation();
     return false;
 }
@@ -70,10 +115,11 @@ function addItem(parent, text) {
 
     parent.appendChild(item);
 
-    const rect = parent.getBoundingClientRect();
-    console.log(`top=${rect.top}, bottom=${rect.bottom}`);
-    minY = rect.top - 10;
-    maxY = rect.bottom + 10;
+    listElements.push({
+        element: item,
+        top: -1,
+        bottom: -1
+    });
 }
 
 function main() {
@@ -83,7 +129,12 @@ function main() {
     addItem(list, "A");
     addItem(list, "B");
     addItem(list, "C");
-    addItem(list, "D"); 
+    addItem(list, "D");
+    addItem(list, "E");
+    addItem(list, "F");
+    addItem(list, "G");
+    addItem(list, "H");
+    addItem(list, "I");
 
     window.onmouseup = (evnt) => onPointerUp(draggingElement, evnt);
     window.onmousemove = (evnt) => onPointerMove(draggingElement, evnt);
