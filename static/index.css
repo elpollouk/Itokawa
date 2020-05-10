@@ -71,6 +71,62 @@ a:visited {
 }
 
 /*
+ * Draggable List
+ */
+.dragItem {
+    display: flex;
+    width: 100%;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    padding: 4px;
+    border-width: 2px;
+    border-style: solid;
+    box-sizing: border-box;
+
+    background-color: lightgray;
+    border-color: slategray;
+}
+
+.dragItem .dragContent {
+    flex-grow: 1;
+}
+
+.dragHandle {
+    cursor: grab;
+    width: 20px;
+    margin: -4px;
+    padding: 4px;
+
+    background-image: url(icons/drag_handle.svg);
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.dragItem.dragging .dragHandle {
+    cursor: grabbing;
+}
+
+.dragItem.dragging {
+    position: relative;
+    z-index: 1;
+    left: 5px;
+    box-shadow: -5px 5px 10px rgba(0, 0, 0, 0.4);
+    cursor: grabbing;
+}
+
+.dragItem.shiftable {
+    transition: transform 0.2s ease-in-out;
+}
+
+.dragItem.shiftDown {
+    transform: translateY(calc(100% + 2px));
+}
+
+.dragItem.shiftUp {
+    transform: translateY(calc(-100% - 2px));
+}
+
+/*
  * System Drawer
  * Visible statis bar height: 1.5em + 10px
  *     #statusBar padding * 2 (4px)
@@ -682,6 +738,15 @@ a:visited {
 
 .functionConfigControl select {
     margin-left: 8px;
+}
+
+.functionSetup2 .pageContent {
+    padding-right: 6px;
+}
+
+.functionSetup2 .dragContent span {
+    display: block;
+    height: 60px;
 }
 
 /*

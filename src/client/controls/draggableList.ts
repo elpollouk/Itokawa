@@ -20,7 +20,7 @@ function getPageY(event: PointerEvent) {
     return event.pageY;
 }
 
-export class TrainControl<T> extends ControlBase {
+export class DraggableList<T> extends ControlBase {
 
     private readonly _listItems: ListItem<T>[] = [];
 
@@ -70,7 +70,7 @@ export class TrainControl<T> extends ControlBase {
         this.element.appendChild(element);
     }
 
-    getData(index: number): T {
+    getItem(index: number): T {
         return this._listItems[index].data;
     }
 
@@ -78,7 +78,7 @@ export class TrainControl<T> extends ControlBase {
         return this._listItems[index].content;
     }
 
-    *data(): IterableIterator<T> {
+    *items(): IterableIterator<T> {
         for (const item of this._listItems)
             yield item.data;
     }
