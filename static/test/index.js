@@ -25,29 +25,34 @@ function onPointerDown(element, evnt) {
     startY = getPageY(evnt);
     currentTop = null;
 
+    // Fetch and cache the current list item positions and sizes
     for (const item of listItems) {
         const rect = item.element.getBoundingClientRect();
         if (item.element === element) {
+            // Cache the top and the bottom for the element being dragged as we need to determine
+            // when we go beyond the midpoint of other elements in the list
             draggingElementTop = rect.top;
             draggingElementBottom = rect.bottom;
         }
         else {
             item.element.classList.add("shiftable");
         }
+        // We use the top for the final sorting order
         item.top = rect.top;
+        // The midpoint is used to calculate if we've dragged the item above or below this item
         item.mid = (rect.top + rect.bottom) / 2;
+        // The height is used to update the top value after shifting
         item.height = rect.bottom - rect.top;
     }
 
-    // Calculate new list extents
+    // Calculate new list extents to put a limit on dragging
     const rect = listElement.getBoundingClientRect();
-    console.log(`top=${rect.top}, bottom=${rect.bottom}`);
     minY = rect.top - 10;
     maxY = rect.bottom + 10;
 
+    // Record this element as being dragged
     draggingElement = element;
 
-    evnt.stopImmediatePropagation();
     return false;
 }
 
@@ -57,6 +62,8 @@ function onPointerUp(element, evnt) {
     element.classList.remove("dragging");
     element.style.transform = "";
 
+    // First pass over the list to update the top values to ensure the correct sort order, removing
+    // utility classes as we go
     for (const item of listItems) {
         if (item.element === element) {
             item.top = currentTop;
@@ -72,8 +79,10 @@ function onPointerUp(element, evnt) {
         item.element.classList.remove("shiftable");
     }
 
+    // If we actually dragged the element, sort the list based on each elements top value
     if (currentTop !== null) {
         listItems.sort((a, b) => a.top - b.top);
+        // Clear out the elements from the UI and re-add them in their new order
         listElement.innerHTML = "";
         for (const item of listItems) {
             listElement.appendChild(item.element);
@@ -87,33 +96,40 @@ function onPointerUp(element, evnt) {
 function onPointerMove(element, evnt) {
     if (!draggingElement || draggingElement != element) return;
 
+    // Calculate the current drag offset
     let dY = getPageY(evnt) - startY;
 
+    // Clamp dragging within the bounds of the list
     if ((draggingElementTop + dY) < minY) dY = minY - draggingElementTop;
     else if ((draggingElementBottom + dY) > maxY) dY = maxY - draggingElementBottom;
 
     element.style.transform = `translateY(${dY}px)`;
 
+    // Are we processing elements originally above the element being dragged?
     let above = true;
     currentTop = draggingElementTop + dY;
     let currentBottom = draggingElementBottom + dY;
     for (const item of listItems) {
         if (item.element === element) {
+            // We've hit the element being dragged, so everything else in the list was originally
+            // below it
             above = false;
         }
         else if (above && currentTop < item.mid) {
+            // If this item was originally above the element being dragged, shift it down
             item.element.classList.add("shiftDown");
         }
         else if (!above && currentBottom > item.mid) {
+            // If it was below it, shift it up
             item.element.classList.add("shiftUp");
         }
         else {
+            // Item is still currently in the correct sort order so no shifting required
             item.element.classList.remove("shiftUp");
             item.element.classList.remove("shiftDown");
         }
     }
 
-    evnt.stopImmediatePropagation();
     return false;
 }
 
@@ -122,6 +138,7 @@ function addItem(parent, text) {
     item.className = "dragItem";
     item.innerText = text;
 
+    // We want to handle both mouse and touch events, so bind them all
     item.onmousedown = (evnt) => onPointerDown(item, evnt);
     item.onmousemove = (evnt) => onPointerMove(item, evnt);
     item.onmouseup = (evnt) => onPointerUp(item, evnt);
@@ -134,7 +151,8 @@ function addItem(parent, text) {
     listItems.push({
         element: item,
         top: null,
-        mid: null
+        mid: null,
+        height: null
     });
 }
 
@@ -152,6 +170,7 @@ function main() {
     addItem(listElement, "H");
     addItem(listElement, "I");
 
+    // We need to hook into the window events as the mouse can escape the bounds of the dragged element
     window.onmouseup = (evnt) => onPointerUp(draggingElement, evnt);
     window.onmousemove = (evnt) => onPointerMove(draggingElement, evnt);
 }
