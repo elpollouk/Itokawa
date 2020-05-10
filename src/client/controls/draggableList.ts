@@ -70,6 +70,17 @@ export class DraggableList<T> extends ControlBase {
         this.element.appendChild(element);
     }
 
+    removeItem(data: T) {
+        for (let i = 0; i < this._listItems.length; i++) {
+            if (this._listItems[i].data === data) {
+                this._listItems.splice(i, 1);
+                i--;
+            }
+        }
+
+        this._rebuildUi();
+    }
+
     getItem(index: number): T {
         return this._listItems[index].data;
     }
@@ -195,15 +206,19 @@ export class DraggableList<T> extends ControlBase {
         // If we actually dragged the element, sort the list based on each elements mid value
         if (this._currentMid !== null) {
             this._listItems.sort((a, b) => a.mid - b.mid);
-            // Clear out the elements from the UI and re-add them in their new order
-            this.element.innerHTML = "";
-            for (const item of this._listItems) {
-                this.element.appendChild(item.element);
-            }
+            this._rebuildUi();
         }
     
         this._draggingElement = null;
         return false;
+    }
+
+    private _rebuildUi() {
+        // Clear out the elements from the UI and re-add them in their new order
+        this.element.innerHTML = "";
+        for (const item of this._listItems) {
+            this.element.appendChild(item.element);
+        }
     }
 
     private _createItemElement(content: HTMLElement) {

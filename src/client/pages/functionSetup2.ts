@@ -22,6 +22,9 @@ export class FunctionSetup2Page extends Page {
     private _createFunctionUi(data: FunctionData) {
         const content = parseHtml(controlHtml);
         getById<HTMLInputElement>(content, "name").value = data.name;
+        getById<HTMLButtonElement>(content, "delete").onclick = () => {
+            this._functionList.removeItem(data);
+        }
         return content;
     }
 

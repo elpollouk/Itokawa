@@ -756,15 +756,16 @@ a:visited {
 
 .functionConfig .deleteContainer {
     width: 1.5em;
-    margin: -2px;
-    margin-left: -4px;
-    margin-right: 6px;
+    margin: -4px;
+    margin-left: -6px;
+    margin-right: 8px;
 }
 
 .functionConfig button {
     width: 100%;
     height: 100%;
     background-color: tomato;
+    font-weight: bold;
 }
 
 .functionConfig .configContainer {
