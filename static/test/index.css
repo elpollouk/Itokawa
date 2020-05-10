@@ -3,8 +3,8 @@ body {
 }
 
 .dragItem {
+    display: flex;
     width: 100%;
-    height: 100px;
     margin-top: 2px;
     margin-bottom: 2px;
     padding: 4px;
@@ -16,10 +16,13 @@ body {
     border-color: slategray;
 }
 
+.dragItem span {
+    height: 60px;
+    flex-grow: 1;
+}
+
 .dragHandle {
-    float: right;
     cursor: grab;
-    height: 100%;
     width: 20px;
     margin: -4px;
     padding: 4px;
