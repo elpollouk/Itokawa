@@ -135,16 +135,22 @@ function onPointerMove(element, evnt) {
 
 function addItem(parent, text) {
     const item = document.createElement("div");
+    const span = document.createElement("span");
+    const handle = document.createElement("div");
     item.className = "dragItem";
-    item.innerText = text;
+    item.appendChild(span);
+    item.appendChild(handle);
+    span.innerText = text;
+    handle.className = "dragHandle";
+    handle.innerText = "...";
 
     // We want to handle both mouse and touch events, so bind them all
-    item.onmousedown = (evnt) => onPointerDown(item, evnt);
-    item.onmousemove = (evnt) => onPointerMove(item, evnt);
-    item.onmouseup = (evnt) => onPointerUp(item, evnt);
-    item.ontouchstart = (evnt) => onPointerDown(item, evnt);
-    item.ontouchmove = (evnt) => onPointerMove(item, evnt);
-    item.ontouchend = (evnt) => onPointerUp(item, evnt);
+    handle.onmousedown = (evnt) => onPointerDown(item, evnt);
+    handle.onmousemove = (evnt) => onPointerMove(item, evnt);
+    handle.onmouseup = (evnt) => onPointerUp(item, evnt);
+    handle.ontouchstart = (evnt) => onPointerDown(item, evnt);
+    handle.ontouchmove = (evnt) => onPointerMove(item, evnt);
+    handle.ontouchend = (evnt) => onPointerUp(item, evnt);
 
     parent.appendChild(item);
 

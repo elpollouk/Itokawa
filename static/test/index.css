@@ -12,13 +12,30 @@
     border-color: slategray;
 }
 
+.dragHandle {
+    float: right;
+    text-orientation: mixed;
+    writing-mode: vertical-rl;
+    height: 100%;
+    margin: -4px;
+    padding: 4px;
+    text-align: center;
+    transform: scaleX(-1);
+    cursor: grab;
+}
+
+.dragItem.dragging .dragHandle {
+    cursor: grabbing;
+}
+
 .dragItem.dragging {
     position: relative;
     z-index: 1;
     background-color: lightblue;
-    opacity: 0.7;
+    /*opacity: 0.7;*/
     left: 5px;
     box-shadow: -5px 5px 10px rgba(0, 0, 0, 0.4);
+    cursor: grabbing;
 }
 
 .dragItem.shiftable {
