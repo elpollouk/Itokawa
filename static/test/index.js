@@ -142,7 +142,6 @@ function addItem(parent, text) {
     item.appendChild(handle);
     span.innerText = text;
     handle.className = "dragHandle";
-    handle.innerText = "...";
 
     // We want to handle both mouse and touch events, so bind them all
     handle.onmousedown = (evnt) => onPointerDown(item, evnt);
@@ -177,6 +176,6 @@ function main() {
     addItem(listElement, "I");
 
     // We need to hook into the window events as the mouse can escape the bounds of the dragged element
-    window.onmouseup = (evnt) => onPointerUp(draggingElement, evnt);
-    window.onmousemove = (evnt) => onPointerMove(draggingElement, evnt);
+    window.addEventListener("mouseup", (evnt) => onPointerUp(draggingElement, evnt));
+    window.addEventListener("mousemove", (evnt) => onPointerMove(draggingElement, evnt));
 }

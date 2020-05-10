@@ -18,14 +18,15 @@ body {
 
 .dragHandle {
     float: right;
-    text-orientation: mixed;
-    writing-mode: vertical-rl;
+    cursor: grab;
     height: 100%;
+    width: 20px;
     margin: -4px;
     padding: 4px;
-    text-align: center;
-    transform: scaleX(-1);
-    cursor: grab;
+
+    background-image: url(../icons/drag_handle.svg);
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .dragItem.dragging .dragHandle {
@@ -35,8 +36,6 @@ body {
 .dragItem.dragging {
     position: relative;
     z-index: 1;
-    /*background-color: lightgr;
-    opacity: 0.7;*/
     left: 5px;
     box-shadow: -5px 5px 10px rgba(0, 0, 0, 0.4);
     cursor: grabbing;
