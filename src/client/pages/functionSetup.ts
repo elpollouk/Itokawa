@@ -1,61 +1,74 @@
 import { Page, IPageConstructor } from "./page";
 import { parseHtml, getById } from "../utils/dom";
-import { FunctionConfigControl } from "../controls/functionConfigControl";
-import { FunctionMode, FunctionConfig } from "../../common/api";
+import { DraggableList } from "../controls/draggableList";
+import { FunctionConfig, FunctionMode } from "../../common/api";
 
 const html = require("./functionSetup.html");
+const controlHtml = require("../controls/functionConfigControl.html");
+
+function _getMode(content: HTMLElement): FunctionMode {
+    const value = getById<HTMLSelectElement>(content, "mode").value;
+    switch (value) {
+        case "1":
+            return FunctionMode.Trigger;
+        case "2":
+            return FunctionMode.Latched;
+        default:
+            return FunctionMode.NotSet;
+    }
+}
 
 export class FunctionSetupPage extends Page {
-    path: string = FunctionSetuprConstructor.path;
+    path: string = FunctionSetupConstructor.path;
     content: HTMLElement;
-    private _functions: FunctionConfig[];
-    private readonly _functionControls: FunctionConfigControl[] = [];
+    private _functionList: DraggableList<FunctionConfig>;
 
     get functions(): FunctionConfig[] {
-        const value: FunctionConfig[] = [];
-        for (const control of this._functionControls) {
-            //if (control.mode == FunctionMode.NotSet) continue;
-            value.push({
-                name: control.name,
-                mode: control.mode,
-                exec: control.exec
+        const funcs: FunctionConfig[] = [];
+        for (const content of this._functionList.content()) {
+            funcs.push({
+                name: getById<HTMLInputElement>(content, "name").value,
+                mode: _getMode(content),
+                exec: getById<HTMLInputElement>(content, "function").value
             });
         }
-        return value;
+        return funcs;
     }
 
-    constructor (params: any) {
+    constructor (params: FunctionConfig[]) {
         super();
-        if (params.length === 0) {
-            this._functions = [];
-            for (let i = 0; i < 29; i++) {
-                this._functions.push({
-                    name: `F${i}`,
-                    mode: FunctionMode.NotSet,
-                    exec: `${i}`
-                });
-            }
-        }
-        else {
-            this._functions = params as FunctionConfig[];
-        }
         this.content = this._buildUi();
+
+        for (const func of params || []) {
+            if (func.mode === FunctionMode.NotSet) continue;
+            this._functionList.addItem(func);
+        }
+    }
+
+    private _createFunctionUi(data: FunctionConfig) {
+        const content = parseHtml(controlHtml);
+        getById<HTMLInputElement>(content, "name").value = data.name;
+        getById<HTMLSelectElement>(content, "mode").value = `${data.mode}`;
+        getById<HTMLSelectElement>(content, "function").value = `${data.exec}`;
+        getById<HTMLButtonElement>(content, "delete").onclick = () => {
+            this._functionList.removeItem(data);
+        }
+        return content;
     }
 
     private _buildUi(): HTMLElement {
         const page = parseHtml(html);
         
-        const functionContainer = getById(page, "functionContainer");
-        for (const config of this._functions) {
-            const control = new FunctionConfigControl(functionContainer, config);
-            this._functionControls.push(control);
-        }
+        const functionList = getById(page, "functionList");
+        this._functionList = new DraggableList(functionList, (data) => this._createFunctionUi(data));
+
+        getById(page, "addFunction").onclick = () => this._functionList.addItem({ name: "", mode: FunctionMode.Trigger, exec: "0" });
 
         return page;
     }
 }
 
-export const FunctionSetuprConstructor: IPageConstructor = {
-    path: "functionEditor",
+export const FunctionSetupConstructor: IPageConstructor = {
+    path: "functionSetup",
     create: (params) => new FunctionSetupPage(params)
 }

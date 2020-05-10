@@ -68,6 +68,7 @@ export class DraggableList<T> extends ControlBase {
         });
 
         this.element.appendChild(element);
+        element.scrollIntoView();
     }
 
     removeItem(data: T) {
