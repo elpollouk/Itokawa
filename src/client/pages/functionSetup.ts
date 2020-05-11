@@ -45,12 +45,19 @@ export class FunctionSetupPage extends Page {
         }
     }
 
+    destroy() {
+        this._functionList.close();
+        super.destroy();
+    }
+
     private _createFunctionUi(data: FunctionConfig) {
         const content = parseHtml(controlHtml);
         getById<HTMLInputElement>(content, "name").value = data.name;
         getById<HTMLSelectElement>(content, "mode").value = `${data.mode}`;
         getById<HTMLSelectElement>(content, "function").value = `${data.exec}`;
-        getById<HTMLButtonElement>(content, "delete").onclick = () => {
+        const deleteButton = getById<HTMLButtonElement>(content, "delete");
+        deleteButton.onclick = () => {
+            deleteButton.onclick = null;
             this._functionList.removeItem(data);
         }
         return content;

@@ -56,6 +56,9 @@ export class DraggableList<T> extends ControlBase {
         super.close();
         window.removeEventListener("mouseup", this._windowOnMouseUp);
         window.removeEventListener("mousemove", this._windowOnMouseMove);
+
+        for (const item of this._listItems)
+            this._unbindElement(item.element);
     }
 
     addItem(data: T) {
@@ -84,7 +87,11 @@ export class DraggableList<T> extends ControlBase {
                 // animations are playing
                 this._listItems.splice(i--, 1);
                 item.element.classList.add("deleting");
-                item.element.ontransitionend = () => this._rebuildUi();
+                this._unbindElement(item.element);
+                item.element.ontransitionend = () => {
+                    item.element.ontransitionend = null;
+                    this._rebuildUi();
+                }
                 removed = true;
             }
         }
@@ -243,6 +250,16 @@ export class DraggableList<T> extends ControlBase {
         dragHandle.ontouchend = (event) => this._onPointerUp(element, event);
 
         return element;
+    }
+
+    private _unbindElement(element: HTMLElement) {
+        const dragHandle = getById(element, "dragHandle");
+        dragHandle.onmousedown = null;
+        dragHandle.onmousemove = null;
+        dragHandle.onmouseup = null;
+        dragHandle.ontouchstart = null;
+        dragHandle.ontouchmove = null;
+        dragHandle.ontouchend = null;
     }
 
     private _bindEvents() {
