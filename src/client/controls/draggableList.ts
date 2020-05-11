@@ -86,10 +86,13 @@ export class DraggableList<T> extends ControlBase {
                 // We splice out immediately so that requests for data are valid while the
                 // animations are playing
                 this._listItems.splice(i--, 1);
-                item.element.classList.add("deleting");
-                this._unbindElement(item.element);
-                item.element.ontransitionend = () => {
-                    item.element.ontransitionend = null;
+                const element = item.element;
+                item.element = null;
+                item.content = null;
+                element.classList.add("deleting");
+                this._unbindElement(element);
+                element.ontransitionend = () => {
+                    element.ontransitionend = null;
                     this._rebuildUi();
                 }
                 removed = true;
