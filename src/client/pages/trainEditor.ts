@@ -4,7 +4,7 @@ import { parseHtml, getById, vaildateIntInput, vaildateNotEmptyInput } from "../
 import * as prompt from "../controls/promptControl";
 import { CvEditorConstructor, CvEditorPage } from "./cvEditor";
 import { CvMap, FunctionConfig } from "../../common/api";
-import { FunctionSetuprConstructor, FunctionSetupPage } from "./functionSetup";
+import { FunctionSetupConstructor, FunctionSetupPage } from "./functionSetup";
 const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
@@ -151,7 +151,7 @@ export class TrainEditPage extends Page {
     }
 
     private _functionSetup() {
-        nav.open(FunctionSetuprConstructor.path, this._functions);
+        nav.open(FunctionSetupConstructor.path, this._functions);
         return false;
     }
 

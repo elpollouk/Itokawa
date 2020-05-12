@@ -11,7 +11,7 @@ const html = require("./locoPanel.html");
 export class LocoPanelPage extends Page {
     path: string = LocoPanelConstructor.path;
     content: HTMLElement;
-    private readonly _loco: Loco;
+    private _loco: Loco;
     private _speedControl: TrainControl;
     private readonly _functionControls = new Map<number, FunctionControl>();
     private _messageHandlerToken: any;
@@ -30,15 +30,6 @@ export class LocoPanelPage extends Page {
         getById(page, "trainTitle").innerText = this._loco.name;
         const speedContainer = getById(page, "speedContainer");
         this._speedControl = new TrainControl(speedContainer, this._loco, true);
-
-        const functionsContainer = getById(page, "functionsContainer");
-        for (const config of this._loco.functions || []) {
-            if (config.mode === FunctionMode.NotSet) continue;
-            const control = new FunctionControl(functionsContainer, this._loco.address, config);
-            if (config.mode === FunctionMode.Latched) {
-                this._functionControls.set(parseInt(config.exec), control);
-            }
-        }
 
         return page;
     }
@@ -67,25 +58,42 @@ export class LocoPanelPage extends Page {
     }
 
     onEnter() {
-        client.connection.request(RequestType.LocoFunctionRefresh, {
-            locoId: this._loco.address
-        } as LocoFunctionRefreshRequest, (err, response) => {
-            if (err) {
-                prompt.error(`Failed to refresh loco functions:\n${err.message}`);
-                return;
+        client.api.getLoco(this._loco.id).then((loco) => {
+            this._loco = loco;
+
+            // Build the function UI once we've confirmed the loco details
+            const functionsContainer = getById(this.content, "functionsContainer");
+            for (const config of this._loco.functions || []) {
+                if (config.mode === FunctionMode.NotSet) continue;
+                const control = new FunctionControl(functionsContainer, this._loco.address, config);
+                if (config.mode === FunctionMode.Latched) {
+                    this._functionControls.set(parseInt(config.exec), control);
+                }
             }
-            if (response.lastMessage) return; // The last message is just "OK"
-            this._updateFunction(response.data as LocoFunctionRequest);
-        });
-        client.connection.request(RequestType.LocoSpeedRefresh, {
-            locoId: this._loco.address
-        } as LocoFunctionRefreshRequest, (err, response) => {
-            if (err) {
-                prompt.error(`Failed to refresh loco speed:\n${err.message}`);
-                return;
-            }
-            if (response.lastMessage) return; // The last message is just "OK"
-            this._updateSpeed(response.data as LocoSpeedRequest);
+
+            client.connection.request(RequestType.LocoFunctionRefresh, {
+                locoId: this._loco.address
+            } as LocoFunctionRefreshRequest, (err, response) => {
+                if (err) {
+                    prompt.error(`Failed to refresh loco functions:\n${err.message}`);
+                    return;
+                }
+                if (response.lastMessage) return; // The last message is just "OK"
+                this._updateFunction(response.data as LocoFunctionRequest);
+            });
+            
+            client.connection.request(RequestType.LocoSpeedRefresh, {
+                locoId: this._loco.address
+            } as LocoFunctionRefreshRequest, (err, response) => {
+                if (err) {
+                    prompt.error(`Failed to refresh loco speed:\n${err.message}`);
+                    return;
+                }
+                if (response.lastMessage) return; // The last message is just "OK"
+                this._updateSpeed(response.data as LocoSpeedRequest);
+            });
+        }).catch((err) => {
+            prompt.error(`Failed to request loco sdetails:\n${err.message}`);
         });
     }
 
