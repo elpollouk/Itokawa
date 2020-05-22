@@ -224,6 +224,22 @@
             <cvs>1,3,4,10,17,18,29</cvs>
         </profile>
 
+        <!-- Hatton's Decoders -->
+        <profile man="79" ver="131,133" name="Hattons DCC Decoder">
+            <locoCvNames>
+                <cv n="33">Headlight function mapping</cv>
+                <cv n="34">Tail light function mapping</cv>
+                <cv n="35">Aux1 function mapping</cv>
+                <cv n="36">Aux2 function mapping</cv>
+                <cv n="49">Headlight Setting</cv>
+                <cv n="50">Tail Light Setting</cv>
+                <cv n="51">Aux1 Setting</cv>
+                <cv n="52">Aux2 Setting</cv>
+                <cv n="61">Self-adjusting Back EMF</cv>
+            </locoCvNames>
+            <cvs>1-6,10,15-18,29,33-36,49-52,61</cvs>
+        </profile>
+
         <!-- Test Decoders -->
         <profile man="255" ver="100" name="Test Decoder">
             <cvs>1-6,10,17,18,29</cvs>

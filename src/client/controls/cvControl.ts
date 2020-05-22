@@ -1,6 +1,5 @@
 import { ControlBase } from "./control";
 import { parseHtml, getById } from "../utils/dom";
-import { LocoCvNames } from "../utils/decoders";
 const html = require("./cvControl.html");
 
 export enum State {
@@ -59,7 +58,7 @@ export class CvControl extends ControlBase {
         this.state = State.clean;
     }
 
-    constructor (parent: HTMLElement, private _cv: number, private _originalValue: number) {
+    constructor (parent: HTMLElement, private _cv: number, private _cvName: string, private _originalValue: number) {
         super();
         if (_originalValue < 0 || _originalValue > 255) throw new Error("Invalid CV value");
         this._init(parent);
@@ -76,10 +75,7 @@ export class CvControl extends ControlBase {
         this._valueElement.oninput = () => this._onValueChanged();
         this._valueElement.readOnly = _readOnlyCVs.has(this._cv);
 
-        const name = LocoCvNames[this._cv];
-        if (name) {
-            getById(control, "cvName").innerText = name;
-        }
+        getById(control, "cvName").innerText = this._cvName ?? "";
 
         return control
     }

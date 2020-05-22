@@ -1,11 +1,15 @@
+type NameMap = { [key : string]: string };
+
 export interface LocoDecoderProfile {
     name: string;
     manufacturer: string;
     cvs: number[];
+    locoCvNames: NameMap;
+    getCvName: (cv: number) => string;
 };
 
-export const Manufactures = {};
-export const LocoCvNames = {};
+export const Manufactures: NameMap = {};
+export const LocoCvNames: NameMap = {};
 export const LocoDecoderProfiles = new Map<number, Map<number, LocoDecoderProfile>>();
 
 function parseData(data: Document) {
@@ -74,6 +78,20 @@ function loadProfile(profile: Element) {
     if (isNaN(manufacturer)) throw new Error(`Invalid manufacturer id encountered: ${rawValue}`);
     const versions = parseNumberList(profile.attributes.getNamedItem("ver").nodeValue);
     const cvs = parseNumberList(profile.getElementsByTagName("cvs")[0].textContent);
+    const locoCvNames: NameMap = {};
+
+    // Load up loco CVs
+    const locoCvElements = profile.getElementsByTagName("locoCvNames");
+    if (locoCvElements.length) {
+        const locoCvs = locoCvElements[0].children;
+        for (let i = 0; i < locoCvs.length; i++) {
+            const node = locoCvs[i];
+            if (node.nodeName !== "cv") continue;
+            const id = node.attributes.getNamedItem("n").nodeValue;
+            if (id in locoCvNames) throw Error(`Duplicate Decoder CV ${id} encountered: ${node.textContent}`);
+            locoCvNames[id] = node.textContent;
+        }
+    }
 
     let decoders = LocoDecoderProfiles.get(manufacturer);
     if (!decoders) {
@@ -86,7 +104,11 @@ function loadProfile(profile: Element) {
         decoders.set(version, {
             name: name,
             manufacturer: Manufactures[manufacturer],
-            cvs: cvs
+            cvs: cvs,
+            locoCvNames: locoCvNames,
+            getCvName: (cv: number) => {
+                return locoCvNames[cv] ?? LocoCvNames[cv] ?? "";
+            }
         });
     }
 }
@@ -129,4 +151,10 @@ export function getLocoDecoderProfile(manufacturer: number, version: number): Lo
 
 export function getLocoScanCvs() {
     return getLocoDecoderProfile(0, 0).cvs;
+}
+
+export function getLocoCvName(manufacturer: number, version: number, cv: number): string {
+    const profile = getLocoDecoderProfile(manufacturer, version);
+    if (!profile) return LocoCvNames[cv] ?? "";
+    return profile.getCvName(cv);
 }
