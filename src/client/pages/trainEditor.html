@@ -1,6 +1,6 @@
 <div class="trainEditor container">
     <div class="title">Edit Train</div>
-    <div class="pageContent">
+    <div class="pageContent"><form autocomplete="off"><!-- To prevent browsers saving this as a street address -->
         <div class="setting">
             <div class="label">Name</div>
             <input data-id="name" type="text" placeholder="e.g. GWR 0-6-0 Tank Engine"/>
@@ -22,11 +22,11 @@
             </div>
         </div>
         <div class="buttons"><button
-            data-id="functionSetup">Functions</button><button
-            data-id="editCVs">CVs</button><br/><button
-            data-id="delete" style="display: none;">Delete</button><button
-            data-id="save">Save</button><button
-            data-id="cancel">Cancel</button>
+            data-id="functionSetup" type="button">Functions</button><button
+            data-id="editCVs" type="button">CVs</button><br/><button
+            data-id="delete" type="button" style="display: none;">Delete</button><button
+            data-id="save" type="button">Save</button><button
+            data-id="cancel" type="button">Cancel</button>
         </div>
-    </div>
+    </form></div>
 </div>
