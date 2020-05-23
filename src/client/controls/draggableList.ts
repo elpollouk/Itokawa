@@ -3,6 +3,7 @@ import { parseHtml, getById } from "../utils/dom";
 const elementHtml = require("./draggableListElement.html");
 
 export type ContentCreator<T> = (data: T) => HTMLElement;
+export type DeleteHandler<T> = (data: T) => Promise<boolean>;
 type PointerEvent = MouseEvent | TouchEvent;
 
 interface ListItem<T> {
@@ -23,6 +24,7 @@ function getPageY(event: PointerEvent) {
 export class DraggableList<T> extends ControlBase {
 
     private readonly _listItems: ListItem<T>[] = [];
+    private _onDelete: DeleteHandler<T> = null;
 
     // Active drag state
     // Allowed extents of dragging
@@ -46,6 +48,20 @@ export class DraggableList<T> extends ControlBase {
         return this._listItems.length;
     }
 
+    get onDelete() {
+        return this._onDelete;
+    }
+
+    set onDelete(handler: DeleteHandler<T>) {
+        if (handler) {
+            this.element.classList.add("deleteEnabled");
+        }
+        else {
+            this.element.classList.remove("deleteEnabled");
+        }
+        this._onDelete = handler;
+    }
+
     constructor(parent: HTMLElement, private readonly _createContent: ContentCreator<T>) {
         super();
         this._init(parent);
@@ -63,7 +79,7 @@ export class DraggableList<T> extends ControlBase {
 
     addItem(data: T) {
         const content = this._createContent(data);
-        const element = this._createItemElement(content);
+        const element = this._createItemElement(content, data);
         this._listItems.push({
             content: content,
             element: element,
@@ -239,9 +255,18 @@ export class DraggableList<T> extends ControlBase {
         }
     }
 
-    private _createItemElement(content: HTMLElement) {
+    private _createItemElement(content: HTMLElement, data: T) {
         const element = parseHtml(elementHtml);
         getById(element, "dragContent").appendChild(content);
+
+        // Delete handlers
+        const deleteButton = getById(element, "delete");
+        deleteButton.onclick = async () => {
+            if (await this._onDelete(data)) {
+                deleteButton.onclick = null;
+                this.removeItem(data);
+            }
+        }; 
 
         // We want to handle both mouse and touch events, so bind them all
         const dragHandle = getById(element, "dragHandle");

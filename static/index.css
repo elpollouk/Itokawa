@@ -73,6 +73,29 @@ a:visited {
 /*
  * Draggable List
  */
+.dragItem .deleteContainer {
+    display: none;
+    width: 1.5em;
+    margin-right: 8px;
+}
+
+.deleteEnabled .dragItem .deleteContainer {
+    display: unset;
+}
+
+.dragItem .deleteContainer button {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border: none;
+    border-radius: 0px;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url(icons/delete.svg);
+    background-repeat: no-repeat;
+    background-position: center;
+    font-weight: bold;
+}
+
 .dragItem {
     display: flex;
     width: 100%;
@@ -750,20 +773,6 @@ a:visited {
     display: flex;
     width: 100%;
     font-size: large;
-}
-
-.functionConfig .deleteContainer {
-    width: 1.5em;
-    margin: -4px;
-    margin-left: -6px;
-    margin-right: 8px;
-}
-
-.functionConfig button {
-    width: 100%;
-    height: 100%;
-    background-color: tomato;
-    font-weight: bold;
 }
 
 .functionConfig .configContainer {

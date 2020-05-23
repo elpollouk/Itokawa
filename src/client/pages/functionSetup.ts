@@ -55,11 +55,6 @@ export class FunctionSetupPage extends Page {
         getById<HTMLInputElement>(content, "name").value = data.name;
         getById<HTMLSelectElement>(content, "mode").value = `${data.mode}`;
         getById<HTMLSelectElement>(content, "function").value = `${data.exec}`;
-        const deleteButton = getById<HTMLButtonElement>(content, "delete");
-        deleteButton.onclick = () => {
-            deleteButton.onclick = null;
-            this._functionList.removeItem(data);
-        }
         return content;
     }
 
@@ -68,6 +63,7 @@ export class FunctionSetupPage extends Page {
         
         const functionList = getById(page, "functionList");
         this._functionList = new DraggableList(functionList, (data) => this._createFunctionUi(data));
+        this._functionList.onDelete = (item) => Promise.resolve(true);
 
         getById(page, "addFunction").onclick = () => this._functionList.addItem({ name: "", mode: FunctionMode.Trigger, exec: "0" });
 
