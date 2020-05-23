@@ -5,7 +5,7 @@ import { client } from "../client";
 import { CvControl, State } from "../controls/cvControl";
 import { RequestType, LocoCvReadRequest, CvValuePair, LocoCvWriteRequest } from "../../common/messages";
 import { CvMap } from "../../common/api";
-import { loadData, getLocoDecoderProfile, LocoDecoderProfile, getLocoScanCvs } from "../utils/decoders";
+import { loadData, getLocoDecoderProfile, LocoDecoderProfile, getLocoScanCvs, getLocoCvName } from "../utils/decoders";
 const html = require("./cvEditor.html");
 
 export class CvEditorPage extends Page {
@@ -16,8 +16,8 @@ export class CvEditorPage extends Page {
     private _decoderText: HTMLElement;
     private _cvContainer: HTMLElement;
     private _cvControls = new Map<number, CvControl>();
-    private _manufacturer: number;
-    private _version: number;
+    private _manufacturer: number = 0;
+    private _version: number = 0;
 
     get cvs(): CvMap {
         const c = {};
@@ -43,7 +43,7 @@ export class CvEditorPage extends Page {
                     const value = params[key];
                     if (!Number.isInteger(value)) continue;
     
-                    this._addCv(cv, value);
+                    this._addCv(cv, getLocoCvName(params[8], params[7], cv), value);
                 }
 
                 // If we don't have any decoder details yet, don't show anything for them to keep the
@@ -79,7 +79,7 @@ export class CvEditorPage extends Page {
         this._decoderText.innerText = decoder || "Unknown decoder";
     }
 
-    private _addCv(cv: number, value: number) {
+    private _addCv(cv: number, cvName: string, value: number) {
         if (cv === 8) {
             this._manufacturer = value;
         }
@@ -89,7 +89,7 @@ export class CvEditorPage extends Page {
         else {
             let control = this._cvControls.get(cv);
             if (!control) {
-                control = new CvControl(this._cvContainer, cv, value);
+                control = new CvControl(this._cvContainer, cv, cvName, value);
                 this._cvControls.set(cv, control);
             }
             else {
@@ -142,8 +142,6 @@ export class CvEditorPage extends Page {
     private _getDecoderProfile(): Promise<LocoDecoderProfile> {
         // Attempt to auto detect the decoder profile
         // Reset the info we have so that we can detect errors
-        this._manufacturer = 0;
-        this._version = 0;
         let message: prompt.PromptControl;
     
         return new Promise<LocoDecoderProfile>((resolve, reject) => {
@@ -176,9 +174,17 @@ export class CvEditorPage extends Page {
                 // Store the details as we encounter them
                 const pair = response.data as CvValuePair;
                 if (pair.cv === 7) {
+                    if (this._version !== pair.value) {
+                        this._cvContainer.innerHTML = "";
+                        this._cvControls.clear();
+                    }
                     this._version = pair.value;
                 }
                 else if (pair.cv === 8) {
+                    if (this._manufacturer !== pair.value) {
+                        this._cvContainer.innerHTML = "";
+                        this._cvControls.clear();
+                    }
                     this._manufacturer = pair.value;
                 }
                 else {
@@ -205,7 +211,8 @@ export class CvEditorPage extends Page {
                 }
                 else {
                     const data = response.data as CvValuePair;
-                    this._addCv(data.cv, data.value);
+                    const cvName = getLocoCvName(this._manufacturer, this._version, data.cv);
+                    this._addCv(data.cv, cvName, data.value);
                 }
             });
         })
@@ -244,7 +251,8 @@ export class CvEditorPage extends Page {
                 }
                 else {
                     const data = response.data as CvValuePair;
-                    this._addCv(data.cv, data.value);
+                    const cvName = getLocoCvName(this._manufacturer, this._version, data.cv);
+                    this._addCv(data.cv, cvName, data.value);
                 }
             });
             return false;
