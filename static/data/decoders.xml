@@ -237,7 +237,7 @@
                 <cv n="52">Aux2 Setting</cv>
                 <cv n="61">Self-adjusting Back EMF</cv>
             </locoCvNames>
-            <cvs>1-6,15-18,29,33-36,49-52,61</cvs>
+            <cvs>1-6,10,15-18,29,33-36,49-52,61</cvs>
         </profile>
 
         <!-- Test Decoders -->
