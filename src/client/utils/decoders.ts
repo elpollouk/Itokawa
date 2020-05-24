@@ -1,4 +1,4 @@
-type NameMap = { [key : string]: string };
+type NameMap = { [key: string]: string };
 
 export interface LocoDecoderProfile {
     name: string;
