@@ -15,6 +15,7 @@ export class TrainEditPage extends Page {
     path: string = TrainEditConstructor.path;
     content: HTMLElement;
 
+    private _params: TrainEditParams;
     private _id: number;
     private readonly _api: IApiClient;
     private _functions: FunctionConfig[] = [];
@@ -31,8 +32,8 @@ export class TrainEditPage extends Page {
   
     constructor (params: TrainEditParams) {
         super();
-        params = params || {};
-        this._id = params.id ? params.id : 0;
+        this._params = params || {};
+        this._id =  this._params.id ?? 0;
         this._api = client.api;
         this.content = this._buildUi();
     }
@@ -76,26 +77,44 @@ export class TrainEditPage extends Page {
     }
 
     private async _loadDetails(previousPage: Page) {
-        if (!this._id) return;
- 
-        const loco = await this._api.getLoco(this._id);
+        let name: string;
+        let address: number;
+        let speeds: number[] = [];
 
-        this._nameElement.value = loco.name;
-        this._addressElement.value = `${loco.address}`;
-        this._functions = loco.functions || [];
-        this._cvs = loco.cvs || {};
-        if (loco.discrete) {
-            this._slowElement.value = `${loco.speeds[0]}`;
-            this._mediumElement.value = `${loco.speeds[1]}`;
-            this._fastElement.value = `${loco.speeds[2]}`;
+        if (this._id) {
+            const loco = await this._api.getLoco(this._id);
+
+            name = loco.name;
+            address = loco.address;
+            this._functions = loco.functions || [];
+            this._cvs = loco.cvs || {};
+            if (loco.discrete) {
+                speeds = loco.speeds;
+            }
+            else {
+                speeds = [loco.maxSpeed];
+            }
+
+            this._deleteButton.style.display = "";
+        }
+
+        
+
+        // Update the UI elemets with the values we'd found
+        this._nameElement.value = name ?? "";
+        this._addressElement.value = `${address ?? ""}`;
+        if (speeds.length === 3) {
+            this._slowElement.value = `${speeds[0]}`;
+            this._mediumElement.value = `${speeds[1]}`;
+            this._fastElement.value = `${speeds[2]}`;
             this._discreteElement.checked = true;
             this._discreteElement.onchange(null);
         }
-        else {
-            this._maxSpeedEelement.value = `${loco.maxSpeed}`;
+        else if (speeds.length !== 0) {
+            this._maxSpeedEelement.value = `${speeds[0]}`;
         }
-        this._deleteButton.style.display = "";
 
+        // Get the latest CV and function values if returning from a sub setup page
         if (previousPage instanceof FunctionSetupPage) {
             if (this._haveFunctionsChanged(previousPage.functions)) {
                 this._functions = previousPage.functions;
