@@ -138,9 +138,11 @@ export class TrainEditPage extends Page {
     private _updatePageParams() {
         const params: TrainEditParams = {}
 
+        // Determine if UI elements contain valid values before we update each paramter
         if (this._id) params.id = this._id;
         if (this._nameElement.value) params.name = this._nameElement.value;
         if (this._addressElement.value) params.address = parseInt(this._addressElement.value);
+        // Pack the speed values. This is different to the database format.
         if (this._discreteElement.checked) {
             const min = parseInt(this._slowElement.value);
             const med = parseInt(this._mediumElement.value);
@@ -216,6 +218,7 @@ export class TrainEditPage extends Page {
     }
 
     private _cancel() {
+        // Revert any potentially updated page parameters
         const params: TrainEditParams = {};
         if (this._id) params.id = this._id;
         nav.replaceParams(params);
@@ -241,7 +244,6 @@ export class TrainEditPage extends Page {
             else {
                 speed = parseInt(this._maxSpeedEelement.value);
             }
-
 
             let promise: Promise<any>;
             if (this._id) {
