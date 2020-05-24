@@ -22,8 +22,13 @@ export class CvEditorPage extends Page {
     get cvs(): CvMap {
         const c = {};
         this._cvControls.forEach((cv, key) => c[key] = cv.value);
-        c[8] = this._manufacturer;
-        c[7] = this._version;
+        if (this._manufacturer && this._version) {
+            // We don't want to set the manufacturer or version if they've not been set
+            // to prevent the train editor page for prompting us to save if there are
+            // no CVs.
+            c[8] = this._manufacturer;
+            c[7] = this._version;
+        }
         return c;
     }
 
