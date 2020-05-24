@@ -22,8 +22,10 @@ export class CvEditorPage extends Page {
     get cvs(): CvMap {
         const c = {};
         this._cvControls.forEach((cv, key) => c[key] = cv.value);
-        c[8] = this._manufacturer;
-        c[7] = this._version;
+        if (this._manufacturer && this._version) {
+            c[8] = this._manufacturer;
+            c[7] = this._version;
+        }
         return c;
     }
 
