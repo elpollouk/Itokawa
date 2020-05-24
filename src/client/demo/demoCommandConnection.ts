@@ -1,6 +1,6 @@
 import { Bindable } from "../utils/bindable";
 import { ICommandConnection, ConnectionState, RequestCallback } from "../client";
-import { RequestType, CommandResponse, LocoSpeedRequest, TransportMessage, generateMessageTag, CvValuePair, LocoCvReadRequest, LocoCvWriteRequest } from "../../common/messages";
+import { RequestType, CommandResponse, LocoSpeedRequest, TransportMessage, generateMessageTag, CvValuePair, LocoCvReadRequest, LocoCvWriteRequest, LocoFunctionRequest, FunctionAction, LocoSpeedRefreshRequest, LocoFunctionRefreshRequest } from "../../common/messages";
 import { timestamp } from "../../common/time";
 import { CommandStationState } from "../../devices/commandStations/commandStation";
 import { timeout } from "../../utils/promiseUtils";
@@ -26,6 +26,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
     publicUrl: string;
 
     private _locoStates = new Map<number, LocoState>();
+    private _functionStates = new Map<number, Map<number, boolean>>();
     private _cvs = new Map<number, number>([
         [1, 3],
         [3, 5],
@@ -74,12 +75,20 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                 this._handleLocoSpeed(rawData as LocoSpeedRequest, callback);
                 break;
 
+            case RequestType.LocoFunction:
+                this._handleLocoFunction(rawData as LocoFunctionRequest, callback);
+                break;
+
             case RequestType.EmergencyStop:
                 this._handleEmergencyStop(callback);
                 break;
 
             case RequestType.LocoSpeedRefresh:
                 this._handleLocoSpeedRefresh(callback);
+                break;
+
+            case RequestType.LocoFunctionRefresh:
+                this._handleLocoFunctionRefresh(rawData as LocoFunctionRefreshRequest, callback);
                 break;
 
             case RequestType.LocoCvRead:
@@ -89,7 +98,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
             case RequestType.LocoCvWrite:
                 this._handleLocoCvWrite(rawData as LocoCvWriteRequest, callback);
                 break;
-    
+
             default:
                 callback(new Error(`Unrecognised request type: ${type}`));
         }
@@ -119,7 +128,37 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                 type: RequestType.LocoSpeed,
                 data: request
             } as TransportMessage);
-        })
+        });
+    }
+
+    private _handleLocoFunction(request: LocoFunctionRequest, callback: RequestCallback) {
+        this.state = ConnectionState.Busy;
+
+        const isStatefulAction = request.action !== FunctionAction.Trigger;
+        if (isStatefulAction) {
+            let functionMap = this._functionStates.get(request.locoId);
+            if (!functionMap) {
+                functionMap = new Map<number, boolean>();
+                this._functionStates.set(request.locoId, functionMap);
+            }
+            functionMap.set(request.function, request.action === FunctionAction.LatchOn);
+        }
+
+        setImmediate(() => {
+            this.state = ConnectionState.Idle;
+            callback(null, {
+                lastMessage: true,
+                data: "OK"
+            });
+            if (!isStatefulAction) return;
+
+            this.emit("message", {
+                tag: generateMessageTag(),
+                requestTime: timestamp(),
+                type: RequestType.LocoFunction,
+                data: request
+            } as TransportMessage);
+        });
     }
 
     private _handleEmergencyStop(callback: RequestCallback) {
@@ -166,6 +205,31 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                         reverse: loco[1].reverse
                     }
                 });
+            }
+
+            callback(null, {
+                lastMessage: true,
+                data: "OK"
+            });
+        });
+    }
+
+    private _handleLocoFunctionRefresh(request: LocoSpeedRefreshRequest, callback: RequestCallback) {
+        this.state = ConnectionState.Idle;
+
+        setImmediate(() => {
+            const functionMap = this._functionStates.get(request.locoId);
+            if (functionMap) {
+                for (const [func, state] of functionMap.entries()) {
+                    callback(null, {
+                        lastMessage: false,
+                        data: {
+                            locoId: request.locoId,
+                            function: func,
+                            action: state ? FunctionAction.LatchOn : FunctionAction.LatchOff
+                        }
+                    });
+                }
             }
 
             callback(null, {

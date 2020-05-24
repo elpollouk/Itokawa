@@ -11,7 +11,7 @@ interface ListItem<T> {
     content: HTMLElement,
     data: T,
     mid?: number;
-    height?: number;        
+    height?: number;
 }
 
 function getPageY(event: PointerEvent) {
@@ -144,7 +144,7 @@ export class DraggableList<T> extends ControlBase {
         element.classList.add("dragging");
         this._startY = getPageY(event);
         this._currentMid = null;
-    
+
         // Fetch and cache the current list item positions and sizes
         for (const item of this._listItems) {
             const rect = item.element.getBoundingClientRect();
@@ -162,15 +162,15 @@ export class DraggableList<T> extends ControlBase {
             // The height is used to update the mid value after shifting
             item.height = rect.bottom - rect.top;
         }
-    
+
         // Calculate new list extents to put a limit on dragging
         const rect = this.element.getBoundingClientRect();
         this._minY = rect.top - 10;
         this._maxY = rect.bottom + 10;
-    
+
         // Record this element as being dragged
         this._draggingElement = element;
-    
+
         return false;
     }
 
@@ -179,13 +179,13 @@ export class DraggableList<T> extends ControlBase {
 
         // Calculate the current drag offset
         let dY = getPageY(event) - this._startY;
-    
+
         // Clamp dragging within the bounds of the list
         if ((this._draggingElementTop + dY) < this._minY) dY = this._minY - this._draggingElementTop;
         else if ((this._draggingElementBottom + dY) > this._maxY) dY = this._maxY - this._draggingElementBottom;
-    
+
         element.style.transform = `translateY(${dY}px)`;
-    
+
         // Are we processing elements originally above the element being dragged?
         let above = true;
         const currentTop = this._draggingElementTop + dY;
@@ -211,7 +211,7 @@ export class DraggableList<T> extends ControlBase {
                 item.element.classList.remove("shiftDown");
             }
         }
-    
+
         return false;
     }
 
@@ -220,7 +220,7 @@ export class DraggableList<T> extends ControlBase {
 
         element.classList.remove("dragging");
         element.style.transform = "";
-    
+
         // First pass over the list to update the top values to ensure the correct sort order
         for (const item of this._listItems) {
             if (item.element === element) {
@@ -239,7 +239,7 @@ export class DraggableList<T> extends ControlBase {
             this._listItems.sort((a, b) => a.mid - b.mid);
             this._rebuildUi();
         }
-    
+
         this._draggingElement = null;
         return false;
     }
