@@ -8,7 +8,10 @@ import { FunctionSetupConstructor, FunctionSetupPage } from "./functionSetup";
 const content = require("./trainEditor.html");
 
 export interface TrainEditParams {
-    id?: number
+    id?: number,
+    name?: string
+    address?: number;
+    speeds?: number[];
 }
 
 export class TrainEditPage extends Page {
@@ -63,7 +66,7 @@ export class TrainEditPage extends Page {
         getById(page, "functionSetup").onclick = () => this._functionSetup();
         getById(page, "editCVs").onclick = () => this._editCvs();
         getById(page, "save").onclick = () => this._save(true);
-        getById(page, "cancel").onclick = () => nav.back();
+        getById(page, "cancel").onclick = () => this._cancel();
 
         return page;
     }
@@ -98,11 +101,14 @@ export class TrainEditPage extends Page {
             this._deleteButton.style.display = "";
         }
 
-        
+        // Get overrides from parameters passed to the page
+        name = this._params.name ?? name;
+        address = this._params.address ?? address;
+        speeds = this._params.speeds ?? speeds;
 
         // Update the UI elemets with the values we'd found
         this._nameElement.value = name ?? "";
-        this._addressElement.value = `${address ?? ""}`;
+        if (address) this._addressElement.value = `${address}`;
         if (speeds.length === 3) {
             this._slowElement.value = `${speeds[0]}`;
             this._mediumElement.value = `${speeds[1]}`;
@@ -129,6 +135,27 @@ export class TrainEditPage extends Page {
         }
     }
 
+    private _updatePageParams() {
+        const params: TrainEditParams = {}
+
+        if (this._id) params.id = this._id;
+        if (this._nameElement.value) params.name = this._nameElement.value;
+        if (this._addressElement.value) params.address = parseInt(this._addressElement.value);
+        if (this._discreteElement.checked) {
+            const min = parseInt(this._slowElement.value);
+            const med = parseInt(this._mediumElement.value);
+            const max = parseInt(this._fastElement.value);
+            if (!isNaN(min) && !isNaN(med) && !isNaN(max)) params.speeds = [min, med, max];
+        }
+        else {
+            const value = parseInt(this._maxSpeedEelement.value);
+            if (!isNaN(value)) params.speeds = [value];
+        }
+
+        this._params = params;
+        nav.replaceParams(params);
+    }
+
     private _haveFunctionsChanged(newFunctions: FunctionConfig[]) {
         if (this._functions.length != newFunctions.length) return true;
         for (let i = 0; i < newFunctions.length; i++) {
@@ -152,6 +179,7 @@ export class TrainEditPage extends Page {
             if (!yes) return;
             try {
                 await this._api.deleteLoco(this._id);
+                nav.replaceParams({});
                 nav.back();
             }
             catch (err) {
@@ -176,13 +204,22 @@ export class TrainEditPage extends Page {
     }
 
     private _functionSetup() {
+        this._updatePageParams();
         nav.open(FunctionSetupConstructor.path, this._functions);
         return false;
     }
 
     private _editCvs() {
+        this._updatePageParams();
         nav.open(CvEditorConstructor.path, this._cvs);
         return false;
+    }
+
+    private _cancel() {
+        const params: TrainEditParams = {};
+        if (this._id) params.id = this._id;
+        nav.replaceParams(params);
+        nav.back();
     }
 
     private _save(navBackOnSuccess: boolean) {
@@ -213,15 +250,14 @@ export class TrainEditPage extends Page {
             else {
                 promise = this._api.addLoco(name, address, speed, this._functions, this._cvs).then((loco) => {
                     this._id = loco.id;
-                    nav.replaceParams({
-                        id: loco.id
-                    });
+                    this._updatePageParams();
                 });
             }
 
             promise.then(() => {
-                if (navBackOnSuccess)
-                    nav.back();
+                if (!navBackOnSuccess) return;
+                this._updatePageParams();
+                nav.back();
             }).catch((err) => {
                 console.error(err);
                 prompt.error("Failed to save train details.");
