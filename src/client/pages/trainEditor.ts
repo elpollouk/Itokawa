@@ -69,39 +69,45 @@ export class TrainEditPage extends Page {
 
     onEnter(previousPage: Page) {
         super.onEnter(previousPage);
-        if (this._id) this._api.getLoco(this._id).then((loco) => {
-            this._nameElement.value = loco.name;
-            this._addressElement.value = `${loco.address}`;
-            this._functions = loco.functions || [];
-            this._cvs = loco.cvs || {};
-            if (loco.discrete) {
-                this._slowElement.value = `${loco.speeds[0]}`;
-                this._mediumElement.value = `${loco.speeds[1]}`;
-                this._fastElement.value = `${loco.speeds[2]}`;
-                this._discreteElement.checked = true;
-                this._discreteElement.onchange(null);
-            }
-            else {
-                this._maxSpeedEelement.value = `${loco.maxSpeed}`;
-            }
-            this._deleteButton.style.display = "";
-
-            if (previousPage instanceof FunctionSetupPage) {
-                if (this._haveFunctionsChanged(previousPage.functions)) {
-                    this._functions = previousPage.functions;
-                    this._save(false);
-                }
-            }
-            else if (previousPage instanceof CvEditorPage) {
-                if (this._haveCVsChanged(previousPage.cvs)) {
-                    this._cvs = previousPage.cvs;
-                    this._save(false);
-                }
-            }
-        }).catch((err) => {
+        this._loadDetails(previousPage).catch((err) => {
             console.error(err);
             prompt.error("Failed to load train details.");
         })
+    }
+
+    private async _loadDetails(previousPage: Page) {
+        if (!this._id) return;
+ 
+        const loco = await this._api.getLoco(this._id);
+
+        this._nameElement.value = loco.name;
+        this._addressElement.value = `${loco.address}`;
+        this._functions = loco.functions || [];
+        this._cvs = loco.cvs || {};
+        if (loco.discrete) {
+            this._slowElement.value = `${loco.speeds[0]}`;
+            this._mediumElement.value = `${loco.speeds[1]}`;
+            this._fastElement.value = `${loco.speeds[2]}`;
+            this._discreteElement.checked = true;
+            this._discreteElement.onchange(null);
+        }
+        else {
+            this._maxSpeedEelement.value = `${loco.maxSpeed}`;
+        }
+        this._deleteButton.style.display = "";
+
+        if (previousPage instanceof FunctionSetupPage) {
+            if (this._haveFunctionsChanged(previousPage.functions)) {
+                this._functions = previousPage.functions;
+                this._save(false);
+            }
+        }
+        else if (previousPage instanceof CvEditorPage) {
+            if (this._haveCVsChanged(previousPage.cvs)) {
+                this._cvs = previousPage.cvs;
+                this._save(false);
+            }
+        }
     }
 
     private _haveFunctionsChanged(newFunctions: FunctionConfig[]) {
@@ -161,7 +167,6 @@ export class TrainEditPage extends Page {
     }
 
     private _save(navBackOnSuccess: boolean) {
-        // TODO - Add protections against overlapped actions
         if (!this._validate()) return;
 
         prompt.confirm("Are you sure you want to save this train?").then((yes) => {
