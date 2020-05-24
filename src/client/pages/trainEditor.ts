@@ -19,7 +19,6 @@ export class TrainEditPage extends Page {
     content: HTMLElement;
 
     private _params: TrainEditParams;
-    private _id: number;
     private readonly _api: IApiClient;
     private _functions: FunctionConfig[] = [];
     private _cvs: CvMap = {};
@@ -36,7 +35,6 @@ export class TrainEditPage extends Page {
     constructor (params: TrainEditParams) {
         super();
         this._params = params || {};
-        this._id =  this._params.id ?? 0;
         this._api = client.api;
         this.content = this._buildUi();
     }
@@ -84,8 +82,8 @@ export class TrainEditPage extends Page {
         let address: number;
         let speeds: number[] = [];
 
-        if (this._id) {
-            const loco = await this._api.getLoco(this._id);
+        if (this._params.id) {
+            const loco = await this._api.getLoco(this._params.id);
 
             name = loco.name;
             address = loco.address;
@@ -136,10 +134,9 @@ export class TrainEditPage extends Page {
     }
 
     private _updatePageParams() {
-        const params: TrainEditParams = {}
+        const params: TrainEditParams = { id: this._params.id };
 
         // Determine if UI elements contain valid values before we update each paramter
-        if (this._id) params.id = this._id;
         if (this._nameElement.value) params.name = this._nameElement.value;
         if (this._addressElement.value) params.address = parseInt(this._addressElement.value);
         // Pack the speed values. This is different to the database format.
@@ -180,7 +177,7 @@ export class TrainEditPage extends Page {
         prompt.confirm("Are you sure you want to delete this train?").then(async (yes) => {
             if (!yes) return;
             try {
-                await this._api.deleteLoco(this._id);
+                await this._api.deleteLoco(this._params.id);
                 nav.replaceParams({});
                 nav.back();
             }
@@ -219,8 +216,7 @@ export class TrainEditPage extends Page {
 
     private _cancel() {
         // Revert any potentially updated page parameters
-        const params: TrainEditParams = {};
-        if (this._id) params.id = this._id;
+        const params: TrainEditParams = { id: this._params.id };
         nav.replaceParams(params);
         nav.back();
     }
@@ -246,12 +242,12 @@ export class TrainEditPage extends Page {
             }
 
             let promise: Promise<any>;
-            if (this._id) {
-                promise = this._api.updateLoco(this._id, name, address, speed, this._functions, this._cvs);
+            if (this._params.id) {
+                promise = this._api.updateLoco(this._params.id, name, address, speed, this._functions, this._cvs);
             }
             else {
                 promise = this._api.addLoco(name, address, speed, this._functions, this._cvs).then((loco) => {
-                    this._id = loco.id;
+                    this._params.id = loco.id;
                     this._updatePageParams();
                 });
             }
