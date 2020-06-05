@@ -239,6 +239,92 @@
             </locoCvNames>
             <cvs>1-6,10,15-18,29,33-36,49-52,61</cvs>
         </profile>
+        
+        <!-- ESU Decoders -->
+        <profile man="151" ver="255" name="ESU LokSound 5">
+            <locoCvNames>
+                <cv n="47">Protocol Selection</cv>
+                <cv n="49">Extended Configuration #1</cv>
+                <cv n="50">Analogue mode</cv>
+                <cv n="51">«K Slow» Cutoff</cv>
+                <cv n="52">BEMF Param. «K Slow»</cv>
+                <cv n="53">Control Reference voltage</cv>
+                <cv n="54">Load control Parameter«K»</cv>
+                <cv n="55">Load control Parameter«I»</cv>
+                <cv n="56">BEMF Influence at VMin</cv>
+                <cv n="57">Steam chuff synchronisation #1</cv>
+                <cv n="58">Steam chuff synchronisation #2</cv>
+                <cv n="63">Sound volume «Master»</cv>
+                <cv n="64">Brake sound threshold «Brake On»</cv>
+                <cv n="65">Brake sound threshold «Brake Off»</cv>
+                <cv n="101">Shunting Mode Trim</cv>
+                <cv n="102">Brake Mode Exit Delay</cv>
+                <cv n="103">Load adjustment &quot;Optional Load&quot;</cv>
+                <cv n="104">Load adjustment &quot;Primary Load&quot;</cv>
+                <cv n="111">Gearbox backlash</cv>
+                <cv n="112">Frequency for Flashing light effects</cv>
+                <cv n="113">Power Fail Bypass</cv>
+                <cv n="116">Slow speed BEMF Sampling period</cv>
+                <cv n="117">Full speed BEMF Sampling period</cv>
+                <cv n="118">Slow speed BEMF Measurement gap length VMin</cv>
+                <cv n="119">Full speed BEMF Measurement gap length Vmax</cv>
+                <cv n="123">ABC Mode &quot;Slow drive&quot;</cv>
+                <cv n="124">Extended Configuration #2</cv>
+                <cv n="125">Start voltage Analog DC</cv>
+                <cv n="126">Maximum speed Analog DC</cv>
+                <cv n="127">Start voltage Analog AC</cv>
+                <cv n="128">Maximum speed Analog AC</cv>
+                <cv n="129">Analog Functions &quot;Hysteresis&quot;</cv>
+                <cv n="130">Analog Motor &quot;Hysteresis&quot;</cv>
+                <cv n="132">Grade Crossing Hold Time</cv>
+                <cv n="133">Sound Fader</cv>
+                <cv n="134">ABC-Mode &quot;Sensibility&quot;</cv>
+                <cv n="138">Smoke Unit Trim Fan</cv>
+                <cv n="139">Smoke Unit Trim Temperature</cv>
+                <cv n="140">Smoke TimeOut</cv>
+                <cv n="141">Smoke Chuff Min</cv>
+                <cv n="142">Smoke Chuff max</cv>
+                <cv n="143">Smoke Chuff Length</cv>
+                <cv n="144">Smoke Pre Heat Temperature</cv>
+                <cv n="149">ABC Shuttle Train Holdtimet</cv>
+                <cv n="150">HLU Speedlimit 1</cv>
+                <cv n="151">HLU Speedlimit 2 (U)</cv>
+                <cv n="152">HLU Speedlimit 3</cv>
+                <cv n="153">HLU Speedlimit 4 (L)</cv>
+                <cv n="154">HLU Speedlimit 5</cv>
+                <cv n="155">Sound CV 1</cv>
+                <cv n="156">Sound CV 2</cv>
+                <cv n="157">Sound CV 3</cv>
+                <cv n="158">Sound CV 4</cv>
+                <cv n="159">Sound CV 5</cv>
+                <cv n="160">Sound CV 6</cv>
+                <cv n="161">Sound CV 7</cv>
+                <cv n="162">Sound CV 8</cv>
+                <cv n="163">Sound CV 9</cv>
+                <cv n="164">Sound CV 10</cv>
+                <cv n="165">Sound CV 11</cv>
+                <cv n="166">Sound CV 12</cv>
+                <cv n="167">Sound CV 13</cv>
+                <cv n="168">Sound CV 14</cv>
+                <cv n="169">Sound CV 15</cv>
+                <cv n="170">Sound CV 16</cv>
+                <cv n="179">Brake Function 1 Deceleration</cv>
+                <cv n="180">Brake Function 2 Deceleration</cv>
+                <cv n="181">Brake Function 3 Deceleration</cv>
+                <cv n="182">Brake Function 1 max. Speed</cv>
+                <cv n="183">Brake Function 2 max. Speed</cv>
+                <cv n="184">Brake Function 3 max. Speed</cv>
+                <cv n="246">Automatic decoupling Driving speed</cv>
+                <cv n="247">Decoupling - Removing time</cv>
+                <cv n="248">Decoupling - Pushing time</cv>
+                <cv n="249">Minimum steam chuff distance</cv>
+                <cv n="250">Secondary steam chuff trigger</cv>
+                <cv n="253">Constant brake mode</cv>
+                <cv n="254">Constant braking distance forward</cv>
+                <cv n="255">Constant braking distance backward</cv>
+            </locoCvNames>
+            <cvs>1-9,13-19,21-24,27-29,31-32,47,49-58,63-95,101-106,111-113,116-119,123-130,132-134,138-144,149-170,179-184,246-250,253-255</cvs>
+        </profile>
 
         <!-- Test Decoders -->
         <profile man="255" ver="100" name="Test Decoder">
