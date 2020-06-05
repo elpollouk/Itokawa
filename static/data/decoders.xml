@@ -244,6 +244,16 @@
         <profile man="151" ver="9" name="ESU LokSound 5">
             <locoCvNames>
                 <cv n="47">Protocol Selection</cv>
+                <cv n="49">Extended Configuration #1</cv>
+                <cv n="50">Analogue mode</cv>
+                <cv n="51">«K Slow» Cutoff</cv>
+                <cv n="52">BEMF Param. «K Slow»</cv>
+                <cv n="53">Control Reference voltage</cv>
+                <cv n="54">Load control Parameter«K»</cv>
+                <cv n="55">Load control Parameter«I»</cv>
+                <cv n="56">BEMF Influence at VMin</cv>
+                <cv n="57">Steam chuff synchronisation #1</cv>
+                <cv n="58">Steam chuff synchronisation #2</cv>
             </locoCvNames>
             <cvs>1-9,13-19,21-24,27-29,31-32,47,49-58,63-95,101-106,111-113,116-119,123-130,132-134,138-144,149-170,179-184,246-250,253-255</cvs>
         </profile>
