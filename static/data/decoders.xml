@@ -241,7 +241,7 @@
         </profile>
         
         <!-- ESU Decoders -->
-        <profile man="151" ver="9" name="ESU LokSound 5">
+        <profile man="151" ver="255" name="ESU LokSound 5">
             <locoCvNames>
                 <cv n="47">Protocol Selection</cv>
                 <cv n="49">Extended Configuration #1</cv>
