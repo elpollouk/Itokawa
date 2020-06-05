@@ -292,6 +292,36 @@
                 <cv n="152">HLU Speedlimit 3</cv>
                 <cv n="153">HLU Speedlimit 4 (L)</cv>
                 <cv n="154">HLU Speedlimit 5</cv>
+                <cv n="155">Sound CV 1</cv>
+                <cv n="156">Sound CV 2</cv>
+                <cv n="157">Sound CV 3</cv>
+                <cv n="158">Sound CV 4</cv>
+                <cv n="159">Sound CV 5</cv>
+                <cv n="160">Sound CV 6</cv>
+                <cv n="161">Sound CV 7</cv>
+                <cv n="162">Sound CV 8</cv>
+                <cv n="163">Sound CV 9</cv>
+                <cv n="164">Sound CV 10</cv>
+                <cv n="165">Sound CV 11</cv>
+                <cv n="166">Sound CV 12</cv>
+                <cv n="167">Sound CV 13</cv>
+                <cv n="168">Sound CV 14</cv>
+                <cv n="169">Sound CV 15</cv>
+                <cv n="170">Sound CV 16</cv>
+                <cv n="179">Brake Function 1 Deceleration</cv>
+                <cv n="180">Brake Function 2 Deceleration</cv>
+                <cv n="181">Brake Function 3 Deceleration</cv>
+                <cv n="182">Brake Function 1 max. Speed</cv>
+                <cv n="183">Brake Function 2 max. Speed</cv>
+                <cv n="184">Brake Function 3 max. Speed</cv>
+                <cv n="246">Automatic decoupling Driving speed</cv>
+                <cv n="247">Decoupling - Removing time</cv>
+                <cv n="248">Decoupling - Pushing time</cv>
+                <cv n="249">Minimum steam chuff distance</cv>
+                <cv n="250">Secondary steam chuff trigger</cv>
+                <cv n="253">Constant brake mode</cv>
+                <cv n="254">Constant braking distance forward</cv>
+                <cv n="255">Constant braking distance backward</cv>
             </locoCvNames>
             <cvs>1-9,13-19,21-24,27-29,31-32,47,49-58,63-95,101-106,111-113,116-119,123-130,132-134,138-144,149-170,179-184,246-250,253-255</cvs>
         </profile>
