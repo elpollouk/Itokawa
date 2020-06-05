@@ -276,6 +276,22 @@
                 <cv n="128">Maximum speed Analog AC</cv>
                 <cv n="129">Analog Functions &quot;Hysteresis&quot;</cv>
                 <cv n="130">Analog Motor &quot;Hysteresis&quot;</cv>
+                <cv n="132">Grade Crossing Hold Time</cv>
+                <cv n="133">Sound Fader</cv>
+                <cv n="134">ABC-Mode &quot;Sensibility&quot;</cv>
+                <cv n="138">Smoke Unit Trim Fan</cv>
+                <cv n="139">Smoke Unit Trim Temperature</cv>
+                <cv n="140">Smoke TimeOut</cv>
+                <cv n="141">Smoke Chuff Min</cv>
+                <cv n="142">Smoke Chuff max</cv>
+                <cv n="143">Smoke Chuff Length</cv>
+                <cv n="144">Smoke Pre Heat Temperature</cv>
+                <cv n="149">ABC Shuttle Train Holdtimet</cv>
+                <cv n="150">HLU Speedlimit 1</cv>
+                <cv n="151">HLU Speedlimit 2 (U)</cv>
+                <cv n="152">HLU Speedlimit 3</cv>
+                <cv n="153">HLU Speedlimit 4 (L)</cv>
+                <cv n="154">HLU Speedlimit 5</cv>
             </locoCvNames>
             <cvs>1-9,13-19,21-24,27-29,31-32,47,49-58,63-95,101-106,111-113,116-119,123-130,132-134,138-144,149-170,179-184,246-250,253-255</cvs>
         </profile>
