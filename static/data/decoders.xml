@@ -239,6 +239,14 @@
             </locoCvNames>
             <cvs>1-6,10,15-18,29,33-36,49-52,61</cvs>
         </profile>
+        
+        <!-- ESU Decoders -->
+        <profile man="151" ver="9" name="ESU LokSound 5">
+            <locoCvNames>
+                <cv n="47">Protocol Selection</cv>
+            </locoCvNames>
+            <cvs>1-9,13-19,21-24,27-29,31-32,47,49-58,63-95,101-106,111-113,116-119,123-130,132-134,138-144,149-170,179-184,246-250,253-255</cvs>
+        </profile>
 
         <!-- Test Decoders -->
         <profile man="255" ver="100" name="Test Decoder">
