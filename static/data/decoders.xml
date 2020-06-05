@@ -254,6 +254,28 @@
                 <cv n="56">BEMF Influence at VMin</cv>
                 <cv n="57">Steam chuff synchronisation #1</cv>
                 <cv n="58">Steam chuff synchronisation #2</cv>
+                <cv n="63">Sound volume «Master»</cv>
+                <cv n="64">Brake sound threshold «Brake On»</cv>
+                <cv n="65">Brake sound threshold «Brake Off»</cv>
+                <cv n="101">Shunting Mode Trim</cv>
+                <cv n="102">Brake Mode Exit Delay</cv>
+                <cv n="103">Load adjustment &quot;Optional Load&quot;</cv>
+                <cv n="104">Load adjustment &quot;Primary Load&quot;</cv>
+                <cv n="111">Gearbox backlash</cv>
+                <cv n="112">Frequency for Flashing light effects</cv>
+                <cv n="113">Power Fail Bypass</cv>
+                <cv n="116">Slow speed BEMF Sampling period</cv>
+                <cv n="117">Full speed BEMF Sampling period</cv>
+                <cv n="118">Slow speed BEMF Measurement gap length VMin</cv>
+                <cv n="119">Full speed BEMF Measurement gap length Vmax</cv>
+                <cv n="123">ABC Mode &quot;Slow drive&quot;</cv>
+                <cv n="124">Extended Configuration #2</cv>
+                <cv n="125">Start voltage Analog DC</cv>
+                <cv n="126">Maximum speed Analog DC</cv>
+                <cv n="127">Start voltage Analog AC</cv>
+                <cv n="128">Maximum speed Analog AC</cv>
+                <cv n="129">Analog Functions &quot;Hysteresis&quot;</cv>
+                <cv n="130">Analog Motor &quot;Hysteresis&quot;</cv>
             </locoCvNames>
             <cvs>1-9,13-19,21-24,27-29,31-32,47,49-58,63-95,101-106,111-113,116-119,123-130,132-134,138-144,149-170,179-184,246-250,253-255</cvs>
         </profile>
