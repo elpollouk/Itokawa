@@ -239,6 +239,11 @@
             </locoCvNames>
             <cvs>1-6,10,15-18,29,33-36,49-52,61</cvs>
         </profile>
+
+        <!-- Zimo Decoders -->
+        <profile man="145" ver="255" name="MX645">
+            <cvs>1-6,9-10,13-14,17-19,21-24,27-29,33-46,49-95,105-110,112-147,151-177,181-191,250</cvs>
+        </profile>
         
         <!-- ESU Decoders -->
         <profile man="151" ver="255" name="ESU LokSound 5">
