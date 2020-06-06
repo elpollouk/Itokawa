@@ -242,6 +242,29 @@
 
         <!-- Zimo Decoders -->
         <profile man="145" ver="255" name="MX645">
+            <locoCvNames>
+                <cv n="33">Function map F0 forward</cv>
+                <cv n="34">Function map F0 reverse</cv>
+                <cv n="35">Function map F1</cv>
+                <cv n="36">Function map F2</cv>
+                <cv n="37">Function map F3</cv>
+                <cv n="38">Function map F4</cv>
+                <cv n="39">Function map F5</cv>
+                <cv n="40">Function map F6</cv>
+                <cv n="41">Function map F7</cv>
+                <cv n="42">Function map F8</cv>
+                <cv n="43">Function map F9</cv>
+                <cv n="44">Function map F10</cv>
+                <cv n="45">Function map F11</cv>
+                <cv n="46">Function map F12</cv>
+                <cv n="49">HLU acceleration</cv>
+                <cv n="50">HLU deceleration</cv>
+                <cv n="51">HLU speed limit 1</cv>
+                <cv n="52">HLU speed limit 2</cv>
+                <cv n="53">HLU speed limit 3</cv>
+                <cv n="54">HLU speed limit 4</cv>
+                <cv n="55">HLU speed limit 5</cv>
+            </locoCvNames>
             <cvs>1-6,9-10,13-14,17-19,21-24,27-29,33-46,49-95,105-110,112-147,151-177,181-191,250</cvs>
         </profile>
         
