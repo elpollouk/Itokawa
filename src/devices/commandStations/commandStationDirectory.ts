@@ -2,6 +2,7 @@ import { DeviceEnumerator } from "../deviceEnumerator";
 import { ELinkCommandStation } from "./elink";
 import { NullCommandStation } from "./null";
 import { RawCommandStation } from "./raw";
+import { WebSocketCommandStation } from "./websocket";
 
 export function registerCommandStations() {
 
@@ -10,5 +11,6 @@ export function registerCommandStations() {
 
     DeviceEnumerator.registerDevice(NullCommandStation, "__TEST__");
     DeviceEnumerator.registerDevice(RawCommandStation);
+    DeviceEnumerator.registerDevice(WebSocketCommandStation);
 }
 
