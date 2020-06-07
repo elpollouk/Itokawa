@@ -239,6 +239,123 @@
             </locoCvNames>
             <cvs>1-6,10,15-18,29,33-36,49-52,61</cvs>
         </profile>
+
+        <!-- Zimo Decoders -->
+        <profile man="145" ver="37" name="MX645">
+            <locoCvNames>
+                <cv n="33">Function map F0 forward</cv>
+                <cv n="34">Function map F0 reverse</cv>
+                <cv n="35">Function map F1</cv>
+                <cv n="36">Function map F2</cv>
+                <cv n="37">Function map F3</cv>
+                <cv n="38">Function map F4</cv>
+                <cv n="39">Function map F5</cv>
+                <cv n="40">Function map F6</cv>
+                <cv n="41">Function map F7</cv>
+                <cv n="42">Function map F8</cv>
+                <cv n="43">Function map F9</cv>
+                <cv n="44">Function map F10</cv>
+                <cv n="45">Function map F11</cv>
+                <cv n="46">Function map F12</cv>
+                <cv n="49">HLU acceleration</cv>
+                <cv n="50">HLU deceleration</cv>
+                <cv n="51">HLU speed limit 1</cv>
+                <cv n="52">HLU speed limit 2</cv>
+                <cv n="53">HLU speed limit 3</cv>
+                <cv n="54">HLU speed limit 4</cv>
+                <cv n="55">HLU speed limit 5</cv>
+                <cv n="56">Motor regulation</cv>
+                <cv n="57">Voltage reference</cv>
+                <cv n="58">BEMF intensity</cv>
+                <cv n="59">HLU delay</cv>
+                <cv n="60">Dimming</cv>
+                <cv n="61">ZIMO ext. mapping</cv>
+                <cv n="62">Effects modifications</cv>
+                <cv n="63">Effects modifications</cv>
+                <cv n="64">Effects modifications</cv>
+                <cv n="65">Sub-Version Number</cv>
+                <cv n="107">Light suppression</cv>
+                <cv n="108">Light suppression</cv>
+                <cv n="109">Extension of CV 107</cv>
+                <cv n="110">Extension of CV 108</cv>
+                <cv n="112">Special ZIMO configuration bits</cv>
+                <cv n="113">Compensation</cv>
+                <cv n="114">Dim Mask 1</cv>
+                <cv n="115">Uncoupler control</cv>
+                <cv n="116">Automatic uncouple</cv>
+                <cv n="117">Flasher functions</cv>
+                <cv n="118">Flashing mask</cv>
+                <cv n="119">F6 low beam mask</cv>
+                <cv n="120">F7 low beam mask</cv>
+                <cv n="121">Expon. acceleration</cv>
+                <cv n="122">Expon. deceleration</cv>
+                <cv n="123">Adaptive accel/decel</cv>
+                <cv n="124">Shunting keys, Out-puts instead of SUSI</cv>
+                <cv n="125">Effects F0 front</cv>
+                <cv n="126">Effects F0 rear</cv>
+                <cv n="127">Effects F1</cv>
+                <cv n="128">Effects F2</cv>
+                <cv n="129">Effects F3</cv>
+                <cv n="130">Effects F4</cv>
+                <cv n="131">Effects F5</cv>
+                <cv n="132">Effects F6</cv>
+                <cv n="133">FO4 for exhaust fan</cv>
+                <cv n="134">Asym. stopping (ABC)</cv>
+                <cv n="135">Km/h - Speed</cv>
+                <cv n="136">Km/h – Speed</cv>
+                <cv n="137">Smoke generator characteristic</cv>
+                <cv n="138">Smoke generator characteristic</cv>
+                <cv n="139">Smoke generator characteristic</cv>
+                <cv n="140">Distance controlled stopping</cv>
+                <cv n="141">Distance controlled stopping</cv>
+                <cv n="142">Distance controlled stopping</cv>
+                <cv n="143">Distance controlled stopping</cv>
+                <cv n="144">Programing/Update Lock</cv>
+                <cv n="145">Alternative motor control</cv>
+                <cv n="146">Gear backlash</cv>
+                <cv n="147">Experimental CV</cv>
+                <cv n="151">Motor brake</cv>
+                <cv n="152">Dim Mask 2</cv>
+                <cv n="153">Continue w/o signal</cv>
+                <cv n="154">Special OEM-Bits</cv>
+                <cv n="155">Half-speed key</cv>
+                <cv n="156">Momentum deactivation key</cv>
+                <cv n="157">MAN key</cv>
+                <cv n="158">Several sound bits + RailCom variants</cv>
+                <cv n="159">Effects for F7</cv>
+                <cv n="160">Effects for F8</cv>
+                <cv n="161">Servo Protocol</cv>
+                <cv n="162">Servo 1 left stop</cv>
+                <cv n="163">Servo 1 right stop</cv>
+                <cv n="164">Servo 1 center stop</cv>
+                <cv n="165">Servo 1 speed</cv>
+                <cv n="166">Servo 2 left stop</cv>
+                <cv n="167">Servo 2 right stop</cv>
+                <cv n="168">Servo 2 center stop</cv>
+                <cv n="169">Servo 2 speed</cv>
+                <cv n="170">Servo 3 left stop</cv>
+                <cv n="171">Servo 3 right stop</cv>
+                <cv n="172">Servo 3 center stop</cv>
+                <cv n="173">Servo 3 speed</cv>
+                <cv n="174">Servo 4 left stop</cv>
+                <cv n="175">Servo 4 right stop</cv>
+                <cv n="176">Servo 4 center stop</cv>
+                <cv n="177">Servo 4 speed</cv>
+                <cv n="181">Servo 1</cv>
+                <cv n="182">Servo 2</cv>
+                <cv n="183">Servo 3</cv>
+                <cv n="184">Servo 4</cv>
+                <cv n="185">Special live steam</cv>
+                <cv n="186">Special pantograph configuration 1</cv>
+                <cv n="187">Special pantograph configuration 2</cv>
+                <cv n="188">Special pantograph configuration 3</cv>
+                <cv n="189">Special pantograph configuration 4</cv>
+                <cv n="190">Dimming times with effect 88</cv>
+                <cv n="191">Dimming times with effect 88</cv>
+                <cv n="250">Decoder-ID</cv>
+            </locoCvNames>
+            <cvs>1-6,9-10,13-14,17-19,21-24,27-29,33-46,49-95,105-110,112-147,151-177,181-191,250</cvs>
+        </profile>
         
         <!-- ESU Decoders -->
         <profile man="151" ver="255" name="ESU LokSound 5">
