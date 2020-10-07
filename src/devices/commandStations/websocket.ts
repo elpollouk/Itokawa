@@ -70,7 +70,9 @@ export class WebSocketCommandStation extends CommandStationBase {
     }
 
     close(): Promise<void> {
-        throw new Error("Method not implemented.");
+        this._setState(CommandStationState.SHUTTING_DOWN);
+        this._ws.close();
+        return this._untilState(CommandStationState.NOT_CONNECTED);
     }
 
     beginCommandBatch(): Promise<ICommandBatch> {

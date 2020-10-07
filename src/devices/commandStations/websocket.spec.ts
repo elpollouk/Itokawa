@@ -9,6 +9,7 @@ const CONNECTION_STRING = "url=wss://foo/bar";
 
 class WebSocketMock {
     callbacks:{[key: string]: (...args: any[])  => void } = {}
+    close = stub();
 
     on(event: string, func: (...args: any[])  => void) {
         this.callbacks[event] = func
@@ -65,6 +66,19 @@ describe("WebSocket Command Station", () => {
             webSocketMock.emit("close", -1, "Test Close");
 
             await expect(promise).to.be.rejectedWith("WebSocket closed unexpectedly. Reason: Test Close");
+        })
+    })
+
+    describe("close", () => {
+        it("waits until close event fired", async () => {
+            const cs = await open();
+
+            const promise = cs.close();
+            webSocketMock.emit("close", 0, "Closed");
+            await promise;
+
+            expect(webSocketMock.close.callCount).to.equal(1);
+            expect(webSocketMock.close.lastCall.args).to.eql([]);
         })
     })
 })
