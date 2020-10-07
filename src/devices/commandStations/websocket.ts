@@ -27,6 +27,7 @@ export class WebSocketCommandStation extends CommandStationBase {
     constructor(connectionString: string) {
         super(log);
         const config = parseConnectionString(connectionString);
+        if (!config.url) throw new CommandStationError('"url" not specified in connection string');
         this.url = config.url;
         this._setState(CommandStationState.INITIALISING);
 
@@ -56,11 +57,16 @@ export class WebSocketCommandStation extends CommandStationBase {
     }
 
     private _onClose(reason: string) {
-
+        if (this.state != CommandStationState.SHUTTING_DOWN) {
+            this._setError(new CommandStationError(`WebSocket closed unexpectedly. Reason: ${reason}`));
+        }
+        else {
+            this._setState(CommandStationState.NOT_CONNECTED);
+        }
     }
 
     private _onError(err: Error) {
-
+        this._setError(err);
     }
 
     close(): Promise<void> {

@@ -54,6 +54,10 @@ describe("Command Station Base", () => {
         setIdle() {
             this._setIdle();
         }
+
+        setError(error: Error) {
+            this._setError(error);
+        }
     
         untilState(state: CommandStationState): Promise<void> {
             return this._untilState(state);
@@ -135,7 +139,7 @@ describe("Command Station Base", () => {
             expect(error.callCount).to.equal(0);
         })
 
-        it ("should reject waiting promise if error occurs while awaiting a state", async () => {
+        it ("should reject awaiting promise if error occurs while awaiting a state", async () => {
             const cs = new TestCommmandStation();
             const promise = cs.untilState(CommandStationState.IDLE);
             await nextTick();
@@ -145,11 +149,28 @@ describe("Command Station Base", () => {
             await expect(promise).to.be.eventually.rejectedWith("Command station is in ERROR state");
         })
 
+        it ("should reject with custom error awaiting promise if error occurs while awaiting a state", async () => {
+            const cs = new TestCommmandStation();
+            const promise = cs.untilState(CommandStationState.IDLE);
+            await nextTick();
+
+            cs.setError(new Error("Testing"))
+
+            await expect(promise).to.be.eventually.rejectedWith("Testing");
+        })
+
         it ("should reject istantly if already in error state bust asked to await another state", async () => {
             const cs = new TestCommmandStation();
             cs.setState(CommandStationState.ERROR);
 
             await expect(cs.untilState(CommandStationState.IDLE)).to.be.eventually.rejectedWith("Command station is in ERROR state");
+        })
+
+        it ("should reject with custom error istantly if already in error state bust asked to await another state", async () => {
+            const cs = new TestCommmandStation();
+            cs.setError(new Error("Custom Error"));
+
+            await expect(cs.untilState(CommandStationState.IDLE)).to.be.eventually.rejectedWith("Custom Error");
         })
 
         it ("should be safe to await the current state", async () => {
