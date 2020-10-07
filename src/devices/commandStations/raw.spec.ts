@@ -3,7 +3,6 @@ use(require("chai-as-promised"));
 import "mocha";
 import { stub, SinonStub } from "sinon"
 import { createSinonStubInstance, StubbedClass } from "../../utils/testUtils"
-import { nextTick } from "../../utils/promiseUtils"
 import { AsyncSerialPort } from "../asyncSerialPort"
 import { RawCommandStation } from "./raw"
 import { CommandStationState } from "./commandStation";

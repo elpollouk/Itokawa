@@ -3,7 +3,6 @@ import { CommandStationBase, ICommandBatch, CommandStationState, ICommandStation
 import { parseConnectionString } from "../../utils/parsers";
 import { ensureCvNumber, ensureByte } from "./nmraUtils";
 import * as WebSocket from "ws";
-//import WebSocket = require("ws");
 
 const log = new Logger("WebSocketCommandStation");
 
@@ -21,13 +20,17 @@ export class WebSocketCommandStation extends CommandStationBase {
         return cs
     }
 
+    static createSocket(url: string) {
+        return new WebSocket(url);
+    }
+
     constructor(connectionString: string) {
         super(log);
         const config = parseConnectionString(connectionString);
         this.url = config.url;
         this._setState(CommandStationState.INITIALISING);
 
-        this._ws = new WebSocket(this.url);
+        this._ws = WebSocketCommandStation.createSocket(this.url);
         this._ws.on("open", () => {
             this._onOpen();
         });
