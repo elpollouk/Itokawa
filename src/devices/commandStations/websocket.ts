@@ -3,8 +3,20 @@ import { CommandStationBase, ICommandBatch, CommandStationState, ICommandStation
 import { parseConnectionString } from "../../utils/parsers";
 import { ensureCvNumber, ensureByte } from "./nmraUtils";
 import * as WebSocket from "ws";
+import * as messages from "../../common/messages";
+import { timestamp } from "../../common/time";
 
 const log = new Logger("WebSocketCommandStation");
+
+let _nextMessageNumber = 1;
+function createRequest<T>(type: messages.RequestType, data: T): messages.TransportMessage {
+    return {
+        tag: `client:${_nextMessageNumber++}`,
+        requestTime: timestamp(),
+        type: type,
+        data: data
+    }
+}
 
 export class WebSocketCommandStation extends CommandStationBase {
     static readonly deviceId = "WebSocketCommandStation";
@@ -13,6 +25,12 @@ export class WebSocketCommandStation extends CommandStationBase {
 
     readonly url: string = null;
     private _ws: WebSocket = null;
+
+    // Current request details
+    private _requestTag: string = null;
+    private _requestResponseCallback: (response: messages.CommandResponse) => void = null;
+    private _requestResolve: () => void = null;
+    private _requestReject: (error: Error) => void = null;
 
     static async open(connectionString?: string): Promise<ICommandStation> {
         let cs = new WebSocketCommandStation(connectionString);
@@ -41,6 +59,15 @@ export class WebSocketCommandStation extends CommandStationBase {
         this._ws.on("error", (err) => {
             this._onError(err);
         });
+        this._ws.on("message", (data) => {
+            try {
+                const message = JSON.parse(data as string);
+                this._onMessage(message);
+            }
+            catch (err) {
+                log.error(`Error handling WebSocket message: ${err.stack}`);
+            }
+        });
     }
 
     async connect() {
@@ -48,12 +75,7 @@ export class WebSocketCommandStation extends CommandStationBase {
     }
 
     private _onOpen() {
-        if (this.state !== CommandStationState.INITIALISING) {
-            this._onError(new CommandStationError("WebSocket received unexpected open event"));
-        }
-        else {
-            this._setIdle();
-        }
+        this._setIdle();
     }
 
     private _onClose(reason: string) {
@@ -65,8 +87,55 @@ export class WebSocketCommandStation extends CommandStationBase {
         }
     }
 
+    private _onMessage(message: messages.TransportMessage) {
+        if (message.type !== messages.RequestType.CommandResponse) return;
+        if (message.tag !== this._requestTag) return;
+        if (!this._requestResponseCallback) return;
+
+        this._onResponse(message.data);
+    }
+
+    private _onResponse(response: messages.CommandResponse) {
+        const callback = this._requestResponseCallback;
+        const resolve = this._requestResolve;
+        const reject = this._requestReject;
+
+        // We explicitly clear out the current request before triggering callbacks so that the
+        // callback is able to immediately issue a new request if desired
+        if (response.lastMessage) this._clearRequest();
+
+        if (response.error) {
+            reject(new CommandStationError(response.error));
+        }
+        else {
+            callback(response);
+            if (response.lastMessage) resolve();
+        }
+    }
+
+    private _clearRequest() {
+        this._requestTag = null;
+        this._requestResponseCallback = null;
+        this._requestResolve = null;
+        this._requestReject = null;
+        this._setIdle();
+    }
+
+    private async _request(message: messages.TransportMessage, callback: (response: messages.CommandResponse) => void): Promise<void> {
+        this._untilIdle();
+        this._setBusy();
+        this._requestTag = message.tag;
+        return new Promise<void>((resolve, reject) => {
+            this._requestResponseCallback = callback;
+            this._requestResolve = resolve;
+            this._requestReject = reject;
+            this._ws.send(JSON.stringify(message));
+        });
+    }
+
     private _onError(err: Error) {
         this._setError(err);
+        if (this._requestReject) this._requestReject(err);
     }
 
     close(): Promise<void> {
@@ -79,8 +148,22 @@ export class WebSocketCommandStation extends CommandStationBase {
         throw new Error("Method not implemented.");
     }
 
-    readLocoCv(cv: number): Promise<number> {
-        return Promise.reject(new Error("CV reading is not supported"));
+    async readLocoCv(cv: number): Promise<number> {
+        ensureCvNumber(cv);
+
+        let cvValue = -1;
+        const request = createRequest<messages.LocoCvReadRequest>(messages.RequestType.LocoCvRead, {
+            cvs: [cv]
+        });
+        await this._request(request, (response) => {
+            if (!response.lastMessage) {
+                const data = response.data as messages.CvValuePair;
+                if (data.cv === cv) cvValue = data.value;
+            }
+        });
+
+        if (cvValue === -1) throw new CommandStationError("No CV data returned");
+        return cvValue;
     }
 
     writeLocoCv(cv: number, value: number): Promise<void> {
@@ -89,13 +172,18 @@ export class WebSocketCommandStation extends CommandStationBase {
 }
 
 export class WebSocketCommandBatch implements ICommandBatch {
-    constructor(private readonly _commit: ()=>Promise<void>) {
+    private _batch: messages.TransportMessage[] = [];
+
+    constructor(private readonly _commit: (requests: messages.TransportMessage[])=>Promise<void>) {
 
     }
 
     async commit()
     {
-        await this._commit();
+        const batch = this._batch;
+        this._batch = null;
+        if (!batch) throw new CommandStationError("Command batch already committed");
+        await this._commit(batch);
         log.verbose("Committed command batch");
     }
     
