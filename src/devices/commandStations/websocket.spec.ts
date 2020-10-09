@@ -166,7 +166,37 @@ describe("WebSocket Command Station", () => {
             expect(cs.state).to.equal(CommandStationState.IDLE);
         })
 
-        it("raises exception for incorrect CV", async () => {
+        it("ignores incorrect tags during request", async () => {
+            const cv = 84;
+            const cvValue = 55;
+
+            const cs = await open();
+            const promise = cs.readLocoCv(cv);
+            await nextTick();
+
+            webSocketMock.postResponse<messages.CvValuePair>(webSocketMock.lastTag, {
+                cv: cv,
+                value: cvValue
+            });
+            webSocketMock.postResponse<messages.CvValuePair>("Bad Tag", {
+                cv: cv,
+                value: 0
+            });
+            webSocketMock.postOk(webSocketMock.lastTag);
+
+            expect(await promise).to.equal(cvValue);
+            expect(cs.state).to.equal(CommandStationState.IDLE);
+        })
+
+        it("raises exception for invalid CV numbers", async () => {
+            const cs = await open();
+            await expect(cs.readLocoCv(-1)).to.be.rejectedWith("CV -1 outside of valid range");
+            await expect(cs.readLocoCv(0)).to.be.rejectedWith("CV 0 outside of valid range");
+            await expect(cs.readLocoCv(256)).to.be.rejectedWith("CV 256 outside of valid range");
+            await expect(cs.readLocoCv(257)).to.be.rejectedWith("CV 257 outside of valid range");
+        })
+
+        it("raises exception for incorrect CV value returned", async () => {
             const cs = await open();
             const promise = cs.readLocoCv(12);
             await nextTick();
@@ -205,6 +235,73 @@ describe("WebSocket Command Station", () => {
         it("raises exception if there is an underlying socket exception", async () => {
             const cs = await open();
             const promise = cs.readLocoCv(12);
+            await nextTick();
+            webSocketMock.emit("error", new Error("Socket Error"));
+
+            await expect(promise).to.be.rejectedWith("Socket Error");
+            expect(cs.state).to.equal(CommandStationState.ERROR);
+        })
+    })
+
+    describe("writeLocoCv", () => {
+        it("issues a valid write CV request", async () => {
+            const cv = 32;
+            const cvValue = 20;
+
+            const cs = await open();
+            const promise = cs.writeLocoCv(cv, cvValue);
+            await nextTick();
+
+            expect(cs.state).to.equal(CommandStationState.BUSY);
+            expect(webSocketMock.sentData).to.have.length(1);
+            const request = webSocketMock.sentData[0] as messages.TransportMessage;
+            expect(request.type).to.equal(messages.RequestType.LocoCvWrite);
+            expect(request.requestTime).to.be.a("string").and.not.be.empty;
+            expect(request.tag).to.be.a("string").and.not.be.empty;
+            expect(request.data).to.eql({
+                cvs: [{
+                    cv: cv,
+                    value: cvValue
+                }]
+            });
+
+            webSocketMock.postResponse<messages.CvValuePair>(request.tag, {
+                cv: cv,
+                value: cvValue
+            });
+            webSocketMock.postOk(request.tag);
+
+            await promise;
+            expect(cs.state).to.equal(CommandStationState.IDLE);
+        })
+
+        it("raises exception for invalid CV numbers", async () => {
+            const cs = await open();
+            await expect(cs.writeLocoCv(-1, 0)).to.be.rejectedWith("CV -1 outside of valid range");
+            await expect(cs.writeLocoCv(0, 0)).to.be.rejectedWith("CV 0 outside of valid range");
+            await expect(cs.writeLocoCv(256, 0)).to.be.rejectedWith("CV 256 outside of valid range");
+            await expect(cs.writeLocoCv(257, 0)).to.be.rejectedWith("CV 257 outside of valid range");
+        })
+
+        it("raises exception for invalid CV values", async () => {
+            const cs = await open();
+            await expect(cs.writeLocoCv(29, -1)).to.be.rejectedWith("Byte(-1) outside of valid range");
+            await expect(cs.writeLocoCv(30, 256)).to.be.rejectedWith("Byte(256) outside of valid range");
+        })
+
+        it("raises exception if error returned by service", async () => {
+            const cs = await open();
+            const promise = cs.writeLocoCv(12, 0);
+            await nextTick();
+            webSocketMock.postError(webSocketMock.lastTag, "Service Error");
+
+            await expect(promise).to.be.rejectedWith("Service Error");
+            expect(cs.state).to.equal(CommandStationState.IDLE);
+        })
+
+        it("raises exception if there is an underlying socket exception", async () => {
+            const cs = await open();
+            const promise = cs.writeLocoCv(12, 1);
             await nextTick();
             webSocketMock.emit("error", new Error("Socket Error"));
 

@@ -90,7 +90,6 @@ export class WebSocketCommandStation extends CommandStationBase {
     private _onMessage(message: messages.TransportMessage) {
         if (message.type !== messages.RequestType.CommandResponse) return;
         if (message.tag !== this._requestTag) return;
-        if (!this._requestResponseCallback) return;
 
         this._onResponse(message.data);
     }
@@ -108,7 +107,7 @@ export class WebSocketCommandStation extends CommandStationBase {
             reject(new CommandStationError(response.error));
         }
         else {
-            callback(response);
+            callback && callback(response);
             if (response.lastMessage) resolve();
         }
     }
@@ -121,9 +120,8 @@ export class WebSocketCommandStation extends CommandStationBase {
         this._setIdle();
     }
 
-    private async _request(message: messages.TransportMessage, callback: (response: messages.CommandResponse) => void): Promise<void> {
-        this._untilIdle();
-        this._setBusy();
+    private async _request(message: messages.TransportMessage, callback: (response: messages.CommandResponse) => void = null): Promise<void> {
+        await this._requestIdleToBusy();
         this._requestTag = message.tag;
         return new Promise<void>((resolve, reject) => {
             this._requestResponseCallback = callback;
@@ -166,8 +164,18 @@ export class WebSocketCommandStation extends CommandStationBase {
         return cvValue;
     }
 
-    writeLocoCv(cv: number, value: number): Promise<void> {
-        return Promise.reject(new Error("CV writing is not supported"));
+    async writeLocoCv(cv: number, value: number): Promise<void> {
+        ensureCvNumber(cv);
+        ensureByte(value);
+
+        const request = createRequest<messages.LocoCvWriteRequest>(messages.RequestType.LocoCvWrite, {
+            cvs: [{
+                cv: cv,
+                value: value
+            }]
+        });
+
+        await this._request(request);
     }
 }
 

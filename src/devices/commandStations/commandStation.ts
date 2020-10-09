@@ -121,7 +121,7 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
             if (this.state === CommandStationState.ERROR)
                 reject(this._error ?? new CommandStationError("Command station is in ERROR state"));
 
-            const listener = async (newState: CommandStationState) => {
+            const listener = (newState: CommandStationState) => {
                 if (newState === state) {
                     this.off("state", listener);
                     resolve();
