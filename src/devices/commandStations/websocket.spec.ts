@@ -311,6 +311,43 @@ describe("WebSocket Command Station", () => {
         })
     })
 
+    describe("Overlapped requests", () => {
+        it("should queue overlapped requests", async () => {
+            const cs = await open();
+
+            const request1 = cs.writeLocoCv(29, 6);
+            await nextTick();
+            const request2 = cs.writeLocoCv(29, 38);
+            await nextTick();
+
+            expect(cs.state).to.equal(CommandStationState.BUSY);
+            expect(webSocketMock.sentData).to.have.length(1);
+            
+            webSocketMock.postOk();
+            await request1;
+
+            expect(cs.state).to.equal(CommandStationState.BUSY);
+            expect(webSocketMock.sentData).to.have.length(2);
+
+            webSocketMock.postOk();
+            await request2;
+            expect(cs.state).to.equal(CommandStationState.IDLE);
+
+            expect(webSocketMock.sentData[0].data).to.eql({
+                cvs: [{
+                    cv: 29,
+                    value: 6
+                }]
+            });
+            expect(webSocketMock.sentData[1].data).to.eql({
+                cvs: [{
+                    cv: 29,
+                    value: 38
+                }]
+            });
+        })
+    })
+
     describe("Received message handling", () => {
         it("should ignore non-response messages", async () => {
             const cs = await open();
