@@ -99,16 +99,20 @@ export class WebSocketCommandStation extends CommandStationBase {
         const resolve = this._requestResolve;
         const reject = this._requestReject;
 
-        // We explicitly clear out the current request before triggering callbacks so that the
-        // callback is able to immediately issue a new request if desired
-        if (response.lastMessage) this._clearRequest();
+        if (response.lastMessage) {
+            // We explicitly clear out the current request before triggering callbacks so that the
+            // callback is able to immediately issue a new request if desired
+            this._clearRequest();
 
-        if (response.error) {
-            reject(new CommandStationError(response.error));
+            if (response.error) {
+                reject(new CommandStationError(response.error));
+            }
+            else {
+                resolve();
+            }
         }
         else {
             callback && callback(response);
-            if (response.lastMessage) resolve();
         }
     }
 
@@ -120,11 +124,11 @@ export class WebSocketCommandStation extends CommandStationBase {
         this._setIdle();
     }
 
-    private async _request(message: messages.TransportMessage, callback: (response: messages.CommandResponse) => void = null): Promise<void> {
+    private async _request(message: messages.TransportMessage, onResponse: (response: messages.CommandResponse) => void = null): Promise<void> {
         await this._requestIdleToBusy();
         this._requestTag = message.tag;
         return new Promise<void>((resolve, reject) => {
-            this._requestResponseCallback = callback;
+            this._requestResponseCallback = onResponse;
             this._requestResolve = resolve;
             this._requestReject = reject;
             this._ws.send(JSON.stringify(message));
@@ -159,10 +163,8 @@ export class WebSocketCommandStation extends CommandStationBase {
             cvs: [cv]
         });
         await this._request(request, (response) => {
-            if (!response.lastMessage) {
-                const data = response.data as messages.CvValuePair;
-                if (data.cv === cv) cvValue = data.value;
-            }
+            const data = response.data as messages.CvValuePair;
+            if (data.cv === cv) cvValue = data.value;
         });
 
         if (cvValue === -1) throw new CommandStationError("No CV data returned");

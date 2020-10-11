@@ -348,6 +348,38 @@ describe("WebSocket Command Station", () => {
         })
     })
 
+    describe("socket error handling", () => {
+        it("should transition to error state on socket error", async () => {
+            const eventListener = stub();
+            const cs = await open();
+            cs.on("state", eventListener);
+
+            webSocketMock.emit("error", new Error("Socket Error"));
+
+            expect(cs.state).to.equal(CommandStationState.ERROR);
+            expect(eventListener.callCount).to.equal(1);
+            expect(eventListener.lastCall.args).to.eql([
+                CommandStationState.ERROR,
+                CommandStationState.IDLE
+            ]);
+        })
+
+        it("should transition to error state if the socket closes unexpectedly", async () => {
+            const eventListener = stub();
+            const cs = await open();
+            cs.on("state", eventListener);
+
+            webSocketMock.emit("close", -1, "closed");
+
+            expect(cs.state).to.equal(CommandStationState.ERROR);
+            expect(eventListener.callCount).to.equal(1);
+            expect(eventListener.lastCall.args).to.eql([
+                CommandStationState.ERROR,
+                CommandStationState.IDLE
+            ]);
+        })
+    })
+
     describe("WebSocketCommandBatch", () => {
         describe("setLocomotiveSpeed", () => {
             it("should generate a valid request", async () => {
