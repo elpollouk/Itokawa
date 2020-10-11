@@ -4,15 +4,15 @@ import { stub, SinonStub, restore } from "sinon"
 import { nextTick } from "../../utils/promiseUtils"
 import * as messages from "../../common/messages";
 import { timestamp } from "../../common/time";
-import { WebSocketCommandStation } from "./websocket"
+import { WebSocketCommandBatch, WebSocketCommandStation } from "./websocket"
 import * as WebSocket from "ws";
-import { CommandStationState } from "./commandStation";
+import { CommandStationState, FunctionAction } from "./commandStation";
 
-const CONNECTION_STRING = "url=wss://foo/bar";
+const CONNECTION_STRING = "url=wss://localhost/control/v1";
 
 class WebSocketMock {
     callbacks:{[key: string]: (...args: any[])  => void } = {}
-    sentData: any[] = [];
+    sentData: messages.TransportMessage[] = [];
     lastTag: string = null;
     close = stub();
 
@@ -43,7 +43,8 @@ class WebSocketMock {
         this.emit("message", JSON.stringify(message));
     }
 
-    postOk(tag: string) {
+    postOk(tag?: string) {
+        tag = tag || this.lastTag;
         const message: messages.TransportMessage = {
             type: messages.RequestType.CommandResponse,
             tag: tag,
@@ -93,7 +94,7 @@ describe("WebSocket Command Station", () => {
         it("should establish a connection", async () => {
             const cs = await open();
             expect(createSocketStub.callCount).to.equal(1);
-            expect(createSocketStub.lastCall.args).to.eql(["wss://foo/bar"]);
+            expect(createSocketStub.lastCall.args).to.eql(["wss://localhost/control/v1"]);
             expect(cs.state).to.equal(CommandStationState.IDLE);
         })
 
@@ -148,7 +149,7 @@ describe("WebSocket Command Station", () => {
 
             expect(cs.state).to.equal(CommandStationState.BUSY);
             expect(webSocketMock.sentData).to.have.length(1);
-            const request = webSocketMock.sentData[0] as messages.TransportMessage;
+            const request = webSocketMock.sentData[0];
             expect(request.type).to.equal(messages.RequestType.LocoCvRead);
             expect(request.requestTime).to.be.a("string").and.not.be.empty;
             expect(request.tag).to.be.a("string").and.not.be.empty;
@@ -311,7 +312,22 @@ describe("WebSocket Command Station", () => {
     })
 
     describe("Received message handling", () => {
-        it("safely ignores irrelevate messages", async () => {
+        it("should ignore non-response messages", async () => {
+            const cs = await open();
+
+            webSocketMock.emit("message", JSON.stringify({
+                type: messages.RequestType.LocoSpeed,
+                tag: "foo",
+                requestTime: "bar",
+                data: "baz"
+            } as messages.TransportMessage));
+            await nextTick();
+            await nextTick();
+
+            expect(cs.state).to.equal(CommandStationState.IDLE);
+        })
+
+        it("should ignore irrelevate messages", async () => {
             const cs = await open();
 
             webSocketMock.postResponse<string>("foo", "bar");
@@ -321,7 +337,7 @@ describe("WebSocket Command Station", () => {
             expect(cs.state).to.equal(CommandStationState.IDLE);
         })
 
-        it("to ignore malformed messages", async () => {
+        it("should ignore malformed messages", async () => {
             const cs = await open();
 
             webSocketMock.emit("message", "dasgsdgs");
@@ -330,5 +346,206 @@ describe("WebSocket Command Station", () => {
 
             expect(cs.state).to.equal(CommandStationState.IDLE);
         })
+    })
+
+    describe("WebSocketCommandBatch", () => {
+        describe("setLocomotiveSpeed", () => {
+            it("should generate a valid request", async () => {
+                const cs = await open();
+                const batch = await cs.beginCommandBatch();
+                batch.setLocomotiveSpeed(3, 64);
+
+                const promise = batch.commit();
+                await nextTick();
+
+                expect(cs.state).to.equal(CommandStationState.BUSY);
+                expect(webSocketMock.sentData).to.have.length(1);
+                const request = webSocketMock.sentData[0];
+                expect(request.type).to.equal(messages.RequestType.LocoSpeed);
+                expect(request.tag).to.be.a("string").and.not.empty;
+                expect(request.requestTime).to.be.a("string").and.not.empty;
+                expect(request.data).to.eql({
+                    locoId: 3,
+                    speed: 64
+                } as messages.LocoSpeedRequest);
+
+                webSocketMock.postOk();
+                await promise;
+                expect(cs.state).to.equal(CommandStationState.IDLE);
+            })
+
+            it("should generate a valid batch", async () => {
+                const cs = await open();
+                const batch = await cs.beginCommandBatch();
+                batch.setLocomotiveSpeed(12, 32, true);
+                batch.setLocomotiveSpeed(9999, 127, false);
+
+                const promise = batch.commit();
+                await nextTick();
+
+                expect(cs.state).to.equal(CommandStationState.BUSY);
+                expect(webSocketMock.sentData).to.have.length(1);
+                let request = webSocketMock.sentData[0];
+                expect(request.type).to.equal(messages.RequestType.LocoSpeed);
+                expect(request.tag).to.be.a("string").and.not.empty;
+                expect(request.requestTime).to.be.a("string").and.not.empty;
+                expect(request.data).to.eql({
+                    locoId: 12,
+                    speed: 32,
+                    reverse: true
+                } as messages.LocoSpeedRequest);
+
+                webSocketMock.postOk();
+                await nextTick();
+
+                expect(webSocketMock.sentData).to.have.length(2);
+                request = webSocketMock.sentData[1];
+                expect(request.type).to.equal(messages.RequestType.LocoSpeed);
+                expect(request.tag).to.be.a("string").and.not.empty;
+                expect(request.requestTime).to.be.a("string").and.not.empty;
+                expect(request.data).to.eql({
+                    locoId: 9999,
+                    speed: 127,
+                    reverse: false
+                } as messages.LocoSpeedRequest);
+
+                webSocketMock.postOk();
+                await promise;
+                expect(cs.state).to.equal(CommandStationState.IDLE);
+            })
+
+            it("should raise excption if batch is committed", async () => {
+                const batch = new WebSocketCommandBatch(() => Promise.resolve());
+                batch.setLocomotiveSpeed(3, 64);
+                await batch.commit();
+
+                expect(() => batch.setLocomotiveSpeed(1, 2)).to.throw("Command batch already committed");
+            })
+
+            it("should raise exception if loco id is invalid", () => {
+                const batch = new WebSocketCommandBatch(() => Promise.resolve());
+
+                expect(() => batch.setLocomotiveSpeed(0, 64)).to.throw("Address 0 outside of valid range");
+                expect(() => batch.setLocomotiveSpeed(10000, 64)).to.throw("Address 10000 outside of valid range");
+            })
+
+            it("should raise exception if speed is invalid", () => {
+                const batch = new WebSocketCommandBatch(() => Promise.resolve());
+
+                expect(() => batch.setLocomotiveSpeed(3, -1)).to.throw("Speed -1 outside of valid range");
+                expect(() => batch.setLocomotiveSpeed(3, 128)).to.throw("Speed 128 outside of valid range");
+            })
+        })
+
+        describe("setLocomotiveFunction", () => {
+            it("should generate a valid request", async () => {
+                const cs = await open();
+                const batch = await cs.beginCommandBatch();
+                batch.setLocomotiveFunction(3, 1, FunctionAction.TRIGGER);
+
+                const promise = batch.commit();
+                await nextTick();
+
+                expect(cs.state).to.equal(CommandStationState.BUSY);
+                expect(webSocketMock.sentData).to.have.length(1);
+                const request = webSocketMock.sentData[0];
+                expect(request.type).to.equal(messages.RequestType.LocoFunction);
+                expect(request.tag).to.be.a("string").and.not.empty;
+                expect(request.requestTime).to.be.a("string").and.not.empty;
+                expect(request.data).to.eql({
+                    locoId: 3,
+                    function: 1,
+                    action: messages.FunctionAction.Trigger
+                } as messages.LocoFunctionRequest);
+
+                webSocketMock.postOk();
+                await promise;
+                expect(cs.state).to.equal(CommandStationState.IDLE);
+            })
+
+            it("should generate a valid batch", async () => {
+                const cs = await open();
+                const batch = await cs.beginCommandBatch();
+                batch.setLocomotiveFunction(12, 12, FunctionAction.LATCH_ON);
+                batch.setLocomotiveFunction(9999, 28, FunctionAction.LATCH_OFF);
+
+                const promise = batch.commit();
+                await nextTick();
+
+                expect(cs.state).to.equal(CommandStationState.BUSY);
+                expect(webSocketMock.sentData).to.have.length(1);
+                let request = webSocketMock.sentData[0];
+                expect(request.type).to.equal(messages.RequestType.LocoFunction);
+                expect(request.tag).to.be.a("string").and.not.empty;
+                expect(request.requestTime).to.be.a("string").and.not.empty;
+                expect(request.data).to.eql({
+                    locoId: 12,
+                    function: 12,
+                    action: messages.FunctionAction.LatchOn
+                } as messages.LocoFunctionRequest);
+
+                webSocketMock.postOk();
+                await nextTick();
+
+                expect(webSocketMock.sentData).to.have.length(2);
+                request = webSocketMock.sentData[1];
+                expect(request.type).to.equal(messages.RequestType.LocoFunction);
+                expect(request.tag).to.be.a("string").and.not.empty;
+                expect(request.requestTime).to.be.a("string").and.not.empty;
+                expect(request.data).to.eql({
+                    locoId: 9999,
+                    function: 28,
+                    action: messages.FunctionAction.LatchOff
+                } as messages.LocoFunctionRequest);
+
+                webSocketMock.postOk();
+                await promise;
+                expect(cs.state).to.equal(CommandStationState.IDLE);
+            })
+
+            it("should raise excption if batch is committed", async () => {
+                const batch = new WebSocketCommandBatch(() => Promise.resolve());
+                batch.setLocomotiveFunction(3, 1, FunctionAction.TRIGGER);
+                await batch.commit();
+
+                expect(() => batch.setLocomotiveFunction(3, 1, FunctionAction.TRIGGER)).to.throw("Command batch already committed");
+            })
+
+            it("should raise exception if loco id is invalid", () => {
+                const batch = new WebSocketCommandBatch(() => Promise.resolve());
+
+                expect(() => batch.setLocomotiveFunction(0, 0, FunctionAction.LATCH_ON)).to.throw("Address 0 outside of valid range");
+                expect(() => batch.setLocomotiveFunction(10000, 0, FunctionAction.LATCH_OFF)).to.throw("Address 10000 outside of valid range");
+            })
+
+            it("should raise exception if function is invalid", () => {
+                const batch = new WebSocketCommandBatch(() => Promise.resolve());
+
+                expect(() => batch.setLocomotiveFunction(3, -1, FunctionAction.TRIGGER)).to.throw("Function -1 outside of valid range");
+                expect(() => batch.setLocomotiveFunction(3, 29, FunctionAction.TRIGGER)).to.throw("Function 29 outside of valid range");
+            })
+
+            it("should raise exception if action is invalid", () => {
+                const batch = new WebSocketCommandBatch(() => Promise.resolve());
+
+                expect(() => batch.setLocomotiveFunction(3, 0, -1)).to.throw("Invalid action -1");
+                expect(() => batch.setLocomotiveFunction(3, 0, 4)).to.throw("Invalid action 4");
+            })
+        })
+
+        describe("writeRaw", () => {
+            it("should raise an exception", () => {
+                const batch = new WebSocketCommandBatch(() => Promise.resolve());
+                expect(() => batch.writeRaw([0, 0, 0, 0])).to.throw("Raw writes are not unsupported");
+            })
+        })
+
+        describe("commit", () => {
+            it("should raise an exception if batch is already committed", async () => {
+                const batch = new WebSocketCommandBatch(() => Promise.resolve());
+                await batch.commit();
+                await expect(batch.commit()).to.be.eventually.rejectedWith("Command batch already committed");
+            })
+        });
     })
 })

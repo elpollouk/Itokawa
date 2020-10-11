@@ -1,7 +1,7 @@
 import { Logger } from "../../utils/logger";
 import { CommandStationBase, ICommandBatch, CommandStationState, ICommandStation, FunctionAction, CommandStationError } from "./commandStation";
 import { parseConnectionString } from "../../utils/parsers";
-import { ensureCvNumber, ensureByte } from "./nmraUtils";
+import { ensureCvNumber, ensureByte, ensureAddress, ensureSpeed, ensureFunction } from "./nmraUtils";
 import * as WebSocket from "ws";
 import * as messages from "../../common/messages";
 import { timestamp } from "../../common/time";
@@ -143,10 +143,15 @@ export class WebSocketCommandStation extends CommandStationBase {
     }
 
     beginCommandBatch(): Promise<ICommandBatch> {
-        throw new Error("Method not implemented.");
+        return Promise.resolve(new WebSocketCommandBatch(async (requests) => {
+            for (const request of requests) {
+                await this._request(request);
+            }
+        }));
     }
 
     async readLocoCv(cv: number): Promise<number> {
+        log.verbose(() => `readLocoCv - cv=${cv}`);
         ensureCvNumber(cv);
 
         let cvValue = -1;
@@ -165,6 +170,7 @@ export class WebSocketCommandStation extends CommandStationBase {
     }
 
     async writeLocoCv(cv: number, value: number): Promise<void> {
+        log.verbose(() => `writeLocoCv - cv=${cv}, value=${value}`);
         ensureCvNumber(cv);
         ensureByte(value);
 
@@ -179,6 +185,15 @@ export class WebSocketCommandStation extends CommandStationBase {
     }
 }
 
+function ActionCommandStationToApi(action: FunctionAction) {
+    switch (action) {
+        case FunctionAction.TRIGGER: return messages.FunctionAction.Trigger;
+        case FunctionAction.LATCH_ON: return messages.FunctionAction.LatchOn;
+        case FunctionAction.LATCH_OFF: return messages.FunctionAction.LatchOff;
+        default: throw new Error(`Invalid action ${action}`);
+    }
+};
+
 export class WebSocketCommandBatch implements ICommandBatch {
     private _batch: messages.TransportMessage[] = [];
 
@@ -186,21 +201,45 @@ export class WebSocketCommandBatch implements ICommandBatch {
 
     }
 
+    private _ensureUncommitted() {
+        if (!this._batch) throw new CommandStationError("Command batch already committed");
+    }
+
     async commit()
     {
+        this._ensureUncommitted();
         const batch = this._batch;
         this._batch = null;
-        if (!batch) throw new CommandStationError("Command batch already committed");
         await this._commit(batch);
         log.verbose("Committed command batch");
     }
     
     setLocomotiveSpeed(locomotiveId: number, speed: number, reverse?: boolean): void {
         log.verbose(() => `setLocomotiveSpeed - locoId=${locomotiveId}, speed=${speed}, reverse=${!!reverse}`);
+        this._ensureUncommitted();
+        ensureAddress(locomotiveId);
+        ensureSpeed(speed);
+
+        const request = createRequest<messages.LocoSpeedRequest>(messages.RequestType.LocoSpeed, {
+            locoId: locomotiveId,
+            speed: speed,
+            reverse: reverse
+        });
+        this._batch.push(request);
     }
 
     setLocomotiveFunction(locomotiveId: number, func: number, action: FunctionAction): void {
         log.verbose(() => `setLocomotiveFunction - locoId=${locomotiveId}, function=${func}, action=${FunctionAction[action]}`);
+        this._ensureUncommitted();
+        ensureAddress(locomotiveId);
+        ensureFunction(func);
+
+        const request = createRequest<messages.LocoFunctionRequest>(messages.RequestType.LocoFunction, {
+            locoId: locomotiveId,
+            function: func,
+            action: ActionCommandStationToApi(action)
+        });
+        this._batch.push(request);
     }
 
     writeRaw(data: Buffer | number[]): void {
