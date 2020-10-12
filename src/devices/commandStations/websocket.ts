@@ -92,6 +92,14 @@ export class WebSocketCommandStation extends CommandStationBase {
         }
     }
 
+    private _onError(err: Error) {
+        this._setError(err);
+        if (this._requestReject) {
+            this._requestReject(err);
+            this._clearRequest();
+        }
+    }
+
     private _onMessage(message: messages.TransportMessage) {
         if (message.type !== messages.RequestType.CommandResponse) return;
         if (message.tag !== this._requestTag) return;
@@ -139,14 +147,6 @@ export class WebSocketCommandStation extends CommandStationBase {
             this._requestReject = reject;
             this._ws.send(JSON.stringify(message));
         });
-    }
-
-    private _onError(err: Error) {
-        this._setError(err);
-        if (this._requestReject) {
-            this._requestReject(err);
-            this._clearRequest();
-        }
     }
 
     close(): Promise<void> {
