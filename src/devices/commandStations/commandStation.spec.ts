@@ -170,7 +170,7 @@ describe("Command Station Base", () => {
             await expect(cs.untilState(CommandStationState.IDLE)).to.be.eventually.rejectedWith("Command station is in ERROR state");
         })
 
-        it ("should reject with custom error istantly if already in error state but asked to await another state", async () => {
+        it ("should reject with custom error instantly if already in error state but asked to await another state", async () => {
             const cs = new TestCommmandStation();
             cs.setError(new Error("Custom Error"));
 
