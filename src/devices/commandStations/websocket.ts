@@ -39,6 +39,7 @@ export class WebSocketCommandStation extends CommandStationBase {
     }
 
     static createSocket(url: string) {
+        // This function is to allow testing by replacing it with a stub
         return new WebSocket(url);
     }
 
@@ -80,10 +81,14 @@ export class WebSocketCommandStation extends CommandStationBase {
 
     private _onClose(reason: string) {
         if (this.state != CommandStationState.SHUTTING_DOWN) {
-            this._setError(new CommandStationError(`WebSocket closed unexpectedly. Reason: ${reason}`));
+            this._onError(new CommandStationError(`WebSocket closed unexpectedly. Reason: ${reason}`));
         }
         else {
             this._setState(CommandStationState.NOT_CONNECTED);
+            if (this._requestReject) {
+                this._requestReject(new CommandStationError("Connection closed"));
+                this._clearRequest();
+            }
         }
     }
 
@@ -121,7 +126,8 @@ export class WebSocketCommandStation extends CommandStationBase {
         this._requestResponseCallback = null;
         this._requestResolve = null;
         this._requestReject = null;
-        this._setIdle();
+        // We want to check this so that we don't accidentally clear an error or closed state
+        if (this.state === CommandStationState.BUSY) this._setIdle();
     }
 
     private async _request(message: messages.TransportMessage, onResponse: (response: messages.CommandResponse) => void = null): Promise<void> {
@@ -137,7 +143,10 @@ export class WebSocketCommandStation extends CommandStationBase {
 
     private _onError(err: Error) {
         this._setError(err);
-        if (this._requestReject) this._requestReject(err);
+        if (this._requestReject) {
+            this._requestReject(err);
+            this._clearRequest();
+        }
     }
 
     close(): Promise<void> {

@@ -118,17 +118,27 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
     protected _untilState(state: CommandStationState): Promise<void> {
         if (this.state === state) return Promise.resolve();
         return new Promise((resolve, reject) => {
-            if (this.state === CommandStationState.ERROR)
+            if (this.state === CommandStationState.ERROR) {
                 reject(this._error ?? new CommandStationError("Command station is in ERROR state"));
+                return; 
+            }
+            else if (this.state === CommandStationState.NOT_CONNECTED && state !== CommandStationState.NOT_CONNECTED) {
+                reject(new CommandStationError("Connection closed"));
+                return;
+            }
 
             const listener = (newState: CommandStationState) => {
                 if (newState === state) {
                     this.off("state", listener);
                     resolve();
                 }
-                else if (this.state === CommandStationState.ERROR) {
+                else if (newState === CommandStationState.ERROR) {
                     this.off("state", listener);
                     reject(this._error ?? new CommandStationError("Command station is in ERROR state"));
+                }
+                else if (newState === CommandStationState.NOT_CONNECTED && state !== CommandStationState.NOT_CONNECTED) {
+                    this.off("state", listener);
+                    reject(new CommandStationError("Connection closed"));
                 }
             };
             this.on("state", listener);

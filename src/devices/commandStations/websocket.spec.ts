@@ -6,7 +6,7 @@ import * as messages from "../../common/messages";
 import { timestamp } from "../../common/time";
 import { WebSocketCommandBatch, WebSocketCommandStation } from "./websocket"
 import * as WebSocket from "ws";
-import { CommandStationState, FunctionAction } from "./commandStation";
+import { CommandStationState, FunctionAction, ICommandStation } from "./commandStation";
 
 const CONNECTION_STRING = "url=wss://localhost/control/v1";
 
@@ -90,6 +90,12 @@ describe("WebSocket Command Station", () => {
         return promise;
     }
 
+    function close(commandStation: ICommandStation) {
+        const promise = commandStation.close();
+        webSocketMock.emit("close", 0, "closed");
+        return promise;
+    }
+
     describe("open", () => {
         it("should establish a connection", async () => {
             const cs = await open();
@@ -126,15 +132,32 @@ describe("WebSocket Command Station", () => {
     })
 
     describe("close", () => {
-        it("waits until close event fired", async () => {
+        it("should wait until close event fired", async () => {
             const cs = await open();
-
-            const promise = cs.close();
-            webSocketMock.emit("close", 0, "Closed");
-            await promise;
+            await close(cs);
 
             expect(webSocketMock.close.callCount).to.equal(1);
             expect(webSocketMock.close.lastCall.args).to.eql([]);
+        })
+
+        it("should reject single outstanding request", async () => {
+            const cs = await open();
+            const promise = cs.readLocoCv(29);
+            await nextTick();
+            await close(cs);
+
+            await expect(promise).to.be.eventually.rejectedWith("Connection closed");
+        })
+
+        it("should reject multiple outstanding request", async () => {
+            const cs = await open();
+            const promise1 = cs.readLocoCv(29);
+            const promise2 = cs.readLocoCv(1);
+            await nextTick();
+            await close(cs);
+
+            await expect(promise1).to.be.eventually.rejectedWith("Connection closed");
+            await expect(promise2).to.be.eventually.rejectedWith("Connection closed");
         })
     })
 
@@ -242,6 +265,13 @@ describe("WebSocket Command Station", () => {
             await expect(promise).to.be.rejectedWith("Socket Error");
             expect(cs.state).to.equal(CommandStationState.ERROR);
         })
+
+        it("raises exception if the connection is already closed", async () => {
+            const cs = await open();
+            await close(cs);
+
+            await expect(cs.readLocoCv(29)).to.be.eventually.rejectedWith("Connection closed")
+        })
     })
 
     describe("writeLocoCv", () => {
@@ -308,6 +338,13 @@ describe("WebSocket Command Station", () => {
 
             await expect(promise).to.be.rejectedWith("Socket Error");
             expect(cs.state).to.equal(CommandStationState.ERROR);
+        })
+
+        it("raises exception if the connection is already closed", async () => {
+            const cs = await open();
+            await close(cs);
+
+            await expect(cs.writeLocoCv(29, 38)).to.be.eventually.rejectedWith("Connection closed")
         })
     })
 
@@ -414,6 +451,18 @@ describe("WebSocket Command Station", () => {
                 CommandStationState.ERROR,
                 CommandStationState.IDLE
             ]);
+        })
+
+        it("should reject outstanding requests", async () => {
+            const cs = await open();
+            const promise1 = cs.writeLocoCv(1, 3);
+            const promise2 = cs.writeLocoCv(29, 6);
+            await nextTick();
+
+            webSocketMock.emit("error", new Error("Socket Error"));
+
+            await expect(promise1).to.be.eventually.rejectedWith("Socket Error");
+            await expect(promise2).to.be.eventually.rejectedWith("Socket Error");
         })
     })
 
@@ -614,6 +663,41 @@ describe("WebSocket Command Station", () => {
                 const batch = new WebSocketCommandBatch(() => Promise.resolve());
                 await batch.commit();
                 await expect(batch.commit()).to.be.eventually.rejectedWith("Command batch already committed");
+            })
+
+            it("should raise an exception if there is a socket error while committing a batch", async () => {
+                const cs = await open();
+                const batch = await cs.beginCommandBatch();
+                batch.setLocomotiveFunction(3, 1, FunctionAction.LATCH_ON);
+                batch.setLocomotiveSpeed(3, 32);
+                const promise = batch.commit();
+                await nextTick();
+
+                webSocketMock.emit("error", new Error("Socket Error"));
+
+                await expect(promise).to.be.eventually.rejectedWith("Socket Error");
+            })
+
+            it("should raise an exception if the connection is closed while committing a batch", async () => {
+                const cs = await open();
+                const batch = await cs.beginCommandBatch();
+                batch.setLocomotiveFunction(3, 1, FunctionAction.LATCH_ON);
+                batch.setLocomotiveSpeed(3, 32);
+                const promise = batch.commit();
+                await nextTick();
+                await close(cs);
+
+                await expect(promise).to.be.eventually.rejectedWith("Connection closed");
+            })
+
+            it("raises exception if the connection is already closed", async () => {
+                const cs = await open();
+                const batch = await cs.beginCommandBatch();
+                batch.setLocomotiveFunction(3, 1, FunctionAction.LATCH_ON);
+                batch.setLocomotiveSpeed(3, 32);
+                await close(cs);
+    
+                await expect(batch.commit()).to.be.eventually.rejectedWith("Connection closed")
             })
         });
     })

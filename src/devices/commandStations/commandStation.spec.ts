@@ -70,6 +70,10 @@ describe("Command Station Base", () => {
         requestStateTransition(from: CommandStationState, to: CommandStationState): Promise<void> {
             return this._requestStateTransition(from, to);
         }
+
+        requestIdleToBusy(): Promise<void> {
+            return this._requestIdleToBusy();
+        }
     }
 
     describe("Constructor", () => {
@@ -116,7 +120,7 @@ describe("Command Station Base", () => {
             expect(onState.lastCall.args).to.eql([CommandStationState.IDLE, CommandStationState.UNINITIALISED]);
         })
 
-        it ("should be possible to await until a specific state", async () => {
+        it ("should be possible to wait until a specific state", async () => {
             const cs = new TestCommmandStation();
             const then = stub();
             const error = stub();
@@ -139,7 +143,7 @@ describe("Command Station Base", () => {
             expect(error.callCount).to.equal(0);
         })
 
-        it ("should reject awaiting promise if error occurs while awaiting a state", async () => {
+        it ("should reject waiting promise if error occurs while awaiting a state", async () => {
             const cs = new TestCommmandStation();
             const promise = cs.untilState(CommandStationState.IDLE);
             await nextTick();
@@ -159,18 +163,44 @@ describe("Command Station Base", () => {
             await expect(promise).to.be.eventually.rejectedWith("Testing");
         })
 
-        it ("should reject istantly if already in error state bust asked to await another state", async () => {
+        it ("should reject instantly if already in error state bust asked to await another state", async () => {
             const cs = new TestCommmandStation();
             cs.setState(CommandStationState.ERROR);
 
             await expect(cs.untilState(CommandStationState.IDLE)).to.be.eventually.rejectedWith("Command station is in ERROR state");
         })
 
-        it ("should reject with custom error istantly if already in error state bust asked to await another state", async () => {
+        it ("should reject with custom error istantly if already in error state but asked to await another state", async () => {
             const cs = new TestCommmandStation();
             cs.setError(new Error("Custom Error"));
 
             await expect(cs.untilState(CommandStationState.IDLE)).to.be.eventually.rejectedWith("Custom Error");
+        })
+
+        it ("should safely handle waiting for closed state", async () => {
+            const cs = new TestCommmandStation();
+            const then = stub();
+            const error = stub();
+            cs.setState(CommandStationState.IDLE);
+            cs.untilState(CommandStationState.NOT_CONNECTED).then(then, error);
+            await nextTick();
+            cs.setState(CommandStationState.NOT_CONNECTED);
+            await nextTick();
+
+            expect(then.callCount).to.equal(1);
+            expect(error.callCount).to.equal(0);
+        })
+
+        it ("should safely handle waiting for closed state when already closed", async () => {
+            const cs = new TestCommmandStation();
+            const then = stub();
+            const error = stub();
+            cs.setState(CommandStationState.NOT_CONNECTED);
+            cs.untilState(CommandStationState.NOT_CONNECTED).then(then, error);
+            await nextTick();
+
+            expect(then.callCount).to.equal(1);
+            expect(error.callCount).to.equal(0);
         })
 
         it ("should be safe to await the current state", async () => {
@@ -232,6 +262,54 @@ describe("Command Station Base", () => {
             await nextTick();
             expect(then.callCount).to.equal(1);
             expect(error.callCount).to.equal(0);
+        })
+    })
+
+    describe("_requestIdleToBusy", () => {
+        it ("should be possible to handle the ANY->IDLE->BUSY transition", async () => {
+            const cs = new TestCommmandStation();
+            cs.setState(CommandStationState.INITIALISING);
+            const then = stub();
+            const error = stub();
+            cs.requestIdleToBusy().then(then, error);
+            await nextTick();
+
+            expect(cs.state).to.equal(CommandStationState.INITIALISING);
+            expect(then.callCount).to.equal(0);
+            expect(error.callCount).to.equal(0);
+
+            cs.setState(CommandStationState.IDLE);
+            await nextTick();
+
+            expect(cs.state).to.equal(CommandStationState.BUSY);
+            expect(then.callCount).to.equal(1);
+            expect(error.callCount).to.equal(0);
+        })
+
+        it ("should handle the error state", async () => {
+            const cs = new TestCommmandStation();
+            cs.setState(CommandStationState.INITIALISING);
+            const promise = cs.requestIdleToBusy();
+            await nextTick();
+            cs.setError(new Error("Connection Error"));
+
+            await expect(promise).to.be.eventually.rejectedWith("Connection Error");
+        })
+
+        it ("should handle the connection being closed while waiting", async () => {
+            const cs = new TestCommmandStation();
+            cs.setState(CommandStationState.INITIALISING);
+            const promise = cs.requestIdleToBusy();
+            await nextTick();
+            cs.setState(CommandStationState.NOT_CONNECTED);
+
+            await expect(promise).to.be.eventually.rejectedWith("Connection closed");
+        })
+
+        it ("should handle the connection being closed before call", async () => {
+            const cs = new TestCommmandStation();
+            cs.setState(CommandStationState.NOT_CONNECTED);
+            await expect(cs.requestIdleToBusy()).to.be.eventually.rejectedWith("Connection closed");
         })
     })
 
