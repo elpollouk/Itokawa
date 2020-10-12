@@ -132,10 +132,14 @@ describe("WebSocket Command Station", () => {
     })
 
     describe("close", () => {
-        it("should wait until close event fired", async () => {
+        it("should close underlying socket", async () => {
             const cs = await open();
-            await close(cs);
+            const promise = cs.close();
+            expect(cs.state).to.equal(CommandStationState.SHUTTING_DOWN);
+            webSocketMock.emit("close", 0, "closed");
+            await promise;
 
+            expect(cs.state).to.equal(CommandStationState.NOT_CONNECTED);
             expect(webSocketMock.close.callCount).to.equal(1);
             expect(webSocketMock.close.lastCall.args).to.eql([]);
         })
@@ -158,6 +162,22 @@ describe("WebSocket Command Station", () => {
 
             await expect(promise1).to.be.eventually.rejectedWith("Connection closed");
             await expect(promise2).to.be.eventually.rejectedWith("Connection closed");
+        })
+
+        it("should be safe to call overlapped", async () => {
+            const cs = await open();
+            const promise1 = cs.close();
+            const promise2 = cs.close();
+            webSocketMock.emit("close", 0, "closed");
+
+            await promise1;
+            await promise2;
+        })
+
+        it("should be safe to call if already closed", async () => {
+            const cs = await open();
+            await close(cs);
+            await cs.close();
         })
     })
 
@@ -401,7 +421,7 @@ describe("WebSocket Command Station", () => {
             expect(cs.state).to.equal(CommandStationState.IDLE);
         })
 
-        it("should ignore irrelevate messages", async () => {
+        it("should ignore irrelevant messages", async () => {
             const cs = await open();
 
             webSocketMock.postResponse<string>("foo", "bar");

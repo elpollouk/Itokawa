@@ -150,8 +150,11 @@ export class WebSocketCommandStation extends CommandStationBase {
     }
 
     close(): Promise<void> {
-        this._setState(CommandStationState.SHUTTING_DOWN);
-        this._ws.close();
+        if (this.state === CommandStationState.NOT_CONNECTED) return Promise.resolve();
+        if (this.state !== CommandStationState.SHUTTING_DOWN) {
+            this._setState(CommandStationState.SHUTTING_DOWN);
+            this._ws.close();
+        }
         return this._untilState(CommandStationState.NOT_CONNECTED);
     }
 
