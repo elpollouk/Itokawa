@@ -116,17 +116,7 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
     // This is to avoid batch commits waiting on command stations that have failed and may never
     // recover.
     protected _untilState(state: CommandStationState): Promise<void> {
-        if (this.state === state) return Promise.resolve();
         return new Promise((resolve, reject) => {
-            if (this.state === CommandStationState.ERROR) {
-                reject(this._error ?? new CommandStationError("Command station is in ERROR state"));
-                return; 
-            }
-            else if (this.state === CommandStationState.NOT_CONNECTED && state !== CommandStationState.NOT_CONNECTED) {
-                reject(new CommandStationError("Connection closed"));
-                return;
-            }
-
             const listener = (newState: CommandStationState) => {
                 if (newState === state) {
                     this.off("state", listener);
@@ -142,6 +132,7 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
                 }
             };
             this.on("state", listener);
+            listener(this.state);
         });
     }
 
