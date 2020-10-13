@@ -38,3 +38,11 @@ export function ensureCvNumber(cv: number) {
 export function ensureByte(value: number) {
     ensureWithinRange(value, 0, 255, `Byte(${value})`);
 }
+
+export function ensureSpeed(speed: number) {
+    ensureWithinRange(speed, 0, 127, `Speed ${speed}`);
+}
+
+export function ensureFunction(func: number) {
+    ensureWithinRange(func, 0, 28, `Function ${func}`);
+}

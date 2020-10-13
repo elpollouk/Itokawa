@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 import "./nmraUtils";
-import { encodeLongAddress, decodeLongAddress, ensureWithinRange, ensureCvNumber, ensureByte, ensureAddress } from "./nmraUtils";
+import { encodeLongAddress, decodeLongAddress, ensureWithinRange, ensureCvNumber, ensureByte, ensureAddress, ensureSpeed, ensureFunction } from "./nmraUtils";
 
 describe("NMRA Utilities", () => {
     describe("encodeLongAddress", () => {
@@ -139,7 +139,7 @@ describe("NMRA Utilities", () => {
             expect(() => ensureWithinRange(1, 2, 10, "Test Value")).to.throw("Test Value outside of valid range");
         })
 
-        it("should reject value below lower bound", () => {
+        it("should reject value above upper bound", () => {
             expect(() => ensureWithinRange(11, 2, 10, "Test Value")).to.throw("Test Value outside of valid range");
         })
     })
@@ -161,7 +161,7 @@ describe("NMRA Utilities", () => {
             expect(() => ensureAddress(0)).to.throw("Address 0 outside of valid range");
         })
 
-        it("should reject value below lower bound", () => {
+        it("should reject value above upper bound", () => {
             expect(() => ensureAddress(10000)).to.throw("Address 10000 outside of valid range");
         })
     })
@@ -183,7 +183,7 @@ describe("NMRA Utilities", () => {
             expect(() => ensureCvNumber(0)).to.throw("CV 0 outside of valid range");
         })
 
-        it("should reject value below lower bound", () => {
+        it("should reject value above upper bound", () => {
             expect(() => ensureCvNumber(256)).to.throw("CV 256 outside of valid range");
         })
     })
@@ -205,8 +205,52 @@ describe("NMRA Utilities", () => {
             expect(() => ensureByte(-1)).to.throw("Byte(-1) outside of valid range");
         })
 
-        it("should reject value below lower bound", () => {
+        it("should reject value above upper bound", () => {
             expect(() => ensureByte(256)).to.throw("Byte(256) outside of valid range");
+        })
+    })
+
+    describe("ensureSpeed", () => {
+        it("should accept value at lower bound", () => {
+            ensureSpeed(0);
+        })
+
+        it("should accept value at upper bound", () => {
+            ensureSpeed(127);
+        })
+
+        it("should accept value within range", () => {
+            ensureSpeed(64);
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureSpeed(-1)).to.throw("Speed -1 outside of valid range");
+        })
+
+        it("should reject value above upper bound", () => {
+            expect(() => ensureSpeed(128)).to.throw("Speed 128 outside of valid range");
+        })
+    })
+
+    describe("ensureFunction", () => {
+        it("should accept value at lower bound", () => {
+            ensureFunction(0);
+        })
+
+        it("should accept value at upper bound", () => {
+            ensureFunction(28);
+        })
+
+        it("should accept value within range", () => {
+            ensureFunction(14);
+        })
+
+        it("should reject value below lower bound", () => {
+            expect(() => ensureFunction(-1)).to.throw("Function -1 outside of valid range");
+        })
+
+        it("should reject value above upper bound", () => {
+            expect(() => ensureFunction(29)).to.throw("Function 29 outside of valid range");
         })
     })
 });

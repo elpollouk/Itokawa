@@ -60,6 +60,7 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
     protected _log: Logger;
 
     private _state: CommandStationState = CommandStationState.UNINITIALISED;
+    private _error: Error = null;
 
     protected constructor(logger?: Logger) {
         super();
@@ -89,6 +90,11 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
         this.emit("state", this._state, prevState);
     }
 
+    protected _setError(error: Error) {
+        this._error = error;
+        this._setState(CommandStationState.ERROR);
+    }
+
     protected _ensureState(state: CommandStationState) {
         if (this._state != state) throw new CommandStationError(`${this.deviceId} is in wrong state for requested operation, state=${CommandStationState[this._state]}, expectedState=${CommandStationState[state]}`);
     }
@@ -110,22 +116,23 @@ export abstract class CommandStationBase extends EventEmitter implements IComman
     // This is to avoid batch commits waiting on command stations that have failed and may never
     // recover.
     protected _untilState(state: CommandStationState): Promise<void> {
-        if (this.state === state) return Promise.resolve();
         return new Promise((resolve, reject) => {
-            if (this.state === CommandStationState.ERROR)
-                reject(new CommandStationError("Command station is in ERROR state"));
-
-            const listener = async (newState: CommandStationState) => {
+            const listener = (newState: CommandStationState) => {
                 if (newState === state) {
                     this.off("state", listener);
                     resolve();
                 }
-                else if (this.state === CommandStationState.ERROR) {
+                else if (newState === CommandStationState.ERROR) {
                     this.off("state", listener);
-                    reject(new CommandStationError("Command station is in ERROR state"));
+                    reject(this._error ?? new CommandStationError("Command station is in ERROR state"));
+                }
+                else if (newState === CommandStationState.NOT_CONNECTED && state !== CommandStationState.NOT_CONNECTED) {
+                    this.off("state", listener);
+                    reject(new CommandStationError("Connection closed"));
                 }
             };
             this.on("state", listener);
+            listener(this.state);
         });
     }
 
