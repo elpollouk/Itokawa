@@ -34,7 +34,7 @@ export class WebSocketCommandStation extends CommandStationBase {
 
     static async open(connectionString?: string): Promise<ICommandStation> {
         let cs = new WebSocketCommandStation(connectionString);
-        await cs.connect();
+        await cs._connect();
         return cs
     }
 
@@ -43,7 +43,7 @@ export class WebSocketCommandStation extends CommandStationBase {
         return new WebSocket(url);
     }
 
-    constructor(connectionString: string) {
+    private constructor(connectionString: string) {
         super(log);
         const config = parseConnectionString(connectionString);
         if (!config.url) throw new CommandStationError('"url" not specified in connection string');
@@ -71,7 +71,7 @@ export class WebSocketCommandStation extends CommandStationBase {
         });
     }
 
-    async connect() {
+    private async _connect() {
         await this._untilIdle();
     }
 
@@ -85,19 +85,13 @@ export class WebSocketCommandStation extends CommandStationBase {
         }
         else {
             this._setState(CommandStationState.NOT_CONNECTED);
-            if (this._requestReject) {
-                this._requestReject(new CommandStationError("Connection closed"));
-                this._clearRequest();
-            }
+            this._requestReject?.(new CommandStationError("Connection closed"));
         }
     }
 
     private _onError(err: Error) {
         this._setError(err);
-        if (this._requestReject) {
-            this._requestReject(err);
-            this._clearRequest();
-        }
+        this._requestReject?.(err);
     }
 
     private _onMessage(message: messages.TransportMessage) {
@@ -108,24 +102,16 @@ export class WebSocketCommandStation extends CommandStationBase {
     }
 
     private _onResponse(response: messages.CommandResponse) {
-        const callback = this._requestResponseCallback;
-        const resolve = this._requestResolve;
-        const reject = this._requestReject;
-
         if (response.lastMessage) {
-            // We explicitly clear out the current request before triggering callbacks so that the
-            // callback is able to immediately issue a new request if desired
-            this._clearRequest();
-
             if (response.error) {
-                reject(new CommandStationError(response.error));
+                this._requestReject(new CommandStationError(response.error));
             }
             else {
-                resolve();
+                this._requestResolve();
             }
         }
         else {
-            callback && callback(response);
+            this._requestResponseCallback?.(response);
         }
     }
 
@@ -140,11 +126,17 @@ export class WebSocketCommandStation extends CommandStationBase {
 
     private async _request(message: messages.TransportMessage, onResponse: (response: messages.CommandResponse) => void = null): Promise<void> {
         await this._requestIdleToBusy();
-        this._requestTag = message.tag;
         return new Promise<void>((resolve, reject) => {
+            this._requestTag = message.tag;
             this._requestResponseCallback = onResponse;
-            this._requestResolve = resolve;
-            this._requestReject = reject;
+            this._requestResolve = () => {
+                this._clearRequest();
+                resolve();
+            }
+            this._requestReject = (err) => {
+                this._clearRequest();
+                reject(err);
+            }
             this._ws.send(JSON.stringify(message));
         });
     }
