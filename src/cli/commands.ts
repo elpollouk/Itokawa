@@ -172,7 +172,7 @@ export async function loco_function(context: CommandContext, args: string[]) {
 }
 loco_function.minArgs = 2;
 loco_function.maxArgs = 3;
-loco_function.help = "Set locomotive function.\n  Usage: loco_speed LOCO_ID SPEED [on|off]";
+loco_function.help = "Set locomotive function.\n  Usage: loco_function LOCO_ID FUNCTION [on|off]";
 
 // Loco Speed Control
 export async function loco_speed(context: CommandContext, args: string[]) {
