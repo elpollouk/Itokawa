@@ -14,6 +14,7 @@ type Output = (message:string)=>void;
 export interface CommandContext {
     out: Output;
     error: Output;
+    vars: {};
 }
 
 // An exception a command can throw to display an error to the user without a call stack.
@@ -34,6 +35,7 @@ let _commands = null;
 export function clearCommands() {
     _commands = {}
     _commands["help"] = help;
+    _commands["set"] = set;
 }
 
 // Register commands with the executor
@@ -105,5 +107,20 @@ async function help(context: CommandContext, args: string[]) {
 }
 help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
+
+// Set script variable
+function set(context: CommandContext, args: string[]) {
+    if (args.length === 0) {
+        for (const key of Object.keys(context.vars).sort()) {
+            context.out(`${key}=${context.vars[key]}`);
+        }
+        return;
+    }
+
+    if (args.length === 1) error(`No value provided for '${args[0]}'`);
+    context.vars[args[0]] = args[1];
+}
+set.maxArgs = 2;
+set.help = "Sets a script variable or lists all currently set variables\n  Usage: set [VARIABLE VALUE]";
 
 clearCommands();

@@ -34,26 +34,29 @@ describe("Executor", () => {
         errorStub = stub();
         context = {
             out: outStub,
-            error: errorStub
+            error: errorStub,
+            vars: {}
         };
     })
 
     describe("help", () => {
-        it("should be the only command registered by default", async () => {
+        it("should list only built in commands by default", async () => {
             await executor.execCommand(context, "help");
-            expect(outStub.callCount).to.equal(3);
+            expect(outStub.callCount).to.equal(4);
             expect(errorStub.callCount).to.equal(0);
             expect(outStub.getCall(0).args).to.eql(["Available commands:"]);
             expect(outStub.getCall(1).args).to.eql(["  help"]);
-            expect(outStub.getCall(2).args).to.eql(["OK"]);
+            expect(outStub.getCall(2).args).to.eql(["  set"]);
+            expect(outStub.getCall(3).args).to.eql(["OK"]);
         })
 
         it("should suppress 'OK' if requested", async () => {
             await executor.execCommand(context, "help", true);
-            expect(outStub.callCount).to.equal(2);
+            expect(outStub.callCount).to.equal(3);
             expect(errorStub.callCount).to.equal(0);
             expect(outStub.getCall(0).args).to.eql(["Available commands:"]);
             expect(outStub.getCall(1).args).to.eql(["  help"]);
+            expect(outStub.getCall(2).args).to.eql(["  set"]);
         })
 
         it("should list all registered valid commands alphabetically", async () => {
@@ -63,7 +66,7 @@ describe("Executor", () => {
                 "not a command": "XXXX"
             });
             await executor.execCommand(context, "help", true);
-            expect(outStub.callCount).to.equal(7);
+            expect(outStub.callCount).to.equal(8);
             expect(errorStub.callCount).to.equal(0);
             expect(outStub.getCall(0).args).to.eql(["Available commands:"]);
             expect(outStub.getCall(1).args).to.eql(["  bar"]);
@@ -71,7 +74,8 @@ describe("Executor", () => {
             expect(outStub.getCall(3).args).to.eql(["  foo"]);
             expect(outStub.getCall(4).args).to.eql(["  help"]);
             expect(outStub.getCall(5).args).to.eql(["  out"]);
-            expect(outStub.getCall(6).args).to.eql(["  throw"]);
+            expect(outStub.getCall(6).args).to.eql(["  set"]);
+            expect(outStub.getCall(7).args).to.eql(["  throw"]);
         })
 
         it("should return the help for the specified command", async () => {
@@ -89,6 +93,42 @@ describe("Executor", () => {
         it("should raise error if command has no help", async () => {
             executor.registerCommands(TEST_COMMANDS);
             await expect(executor.execCommand(context, "help out")).to.be.eventually.rejectedWith("out is not helpful");
+        })
+    })
+
+    describe("set", () => {
+        it("should store specified value", async () => {
+            await executor.execCommand(context, 'set foo "bar baz"', true);
+            expect(outStub.callCount).to.equal(0);
+            expect(errorStub.callCount).to.equal(0);
+            expect(context.vars["foo"]).to.equal("bar baz");
+        })
+
+        it("should list set variables", async () => {
+            context.vars["b"] = "foo";
+            context.vars["a"] = 1;
+            await executor.execCommand(context, 'set', true);
+            expect(outStub.callCount).to.equal(2);
+            expect(errorStub.callCount).to.equal(0);
+            expect(outStub.getCall(0).args).to.eql(["a=1"]);
+            expect(outStub.getCall(1).args).to.eql(["b=foo"]);
+        })
+
+        it("should not list anything if there are no variables set", async () => {
+            await executor.execCommand(context, 'set', true);
+            expect(outStub.callCount).to.equal(0);
+            expect(errorStub.callCount).to.equal(0);
+        })
+
+        it("should raise error if no value provided for variable", async () => {
+            await expect(executor.execCommand(context, 'set foo', true)).to.be.eventually.rejectedWith("No value provided for 'foo'");
+        })
+
+        it("should be helpful", async () => {
+            await executor.execCommand(context, "help set", true);
+            expect(outStub.callCount).to.equal(1);
+            expect(errorStub.callCount).to.equal(0);
+            expect(outStub.getCall(0).args).to.eql(["Sets a script variable or lists all currently set variables\n  Usage: set [VARIABLE VALUE]"]);
         })
     })
 
