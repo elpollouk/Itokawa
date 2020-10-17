@@ -1,9 +1,10 @@
 const _whitespaceChars = new Set([" ", "\t", "\r", "\n", ""]);
 
-export function splitStringEx(text: string, splitChars: Set<string> | string[], quoteChar: string, escapeChar: string, preserveSpecials?: boolean): string[] {
+export function splitStringEx(text: string, splitChars: Set<string> | string[], quoteChar: string, escapeChar: string, preserveSpecials?: boolean, commentChar?: string): string[] {
     if (Array.isArray(splitChars)) splitChars = new Set(splitChars);
 
-    text = text || "";
+    text = text ?? "";
+    commentChar = commentChar ?? "";
     let commandArgs: string[] = [];
     let currentWord: string = null;
     let quoteMode: boolean = false;
@@ -17,11 +18,14 @@ export function splitStringEx(text: string, splitChars: Set<string> | string[], 
             if (preserveSpecials) currentWord += c;
             continue;
         }
-        if (c === escapeChar) {
+        else if (c === escapeChar) {
             isEscaped = true;
             i++;
             if (preserveSpecials) currentWord += c;
             c = text[i] || "";
+        }
+        else if (c === commentChar && !quoteMode) {
+            break;
         }
 
         if (splitChars.has(c) && !quoteMode && !isEscaped) {
@@ -54,7 +58,7 @@ export function parseFloatStrict(text: string): number {
 }
 
 export function parseCommand(command: string): string[] {
-    return splitStringEx(command, _whitespaceChars, "\"", "^");
+    return splitStringEx(command, _whitespaceChars, "\"", "^", false, "#");
 }
 
 export function parseConnectionString(c: string, fieldParsers?: {[key: string]: (arg:string) => any}): {[key: string]: any} {

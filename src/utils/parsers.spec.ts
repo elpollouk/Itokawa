@@ -144,6 +144,36 @@ describe("Parsers", () => {
             const result = parseCommand("\n\r\ta\t\r\nb\n\r\tc\r\n\t");
             expect(result).to.eql(["a", "b", "c"]);
         });
+
+        it("should handle line comments at beginning of line", () => {
+            const result = parseCommand("# Hello World");
+            expect(result).to.eql([]);
+        })
+
+        it("should handle line comments preceded by white space", () => {
+            const result = parseCommand("\t# Hello World");
+            expect(result).to.eql([]);
+        })
+
+        it("should handle line comments after valid text", () => {
+            const result = parseCommand("a b c # Hello World");
+            expect(result).to.eql(["a", "b", "c"]);
+        })
+
+        it("should handle line comments connected to valid characters", () => {
+            const result = parseCommand("abc# Hello World");
+            expect(result).to.eql(["abc"]);
+        })
+
+        it("should ignore comment character if it's quoted", () => {
+            const result = parseCommand("\"# Hello World\"");
+            expect(result).to.eql(["# Hello World"]);
+        })
+
+        it("should ignore comment character if it's escaped", () => {
+            const result = parseCommand("^# Hello World");
+            expect(result).to.eql(["#", "Hello", "World"]);
+        })
     });
 
     describe("Connection String Parser", () => {

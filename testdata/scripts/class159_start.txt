@@ -1,45 +1,48 @@
+#
+# Start up sequence for sound fitted Bachmann Class 159
+#
 set locoId 159
 
 echo "Driver entering..."
-loco_function $locoId 18 on
+loco_function $locoId 18 on         # Diver's door opem
 sleep 4
-loco_function $locoId 18 off
+loco_function $locoId 18 off        # And closed
 sleep 3
 
 echo "Lights on!"
-loco_function $locoId 15 on
+loco_function $locoId 15 on         # Cab lights
 sleep 2
-loco_function $locoId 0 on
+loco_function $locoId 0 on          # Lights on
 sleep 2
 
 echo "Starting engine..."
-loco_function $locoId 5 on
-loco_function $locoId 1 on
+loco_function $locoId 5 on          # Cold start mode
+loco_function $locoId 1 on          # Sound on
 sleep 15
-loco_function $locoId 5 off
-loco_function $locoId 7 on
+loco_function $locoId 5 off         # Clear cold start
+loco_function $locoId 7 on          # Flange squeal
 
 echo "Switching to day mode..."
-loco_function $locoId 14 on
+loco_function $locoId 14 on         # Day lights on
 sleep 3
 
 echo "Passenger lights on!"
-loco_function $locoId 9 on
+loco_function $locoId 9 on          # Passenger cabin lights
 sleep 4
 
 echo "Opening passenger doors..."
-loco_function $locoId 8 on
+loco_function $locoId 8 on          # Open passenger doors
 sleep 15
 
 echo "All aboard!"
-loco_function $locoId 10
+loco_function $locoId 10            # Guard's whistle
 sleep 2
-loco_function $locoId 8 off
+loco_function $locoId 8 off         # Close the doors again
 sleep 6
 
 echo "Ready?"
-loco_function $locoId 12 on
+loco_function $locoId 12 on         # Buzzer check
 sleep 3
 
 echo "Ready!"
-loco_function $locoId 12 off
+loco_function $locoId 12 off        # Buzzer response
