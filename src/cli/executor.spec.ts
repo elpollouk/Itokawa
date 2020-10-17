@@ -160,24 +160,25 @@ describe("Executor", () => {
         it("should resolve variables from the command context", async () => {
             context.vars["foo"] = "Hello World";
             executor.registerCommands(TEST_COMMANDS);
-            await executor.execCommand(context, "out Test $foo !", true);
-            expect(outStub.callCount).to.equal(3);
+            await executor.execCommand(context, 'out Test $foo "" !', true);
+            expect(outStub.callCount).to.equal(4);
             expect(errorStub.callCount).to.equal(0);
             expect(outStub.getCall(0).args).to.eql(["Test"]);
             expect(outStub.getCall(1).args).to.eql(["Hello World"]);
-            expect(outStub.getCall(2).args).to.eql(["!"]);
+            expect(outStub.getCall(2).args).to.eql([""]);
+            expect(outStub.getCall(3).args).to.eql(["!"]);
         })
 
         it("should raise error if variable not set", async () => {
             executor.registerCommands(TEST_COMMANDS);
-            await expect(executor.execCommand(context, "out Test $foo !")).to.be.eventually.rejectedWith("Variable 'foo' not set");
+            await expect(executor.execCommand(context, "out $foo")).to.be.eventually.rejectedWith("Variable 'foo' not set");
             expect(outStub.callCount).to.equal(0);
             expect(errorStub.callCount).to.equal(0);
         })
 
         it("should raise error if variable not specified", async () => {
             executor.registerCommands(TEST_COMMANDS);
-            await expect(executor.execCommand(context, "out Test $ !")).to.be.eventually.rejectedWith("Variable not specified");
+            await expect(executor.execCommand(context, "out $")).to.be.eventually.rejectedWith("Variable not specified");
             expect(outStub.callCount).to.equal(0);
             expect(errorStub.callCount).to.equal(0);
         })

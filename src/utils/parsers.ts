@@ -5,7 +5,7 @@ export function splitStringEx(text: string, splitChars: Set<string> | string[], 
 
     text = text || "";
     let commandArgs: string[] = [];
-    let currentWord: string = "";
+    let currentWord: string = null;
     let quoteMode: boolean = false;
 
     for (let i = 0; i < text.length; i++) {
@@ -13,6 +13,7 @@ export function splitStringEx(text: string, splitChars: Set<string> | string[], 
         let c = text[i];
         if (c === quoteChar) {
             quoteMode = !quoteMode;
+            if (quoteMode) currentWord = currentWord ?? ""; // Allow empty quoted strings
             if (preserveSpecials) currentWord += c;
             continue;
         }
@@ -24,17 +25,18 @@ export function splitStringEx(text: string, splitChars: Set<string> | string[], 
         }
 
         if (splitChars.has(c) && !quoteMode && !isEscaped) {
-            if (currentWord) {
+            if (currentWord !== null) {
                 commandArgs.push(currentWord);
-                currentWord = "";
+                currentWord = null
             }    
         }
-        else {
+        else if (c) {
+            currentWord = currentWord ?? "";
             currentWord += c;
         }
     }
 
-    if (currentWord) commandArgs.push(currentWord);
+    if (currentWord !== null) commandArgs.push(currentWord);
 
     return commandArgs;
 }

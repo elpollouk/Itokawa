@@ -80,12 +80,27 @@ describe("Parsers", () => {
             expect(result).to.eql(["this is a quote: '\"'", "another\"quote"]);
         })
 
+        it("should preserve empty quoted strings", () => {
+            const result = parseCommand("a \"\" b");
+            expect(result).to.eql(["a", "", "b"]);
+        })
+
+        it("should handle empty quotes in middle of string", () => {
+            const result = parseCommand("a b\"\"c");
+            expect(result).to.eql(["a", "bc"]);
+        })
+
+        it("should parse strings with only empty quotes", () => {
+            const result = parseCommand("\"\"");
+            expect(result).to.eql([""]);
+        })
+
         it("should parse escaped hat", () => {
             const result = parseCommand("\"This is a hat: '^^'\" ^^");
             expect(result).to.eql(["This is a hat: '^'", "^"]);
         })
 
-        it("should parse any escaped chat", () => {
+        it("should parse any escaped char", () => {
             const result = parseCommand("^a^b^c^ ^d^e^f");
             expect(result).to.eql(["abc def"]);
         })
