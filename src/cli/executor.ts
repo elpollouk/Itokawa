@@ -30,12 +30,13 @@ export function error(message: string) {
     throw new CommandError(message);
 }
 
-let _commands = null;
+let _commands: {[ket:string]:Command} = null;
 
 export function clearCommands() {
     _commands = {}
     _commands["help"] = help;
     _commands["set"] = set;
+    _commands["unset"] = unset;
 }
 
 // Register commands with the executor
@@ -109,7 +110,7 @@ help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
 
 // Set script variable
-function set(context: CommandContext, args: string[]) {
+async function set(context: CommandContext, args: string[]) {
     if (args.length === 0) {
         for (const key of Object.keys(context.vars).sort()) {
             context.out(`${key}=${context.vars[key]}`);
@@ -122,5 +123,14 @@ function set(context: CommandContext, args: string[]) {
 }
 set.maxArgs = 2;
 set.help = "Sets a script variable or lists all currently set variables\n  Usage: set [VARIABLE VALUE]";
+
+// Clear a script variable
+async function unset(context: CommandContext, args: string[]) {
+    if (!(args[0] in context.vars)) error(`'${args[0]}' is not set`);
+    delete context.vars[args[0]];
+}
+unset.minArgs = 1;
+unset.maxArgs = 1;
+unset.help = "Clear a script variable\n  Usage: set VARIABLE";
 
 clearCommands();

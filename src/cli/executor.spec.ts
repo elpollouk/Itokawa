@@ -42,21 +42,23 @@ describe("Executor", () => {
     describe("help", () => {
         it("should list only built in commands by default", async () => {
             await executor.execCommand(context, "help");
+            expect(outStub.callCount).to.equal(5);
+            expect(errorStub.callCount).to.equal(0);
+            expect(outStub.getCall(0).args).to.eql(["Available commands:"]);
+            expect(outStub.getCall(1).args).to.eql(["  help"]);
+            expect(outStub.getCall(2).args).to.eql(["  set"]);
+            expect(outStub.getCall(3).args).to.eql(["  unset"]);
+            expect(outStub.getCall(4).args).to.eql(["OK"]);
+        })
+
+        it("should suppress 'OK' if requested", async () => {
+            await executor.execCommand(context, "help", true);
             expect(outStub.callCount).to.equal(4);
             expect(errorStub.callCount).to.equal(0);
             expect(outStub.getCall(0).args).to.eql(["Available commands:"]);
             expect(outStub.getCall(1).args).to.eql(["  help"]);
             expect(outStub.getCall(2).args).to.eql(["  set"]);
-            expect(outStub.getCall(3).args).to.eql(["OK"]);
-        })
-
-        it("should suppress 'OK' if requested", async () => {
-            await executor.execCommand(context, "help", true);
-            expect(outStub.callCount).to.equal(3);
-            expect(errorStub.callCount).to.equal(0);
-            expect(outStub.getCall(0).args).to.eql(["Available commands:"]);
-            expect(outStub.getCall(1).args).to.eql(["  help"]);
-            expect(outStub.getCall(2).args).to.eql(["  set"]);
+            expect(outStub.getCall(3).args).to.eql(["  unset"]);
         })
 
         it("should list all registered valid commands alphabetically", async () => {
@@ -66,7 +68,7 @@ describe("Executor", () => {
                 "not a command": "XXXX"
             });
             await executor.execCommand(context, "help", true);
-            expect(outStub.callCount).to.equal(8);
+            expect(outStub.callCount).to.equal(9);
             expect(errorStub.callCount).to.equal(0);
             expect(outStub.getCall(0).args).to.eql(["Available commands:"]);
             expect(outStub.getCall(1).args).to.eql(["  bar"]);
@@ -76,6 +78,7 @@ describe("Executor", () => {
             expect(outStub.getCall(5).args).to.eql(["  out"]);
             expect(outStub.getCall(6).args).to.eql(["  set"]);
             expect(outStub.getCall(7).args).to.eql(["  throw"]);
+            expect(outStub.getCall(8).args).to.eql(["  unset"]);
         })
 
         it("should return the help for the specified command", async () => {
@@ -107,7 +110,7 @@ describe("Executor", () => {
         it("should list set variables", async () => {
             context.vars["b"] = "foo";
             context.vars["a"] = 1;
-            await executor.execCommand(context, 'set', true);
+            await executor.execCommand(context, "set", true);
             expect(outStub.callCount).to.equal(2);
             expect(errorStub.callCount).to.equal(0);
             expect(outStub.getCall(0).args).to.eql(["a=1"]);
@@ -115,7 +118,7 @@ describe("Executor", () => {
         })
 
         it("should not list anything if there are no variables set", async () => {
-            await executor.execCommand(context, 'set', true);
+            await executor.execCommand(context, "set", true);
             expect(outStub.callCount).to.equal(0);
             expect(errorStub.callCount).to.equal(0);
         })
@@ -129,6 +132,27 @@ describe("Executor", () => {
             expect(outStub.callCount).to.equal(1);
             expect(errorStub.callCount).to.equal(0);
             expect(outStub.getCall(0).args).to.eql(["Sets a script variable or lists all currently set variables\n  Usage: set [VARIABLE VALUE]"]);
+        })
+    })
+
+    describe("unset", () => {
+        it("should clear specified value", async () => {
+            context.vars["foo"] = "bar";
+            await executor.execCommand(context, "unset foo", true);
+            expect(outStub.callCount).to.equal(0);
+            expect(errorStub.callCount).to.equal(0);
+            expect("foo" in context.vars).to.be.false;
+        })
+
+        it("should raise an error if the value isn't set", async () => {
+            await expect(executor.execCommand(context, 'unset foo', true)).to.be.eventually.rejectedWith("'foo' is not set");
+        })
+
+        it("should be helpful", async () => {
+            await executor.execCommand(context, "help unset", true);
+            expect(outStub.callCount).to.equal(1);
+            expect(errorStub.callCount).to.equal(0);
+            expect(outStub.getCall(0).args).to.eql(["Clear a script variable\n  Usage: set VARIABLE"]);
         })
     })
 
