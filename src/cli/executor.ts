@@ -73,6 +73,15 @@ export async function execCommand(context: CommandContext, commandString: string
     if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) error(`${commandName} expects at least ${command.minArgs} args`);
     if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) error(`${commandName} expects at most ${command.maxArgs} args`);
 
+    // Resolve variables
+    for (let i = 0; i < commandArgs.length; i++) {
+        if (commandArgs[i][0] !== '$') continue;
+        const variable = commandArgs[i].substr(1);
+        if (!variable) error("Variable not specified");
+        if (!(variable in context.vars)) error(`Variable '${variable}' not set`);
+        commandArgs[i] = context.vars[variable];
+    }
+
     await command(context, commandArgs);
     if (!suppressOk) context.out("OK");
 }
