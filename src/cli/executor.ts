@@ -32,6 +32,7 @@ export function error(message: string) {
 
 let _commands: {[ket:string]:Command} = null;
 
+// Clear out all additionally registered commands
 export function clearCommands() {
     _commands = {}
     _commands["help"] = help;

@@ -80,11 +80,16 @@ export function exec(context: CommandContext, args: string[]) {
                 return;
             }
 
-            const script = data.toString().split("\n");
-            for (const line of script)
-               await execCommand(context, line, true);
+            try {
+                const script = data.toString().split("\n");
+                for (const line of script)
+                    await execCommand(context, line, true);
 
-            resolve();
+                resolve();
+            }
+            catch (ex) {
+                reject(ex);
+            }
         });
     });
 }

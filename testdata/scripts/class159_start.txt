@@ -1,43 +1,45 @@
+set locoId 159
+
 echo "Driver entering..."
-loco_function 159 18 on
+loco_function $locoId 18 on
 sleep 4
-loco_function 159 18 off
+loco_function $locoId 18 off
 sleep 3
 
 echo "Lights on!"
-loco_function 159 15 on
+loco_function $locoId 15 on
 sleep 2
-loco_function 159 0 on
+loco_function $locoId 0 on
 sleep 2
 
 echo "Starting engine..."
-loco_function 159 5 on
-loco_function 159 1 on
+loco_function $locoId 5 on
+loco_function $locoId 1 on
 sleep 15
-loco_function 159 5 off
-loco_function 159 7 on
+loco_function $locoId 5 off
+loco_function $locoId 7 on
 
 echo "Switching to day mode..."
-loco_function 159 14 on
+loco_function $locoId 14 on
 sleep 3
 
 echo "Passenger lights on!"
-loco_function 159 9 on
+loco_function $locoId 9 on
 sleep 4
 
 echo "Opening passenger doors..."
-loco_function 159 8 on
+loco_function $locoId 8 on
 sleep 15
 
 echo "All aboard!"
-loco_function 159 10
+loco_function $locoId 10
 sleep 2
-loco_function 159 8 off
+loco_function $locoId 8 off
 sleep 6
 
 echo "Ready?"
-loco_function 159 12 on
+loco_function $locoId 12 on
 sleep 3
 
 echo "Ready!"
-loco_function 159 12 off
+loco_function $locoId 12 off

@@ -34,7 +34,8 @@ async function _onExit() {
     try {
         if (program.exitEstop) await Commands.estop({
             out: _out,
-            error: _error
+            error: _error,
+            vars: {}
         });
     }
     catch(ex) {
@@ -64,7 +65,8 @@ async function main() {
     // Set up the global context for command execution
     const commandContext: executor.CommandContext = {
         out: _out,
-        error: _error
+        error: _error,
+        vars: {}
     };
 
     // A command or script has been explicitly specified on the command line, so execute it and then exit
