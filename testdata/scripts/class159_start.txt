@@ -4,7 +4,7 @@
 set locoId 159
 
 echo "Driver entering..."
-loco_function $locoId 18 on         # Diver's door opem
+loco_function $locoId 18 on         # Driver's door opem
 sleep 4
 loco_function $locoId 18 off        # And closed
 sleep 3
