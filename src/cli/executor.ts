@@ -6,7 +6,7 @@ export interface Command extends CommandFunc {
     notCommand?: boolean;           // Flag that the exported function is not a user command
     minArgs?: number;               // Minimum number of args the user must supply
     maxArgs?: number;               // Maximum number of args the user can supply
-    help?: () => string | string;   // String to display for command help
+    help?: string;                  // String to display for command help
 }
 
 // Context used to allow commands to interact with their execution environment
@@ -29,7 +29,12 @@ export function error(message: string) {
     throw new CommandError(message);
 }
 
-const _commands = {};
+let _commands = null;
+
+export function clearCommands() {
+    _commands = {}
+    _commands["help"] = help;
+}
 
 // Register commands with the executor
 export function registerCommands(...commandModules: any[]) {
@@ -49,8 +54,7 @@ export async function execCommandSafe(context: CommandContext, commandString: st
         await execCommand(context, commandString, suppressOk);
     }
     catch (ex) {
-        if (ex instanceof CommandError) context.error(ex.message);
-        else context.error(ex);
+        context.error(ex.message);
     }
 }
 
@@ -95,13 +99,11 @@ async function help(context: CommandContext, args: string[]) {
     }
 
     const command = resolveCommand(context, args[0]);
-    if (!command) error(`Unrecognised command '${args[0]}'`);
     if (!command.help) error(`${args[0]} is not helpful`);
 
-    const help = command.help instanceof Function ? command.help() : command.help;
-    context.out(help);
+    context.out(command.help);
 }
 help.maxArgs = 1;
 help.help = "Lists available commands or retrieves help on a command\n  Usage: help [COMMAND_NAME]";
 
-_commands["help"] = help;
+clearCommands();
