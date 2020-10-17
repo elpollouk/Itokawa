@@ -184,6 +184,46 @@ describe("Executor", () => {
         })
     })
 
+    describe("Comment Handling", () => {
+        it("should ignore comments", async () => {
+            executor.registerCommands(TEST_COMMANDS);
+            await executor.execCommand(context, "out a b # c", true);
+            expect(outStub.callCount).to.equal(2);
+            expect(outStub.getCall(0).args).to.eql(["a"]);
+            expect(outStub.getCall(1).args).to.eql(["b"]);
+        })
+
+        it("should ignore comments attached to a variable", async () => {
+            context.vars["foo"] = "bar";
+            executor.registerCommands(TEST_COMMANDS);
+            await executor.execCommand(context, "out $foo# baz", true);
+            expect(outStub.callCount).to.equal(1);
+            expect(outStub.getCall(0).args).to.eql(["bar"]);
+        })
+
+        it("should not process variables for comments", async () => {
+            context.vars["foo"] = "# Hello World";
+            executor.registerCommands(TEST_COMMANDS);
+            await executor.execCommand(context, "out $foo", true);
+            expect(outStub.callCount).to.equal(1);
+            expect(outStub.getCall(0).args).to.eql(["# Hello World"]);
+        })
+
+        it("should not process comments in quotes", async () => {
+            executor.registerCommands(TEST_COMMANDS);
+            await executor.execCommand(context, 'out "# foo"', true);
+            expect(outStub.callCount).to.equal(1);
+            expect(outStub.getCall(0).args).to.eql(["# foo"]);
+        })
+
+        it("should ignore comments preceded by a large number of spaces", async () => {
+            executor.registerCommands(TEST_COMMANDS);
+            await executor.execCommand(context, "out Test    \t\t# foo", true);
+            expect(outStub.callCount).to.equal(1);
+            expect(outStub.getCall(0).args).to.eql(["Test"]);
+        })
+    })
+
     describe("Error Handling", () => {
         it("should report command not found error when using execCommandSafe", async () => {
             await executor.execCommandSafe(context, "foo");
