@@ -4,11 +4,10 @@ import { Logger, LogLevel } from "../utils/logger";
 Logger.logLevel = LogLevel.DISPLAY;
 
 import { addCommonOptions } from "../utils/commandLineArgs";
-import { ICommandStation } from "../devices/commandStations/commandStation";
 import { nextTick } from "../utils/promiseUtils";
-import { parseCommand } from "../utils/parsers";
 import { toHumanHex } from "../utils/hex";
 import { application } from "../application";
+import * as executor from "./executor";
 
 // All commands are implemented as module level function exports and we discover then via "reflection"
 import * as Commands from "./commands";
@@ -20,32 +19,6 @@ program
     .option("-x --exec <script", "Execute a script")
     .option("--continue", "Continue to CLI after executing script or command");
 
-// Command function interface that specifies the available attributes
-type CommandFunc = (context: CommandContext, command:string[])=>Promise<void>;
-export interface Command extends CommandFunc {
-    notCommand?: boolean;           // Flag that the exported function is not a user command
-    minArgs?: number;               // Minimum number of args the user must supply
-    maxArgs?: number;               // Maximum number of args the user can supply
-    help?: () => string | string;   // String to display for command help
-}
-
-// Context used to allow commands to interact with their execution environment
-type Output = (message:string)=>void;
-export interface CommandContext {
-    out: Output;
-    error: Output;
-}
-
-// An exception a command can throw to display an error to the user without a call stack.
-// Should be used for user caused errors such as incorrectly specified args rather than actual failures.
-export class CommandError extends Error {
-    constructor(message: string) {
-        super(message);
-    }
-}
-
-let _commandContext: CommandContext = null;
-
 // Helper function for displaying command output to the user
 function _out(message: string) {
     console.log(message);
@@ -53,7 +26,7 @@ function _out(message: string) {
 
 // Helper function to throw a user error of the correct type
 function _error(message: string) {
-    throw new CommandError(message);
+    console.error(message);
 }
 
 // Handler for clean up when exit command is issued
@@ -61,54 +34,20 @@ async function _onExit() {
     try {
         if (program.exitEstop) await Commands.estop({
             out: _out,
-            error: _error
+            error: _error,
+            vars: {}
         });
     }
     catch(ex) {
-        if (!(ex instanceof CommandError)) {
+        if (!(ex instanceof executor.CommandError)) {
             console.error(ex.stack);
         }
     } 
 }
 
-// Handler for a raw command string.
-export async function execCommand(context: CommandContext, commandString: string, suppressOk: boolean=false) {
-    const commandArgs = parseCommand(commandString);
-    if (commandArgs.length == 0) return;
-
-    const commandName = commandArgs.shift();
-    const command = resolveCommand(context, commandName);
-
-    if (typeof command.minArgs !== "undefined" && commandArgs.length < command.minArgs) context.error(`${commandName} expects at least ${command.minArgs} args`);
-    if (typeof command.maxArgs !== "undefined" && commandArgs.length > command.maxArgs) context.error(`${commandName} expects at most ${command.maxArgs} args`);
-
-    await command(context, commandArgs);
-    if (!suppressOk) context.out("OK");
-}
-
-async function safeExec(exec: ()=>Promise<void>) {
-    try {
-        await exec();
-    }
-    catch (ex) {
-        if (ex instanceof CommandError) console.error(ex.message);
-        else console.error(ex);    
-    }
-}
-
-// Return the function for the specified command.
-// If the command isn't found int the Commands exports or isn't a valid command function, an exception is raised
-export function resolveCommand(context: CommandContext, commandName: string): Command {
-    commandName = commandName.toLowerCase();
-    const command = Commands[commandName] as Command;
-    if (!(command instanceof Function)) context.error(`Unrecognised command '${commandName}'`);
-    if (command.notCommand) context.error(`Unrecognised command '${commandName}'`);
-
-    return command;
-}
-
 async function main() {
     program.parse(process.argv);
+    executor.registerCommands(Commands);
 
     application.onshutdown = _onExit;
     await application.start(program);
@@ -124,19 +63,20 @@ async function main() {
     });
 
     // Set up the global context for command execution
-    _commandContext = {
+    const commandContext: executor.CommandContext = {
         out: _out,
-        error: _error
+        error: _error,
+        vars: {}
     };
 
     // A command or script has been explicitly specified on the command line, so execute it and then exit
     if (program.cmd) {
-        await safeExec(() => execCommand(_commandContext, program.cmd, true));
-        if (!program.continue) await Commands.exit(_commandContext);
+        await executor.execCommandSafe(commandContext, program.cmd, true);
+        if (!program.continue) await Commands.exit(commandContext);
     }
     else if (program.exec) {
-        await safeExec(() => Commands.exec(_commandContext, [program.exec]));
-        if (!program.continue) await Commands.exit(_commandContext);
+        await executor.execCommandSafe(commandContext, `exec ${program.exec}`, true);
+        if (!program.continue) await Commands.exit(commandContext);
     }
 
     const rl = readline.createInterface({
@@ -154,7 +94,7 @@ async function main() {
 
         while (lineBuffer.length) {
             const line = lineBuffer.shift();
-            await safeExec(() => execCommand(_commandContext, line));
+            await executor.execCommandSafe(commandContext, line);
             await nextTick(); // Make sure other events have an opportunity to run between commands
         }
 
@@ -164,10 +104,8 @@ async function main() {
 
     rl.prompt();
     rl.on("line", (line) => {
-
         lineBuffer.push(line);
         proccessBufferedLines();
-
     }).on("close", () => {
         process.exit(0);
     });
