@@ -26,6 +26,7 @@ export abstract class TaskBase implements ITask {
     private readonly _taskPromise: Promise<void>;
     private _taskResolve: () => void;
     private _taskReject: (error: Error) => void;
+    private _finished = false;
     private readonly _listeners: Set<OnProgressCallback>;
 
     protected constructor(readonly id: number, readonly name: string) {
@@ -39,7 +40,7 @@ export abstract class TaskBase implements ITask {
     protected abstract _onCancel();
 
     cancel(): Promise<void> {
-        this._onCancel();
+        !this._finished && this._onCancel();
         return this.wait();
     }
 
@@ -48,9 +49,12 @@ export abstract class TaskBase implements ITask {
     }
 
     protected _onProgress(progress: TaskProgress) {
+        if (this._finished) throw new Error("Task has already finished");
         if (progress.id !== this.id) throw new Error("Invalid task id provided for progress");
+
         for (const listener of this._listeners) listener(progress);
         if (progress.finished) {
+            this._finished = true;
             if (progress.error) {
                 this._taskReject(new Error(progress.error));
             }
@@ -58,6 +62,14 @@ export abstract class TaskBase implements ITask {
                 this._taskResolve();
             }
         }
+    }
+
+    protected _fail(message: string) {
+        this._onProgress({
+            id: this.id,
+            finished: true,
+            error: message
+        });
     }
 
     subscribe(onProgress: OnProgressCallback) {

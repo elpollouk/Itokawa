@@ -1,14 +1,18 @@
 import { expect } from "chai";
 import "mocha";
-import { stub, SinonStub, SinonSpy } from "sinon";
+import { nextTick } from "../utils/promiseUtils";
+import { stub } from "sinon";
 import { TaskProgress, TaskBase, TaskManager } from "./taskmanager";
 
 class TestTask extends TaskBase {
+    cancelCount = 0;
+
     constructor(id: number, readonly params?: any) {
         super(id, "Test Task");
     }
 
     protected _onCancel() {
+        this.cancelCount += 1;
         this._onProgress({
             id: this.id,
             finished: true,
@@ -18,6 +22,10 @@ class TestTask extends TaskBase {
 
     onProgress(progress: TaskProgress) {
         this._onProgress(progress);
+    }
+
+    fail(message: string) {
+        this._fail(message);
     }
 }
 
@@ -90,6 +98,138 @@ describe("Task Manager", () => {
             it("should be safe to use unsubscribed handle", () => {
                 const task = new TestTask(1);
                 task.unsubscribe({});
+            })
+        })
+
+        describe("wait", () => {
+            it("should return a promise that only completes when task reports finished progress", async () => {
+                const then = stub();
+                const error = stub();
+                const task = new TestTask(1);
+                
+                task.wait().then(then, error);
+                expect(then.callCount).to.equal(0);
+                expect(error.callCount).to.equal(0);
+
+                task.onProgress({
+                    id: 1,
+                    finished: true
+                });
+                await nextTick();
+
+                expect(then.callCount).to.equal(1);
+                expect(error.callCount).to.equal(0);
+            })
+
+            it("should report already completed tasks", async () => {
+                const then = stub();
+                const error = stub();
+                const task = new TestTask(1);
+                task.onProgress({
+                    id: 1,
+                    finished: true
+                });
+                task.wait().then(then, error);
+                await nextTick();
+
+                expect(then.callCount).to.equal(1);
+                expect(error.callCount).to.equal(0);
+            })
+
+            it("should reject returns promise if task reports finished with an error", async () => {
+                const task = new TestTask(1);
+                const promise = task.wait();
+
+                task.onProgress({
+                    id: 1,
+                    finished: true,
+                    error: "Test Error"
+                });
+                await nextTick();
+
+                await expect(promise).to.be.eventually.rejectedWith("Test Error");
+            })
+        })
+
+        describe("cancel", () => {
+            it("should invoke the _onCancel handler", async () => {
+                const task = new TestTask(1);
+                await expect(task.cancel()).to.be.eventually.rejectedWith("Cancelled");
+                expect(task.cancelCount).to.equal(1);
+            })
+
+            it("should be safe to cancel an already complete task", async () => {
+                const then = stub();
+                const error = stub();
+                const task = new TestTask(1);
+                task.onProgress({
+                    id: 1,
+                    finished: true
+                });
+
+                task.cancel().then(then, error);
+                await nextTick();
+
+                expect(then.callCount).to.equal(1);
+                expect(error.callCount).to.equal(0);
+                expect(task.cancelCount).to.equal(0);
+            })
+
+            it("should re-report the exception if cancelling an already cancelled task", async () => {
+                const task = new TestTask(1);
+                await expect(task.cancel()).to.be.eventually.rejectedWith("Cancelled");
+                await expect(task.cancel()).to.be.eventually.rejectedWith("Cancelled");
+                expect(task.cancelCount).to.equal(1);
+            })
+        })
+
+        describe("_onProgress", () => {
+            it("should raise an error if the wrong task id is used", () => {
+                const task = new TestTask(1);
+                expect(() => task.onProgress({
+                    id: 0,
+                    finished: false
+                })).to.throw("Invalid task id provided for progress");
+            })
+
+            it("should raise an error if the task has already reported as finished", () => {
+                const task = new TestTask(1);
+                task.onProgress({
+                    id: 1,
+                    finished: true
+                });
+
+                expect(() => task.onProgress({
+                    id: 1,
+                    finished: true
+                })).to.throw("Task has already finished");
+            })
+        })
+
+        describe("_fail", () => {
+            it("should cause the task to report an error", async () => {
+                const listener = stub();
+                const task = new TestTask(1234);
+                task.subscribe(listener);
+
+                task.fail("Test Fail");
+                await expect(task.wait()).to.be.eventually.rejectedWith("Test Fail");
+                expect(listener.callCount).to.equal(1);
+                expect(listener.lastCall.args).to.eql([{
+                    id: 1234,
+                    finished: true,
+                    error: "Test Fail"
+                }]);
+            })
+
+            it("should raise an error if the task has already finished", () => {
+                const task = new TestTask(1);
+                task.onProgress({
+                    id: 1,
+                    finished: true
+                });
+
+                expect(() => task.fail("Foo")).to.throw("Task has already finished");
             })
         })
     })
