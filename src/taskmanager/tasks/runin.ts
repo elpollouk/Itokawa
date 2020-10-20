@@ -13,9 +13,15 @@ export class RunInTask extends TaskBase {
     static readonly TASK_NAME = "RunIn";
 
     static factory(id: number, params: RunInParams) {
-        ensureAddress(params.locoId);
-        ensureSpeed(params.speed);
-        return Promise.resolve(new RunInTask(id, params));
+        try {
+            ensureAddress(params.locoId);
+            ensureSpeed(params.speed);
+            if (params.seconds <= 0) throw new Error(`${params.seconds} is in valid time value`);
+            return Promise.resolve(new RunInTask(id, params));
+        }
+        catch (error) {
+            return Promise.reject(error);
+        }
     }
 
     private _cancelled = false;
@@ -23,10 +29,7 @@ export class RunInTask extends TaskBase {
     constructor(id: number, params: RunInParams) {
         super(id, RunInTask.TASK_NAME);
 
-        this._run(params.locoId, params.speed, params.seconds).finally(() => {
-            // Stop the loco before flagging the task as finished
-            this._setSpeed(params.locoId, 0);
-        }).then(() => {
+        this._run(params.locoId, params.speed, params.seconds).then(() => {
             this._onProgress({
                 id: this.id,
                 finished: true
@@ -55,23 +58,19 @@ export class RunInTask extends TaskBase {
         let count = 0;
         this._updateProgress(count, seconds);
 
-        // Run the loco forward
-        await this._setSpeed(locoId, speed);
-        while (count < seconds / 2) {
-            await timeout(1);
-            if (this._cancelled) return;
-            count++;
-            this._updateProgress(count, seconds);
+        let reverse = false;
+        for (let i = 0; i < 2; i++) {
+            await this._setSpeed(locoId, speed, reverse);
+            for (let j = 0; j < seconds / 2; j++) {
+                await timeout(1);
+                if (this._cancelled) return;
+                count++;
+                this._updateProgress(count, seconds);
+            }
+            reverse = !reverse;
         }
 
-        // Run it in reverse
-        await this._setSpeed(locoId, speed, true);
-        while (count < seconds) {
-            await timeout(1);
-            if (this._cancelled) return;
-            count++;
-            this._updateProgress(count, seconds);
-        }
+        await this._setSpeed(locoId, 0);
     }
 
     protected _onCancel() {

@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
-import { nextTick } from "../utils/promiseUtils";
 import { stub } from "sinon";
+import { nextTick } from "../utils/promiseUtils";
 import { ITask, TaskProgress, TaskBase, TaskManager } from "./taskmanager";
 
 const TEST_TASK_NAME = "Test Task";
