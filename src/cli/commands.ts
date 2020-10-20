@@ -267,6 +267,8 @@ export async function runin(context: CommandContext, args: string[]) {
         seconds: seconds
     });
 
+    // Store the task id in the context for potential future use
+    context.vars["_TASKID"] = task.id;
     context.out(`Task ${task.id} started...`);
     task.subscribe((progress) => {
         if (!progress.finished) return;
