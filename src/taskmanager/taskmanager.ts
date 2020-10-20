@@ -22,19 +22,12 @@ export interface ITask {
 }
 
 export abstract class TaskBase implements ITask {
-    private readonly _taskPromise: Promise<void>;
-    private _taskResolve: () => void;
-    private _taskReject: (error: Error) => void;
+    private readonly _taskResolve: Set<() => void> = new Set<() => void>();
+    private readonly _taskReject: Set<(error: Error) => void> = new Set<(error: Error) => void>();
     private _finalResult: TaskProgress = null;
     private readonly _listeners: Set<OnProgressCallback>;
 
     protected constructor(readonly id: number, readonly name: string) {
-        this._taskPromise = new Promise((resolve, reject) => {
-            this._taskResolve = resolve;
-            this._taskReject = reject;
-        });
-        // This is to prevent errors related to consumers who only use the subscription interface
-        this._taskPromise.catch(() => {});
         this._listeners = new Set<OnProgressCallback>();
     }
 
@@ -46,7 +39,34 @@ export abstract class TaskBase implements ITask {
     }
 
     wait(): Promise<void> {
-        return this._taskPromise;
+        // We create a promise on demand each time to avoid the need to swallow errors if we create
+        // a single promise up front
+        return new Promise<void>((resolve, reject) => {
+            if (this._finalResult) {
+                this._handleFinalProgress(resolve, reject);
+            }
+            else {
+                this._taskResolve.add(resolve);
+                this._taskReject.add(reject);
+            }
+        })
+    }
+
+    private _handleFinalProgress(resolve: ()=>void, reject: (error:Error)=>void) {
+        if (this._finalResult.error) {
+            reject(new Error(this._finalResult.error));
+        }
+        else {
+            resolve();
+        }
+    }
+
+    private _resolve() {
+        for (const resolve of this._taskResolve) resolve();
+    }
+
+    private _reject(error: Error) {
+        for (const reject of this._taskReject) reject(error);
     }
 
     protected _onProgress(progress: TaskProgress) {
@@ -56,12 +76,7 @@ export abstract class TaskBase implements ITask {
         for (const listener of this._listeners) listener(progress);
         if (progress.finished) {
             this._finalResult = progress;
-            if (progress.error) {
-                this._taskReject(new Error(progress.error));
-            }
-            else {
-                this._taskResolve();
-            }
+            this._handleFinalProgress(() => this._resolve(), (e) => this._reject(e));
         }
     }
 

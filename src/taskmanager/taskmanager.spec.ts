@@ -264,6 +264,15 @@ describe("Task Manager", () => {
         })
 
         describe("_onProgress", () => {
+            it("should be safe to report progress if there are no waiters", () => {
+                const task = new TestTask(1);
+                task.onProgress({
+                    id: 1,
+                    finished: false,
+                    out: "Foo"
+                });
+            })
+
             it("should raise an error if the wrong task id is used", () => {
                 const task = new TestTask(1);
                 expect(() => task.onProgress({
