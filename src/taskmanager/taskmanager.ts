@@ -1,4 +1,3 @@
-
 export type OnProgressCallback = (progress: TaskProgress) => void;
 export type TaskFactory = (id: number, params: any) => Promise<ITask>;
 export type SubscriptionHandle = any;
@@ -26,7 +25,7 @@ export abstract class TaskBase implements ITask {
     private readonly _taskPromise: Promise<void>;
     private _taskResolve: () => void;
     private _taskReject: (error: Error) => void;
-    private _finished = false;
+    private _finalResult: TaskProgress = null;
     private readonly _listeners: Set<OnProgressCallback>;
 
     protected constructor(readonly id: number, readonly name: string) {
@@ -34,13 +33,15 @@ export abstract class TaskBase implements ITask {
             this._taskResolve = resolve;
             this._taskReject = reject;
         });
+        // This is to prevent errors related to consumers who only use the subscription interface
+        this._taskPromise.catch(() => {});
         this._listeners = new Set<OnProgressCallback>();
     }
 
     protected abstract _onCancel();
 
     cancel(): Promise<void> {
-        !this._finished && this._onCancel();
+        !this._finalResult && this._onCancel();
         return this.wait();
     }
 
@@ -49,12 +50,12 @@ export abstract class TaskBase implements ITask {
     }
 
     protected _onProgress(progress: TaskProgress) {
-        if (this._finished) throw new Error("Task has already finished");
+        if (this._finalResult) throw new Error("Task has already finished");
         if (progress.id !== this.id) throw new Error("Invalid task id provided for progress");
 
         for (const listener of this._listeners) listener(progress);
         if (progress.finished) {
-            this._finished = true;
+            this._finalResult = progress;
             if (progress.error) {
                 this._taskReject(new Error(progress.error));
             }
@@ -74,6 +75,7 @@ export abstract class TaskBase implements ITask {
 
     subscribe(onProgress: OnProgressCallback) {
         this._listeners.add(onProgress);
+        if (this._finalResult) process.nextTick(() => onProgress(this._finalResult));
         return onProgress;
     }
 

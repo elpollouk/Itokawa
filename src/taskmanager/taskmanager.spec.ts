@@ -72,6 +72,40 @@ describe("Task Manager", () => {
                 expect(listener1.lastCall.args).to.eql([progress]);
                 expect(listener2.lastCall.args).to.eql([progress]);
             })
+
+            it("should raise finished result if subscribing to a finished task", async () => {
+                const listener = stub();
+                const task = new TestTask(1);
+                const progress = {
+                    id: 1,
+                    finished: true,
+                    out: "Test"
+                }
+
+                task.onProgress(progress);
+                task.subscribe(listener);
+                await nextTick();
+
+                expect(listener.callCount).to.equal(1);
+                expect(listener.lastCall.args).to.eql([progress]);
+            })
+
+            it("should raise error result if subscribing to a failed task", async () => {
+                const listener = stub();
+                const task = new TestTask(1);
+                const progress = {
+                    id: 1,
+                    finished: true,
+                    error: "Failed"
+                }
+
+                task.onProgress(progress);
+                task.subscribe(listener);
+                await nextTick();
+
+                expect(listener.callCount).to.equal(1);
+                expect(listener.lastCall.args).to.eql([progress]);
+            })
         })
 
         describe("unsubscribe", () => {
@@ -148,6 +182,52 @@ describe("Task Manager", () => {
                 await nextTick();
 
                 await expect(promise).to.be.eventually.rejectedWith("Test Error");
+            })
+
+            it("should handle multiple waiters in a successful state", async () => {
+                const then = stub();
+                const error = stub();
+                const katch = stub();
+                const finaly = stub();
+                const task = new TestTask(1);
+                task.wait().then(then, error);
+                task.wait().catch(katch);
+                task.wait().finally(finaly);
+
+                task.onProgress({
+                    id: 1,
+                    finished: true,
+                    out: "Test"
+                });
+                await nextTick();
+
+                expect(then.callCount).to.equal(1);
+                expect(error.callCount).to.equal(0);
+                expect(katch.callCount).to.equal(0);
+                expect(finaly.callCount).to.equal(1);
+            })
+
+            it("should handle multiple waiters in a failed state", async () => {
+                const then = stub();
+                const error = stub();
+                const katch = stub();
+                const finaly = stub();
+                const task = new TestTask(1);
+                task.wait().then(then, error);
+                task.wait().catch(katch);
+                task.wait().finally(finaly).catch(stub());
+
+                task.onProgress({
+                    id: 1,
+                    finished: true,
+                    error: "Test"
+                });
+                await nextTick();
+
+                expect(then.callCount).to.equal(0);
+                expect(error.callCount).to.equal(1);
+                expect(katch.callCount).to.equal(1);
+                expect(finaly.callCount).to.equal(1);
             })
         })
 
