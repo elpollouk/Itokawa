@@ -1,6 +1,10 @@
 export type OnProgressCallback = (progress: TaskProgress) => void;
-export type TaskFactory = (id: number, params: any) => Promise<ITask>;
 export type SubscriptionHandle = any;
+
+export interface TaskFactory {
+    readonly TASK_NAME: string;
+    factory(id: number, params: any): Promise<ITask>;
+}
 
 export interface TaskProgress {
     id: number;
@@ -111,9 +115,9 @@ export class TaskManager {
     private readonly _tasks: Map<number, ITask> = new Map();
     private _nextId = 0;
 
-    registerTaskFactory(name: string, factory: TaskFactory) {
-        if (this._factories.has(name)) throw new Error(`Factory '${name}' is already registered`);
-        this._factories.set(name, factory);
+    registerTaskFactory(factory: TaskFactory) {
+        if (this._factories.has(factory.TASK_NAME)) throw new Error(`Factory '${factory.TASK_NAME}' is already registered`);
+        this._factories.set(factory.TASK_NAME, factory);
     }
 
     async startTask<T = any>(name: string, params?: T): Promise<ITask> {
@@ -121,7 +125,7 @@ export class TaskManager {
         if (!factory) throw new Error(`No factory for '${name}' has been registered`);
 
         const id = this._nextId++;
-        const task = await factory(id, params);
+        const task = await factory.factory(id, params);
         // These are internal verification checks
         if (id !== task.id) throw new Error("Task created with incorrect id");
         if (name !== task.name) throw new Error("Task created with incorrect name");

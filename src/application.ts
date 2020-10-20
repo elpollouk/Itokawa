@@ -210,7 +210,7 @@ class Application {
     }
 
     private _registerTasks() {
-        this.taskmanager.registerTaskFactory(RunInTask.TASK_NAME, RunInTask.factory);
+        this.taskmanager.registerTaskFactory(RunInTask);
     }
 }
 

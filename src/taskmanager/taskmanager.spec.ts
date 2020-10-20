@@ -2,11 +2,16 @@ import { expect } from "chai";
 import "mocha";
 import { nextTick } from "../utils/promiseUtils";
 import { stub } from "sinon";
-import { TaskProgress, TaskBase, TaskManager } from "./taskmanager";
+import { ITask, TaskProgress, TaskBase, TaskManager } from "./taskmanager";
 
 const TEST_TASK_NAME = "Test Task";
 
 class TestTask extends TaskBase {
+    static readonly TASK_NAME = TEST_TASK_NAME;
+    static factory(id: number, params: any) {
+        return Promise.resolve(new TestTask(id, params));
+    }
+
     cancelCount = 0;
 
     constructor(id: number, readonly params?: any) {
@@ -31,8 +36,11 @@ class TestTask extends TaskBase {
     }
 }
 
-function TestTaskFactory(id: number, params: any) {
-    return Promise.resolve(new TestTask(id, params));
+function factory(name: string, func: (id: number, params: any) => Promise<ITask>) {
+    return {
+        TASK_NAME: name,
+        factory: func
+    };
 }
 
 describe("Task Manager", () => {
@@ -347,8 +355,8 @@ describe("Task Manager", () => {
     describe("registerTaskFactory", () => {
         it("should fail if attempting to register duplicate factory", () => {
             const tm = new TaskManager();
-            tm.registerTaskFactory(TEST_TASK_NAME, TestTaskFactory);
-            expect(() => tm.registerTaskFactory(TEST_TASK_NAME, TestTaskFactory)).to.throw("Factory 'Test Task' is already registered");
+            tm.registerTaskFactory(TestTask);
+            expect(() => tm.registerTaskFactory(TestTask)).to.throw("Factory 'Test Task' is already registered");
         })
     })
 
@@ -356,10 +364,10 @@ describe("Task Manager", () => {
         it("should return task created by registered factory", async () => {
             const tm = new TaskManager();
             let factoryTask: TestTask = null;
-            tm.registerTaskFactory(TEST_TASK_NAME, (id, params) => {
+            tm.registerTaskFactory(factory(TEST_TASK_NAME, (id, params) => {
                 factoryTask = new TestTask(id, params);
                 return Promise.resolve(factoryTask);
-            });
+            }));
 
             const task = await tm.startTask(TEST_TASK_NAME, "FooBar");
 
@@ -371,7 +379,7 @@ describe("Task Manager", () => {
 
         it("should increment the task id for wach new task", async () => {
             const tm = new TaskManager();
-            tm.registerTaskFactory(TEST_TASK_NAME, TestTaskFactory);
+            tm.registerTaskFactory(TestTask);
 
             const task1 = await tm.startTask(TEST_TASK_NAME);
             const task2 = await tm.startTask(TEST_TASK_NAME);
@@ -390,14 +398,14 @@ describe("Task Manager", () => {
 
         it("should raise an error if task is created with wrong id", async () => {
             const tm = new TaskManager();
-            tm.registerTaskFactory(TEST_TASK_NAME, () => Promise.resolve(new TestTask(4)));
+            tm.registerTaskFactory(factory(TEST_TASK_NAME, () => Promise.resolve(new TestTask(4))));
 
             await expect(tm.startTask(TEST_TASK_NAME)).to.be.eventually.rejectedWith("Task created with incorrect id");
         })
 
         it("should raise an error if task is created with wrong name", async () => {
             const tm = new TaskManager();
-            tm.registerTaskFactory("Foo", () => Promise.resolve(new TestTask(0)));
+            tm.registerTaskFactory(factory("Foo", () => Promise.resolve(new TestTask(0))));
 
             await expect(tm.startTask("Foo")).to.be.eventually.rejectedWith("Task created with incorrect name");
         })
@@ -406,7 +414,7 @@ describe("Task Manager", () => {
     describe("getTask", () => {
         it("should return the correct task", async () => {
             const tm = new TaskManager();
-            tm.registerTaskFactory(TEST_TASK_NAME, TestTaskFactory);
+            tm.registerTaskFactory(TestTask);
 
             await tm.startTask(TEST_TASK_NAME, "A");
             await tm.startTask(TEST_TASK_NAME, "B");
@@ -433,7 +441,7 @@ describe("Task Manager", () => {
             ];
             const toCreate = [...factoryTasks];
             const tm = new TaskManager();
-            tm.registerTaskFactory(TEST_TASK_NAME, () => Promise.resolve(toCreate.shift()));
+            tm.registerTaskFactory(factory(TEST_TASK_NAME, () => Promise.resolve(toCreate.shift())));
 
             await tm.startTask(TEST_TASK_NAME);
             await tm.startTask(TEST_TASK_NAME);
@@ -445,7 +453,7 @@ describe("Task Manager", () => {
 
         it("should remove finished tasks from the task list", async () => {
             const tm = new TaskManager();
-            tm.registerTaskFactory(TEST_TASK_NAME, TestTaskFactory);
+            tm.registerTaskFactory(TestTask);
 
             const task0 = await tm.startTask(TEST_TASK_NAME);
             const task1 = await tm.startTask(TEST_TASK_NAME) as TestTask;
@@ -466,7 +474,7 @@ describe("Task Manager", () => {
 
         it("should remove failed tasks from the task list", async () => {
             const tm = new TaskManager();
-            tm.registerTaskFactory(TEST_TASK_NAME, TestTaskFactory);
+            tm.registerTaskFactory(TestTask);
 
             const task0 = await tm.startTask(TEST_TASK_NAME) as TestTask;
             const task1 = await tm.startTask(TEST_TASK_NAME);
