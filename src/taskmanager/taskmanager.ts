@@ -116,7 +116,7 @@ export class TaskManager {
         this._factories.set(name, factory);
     }
 
-    async startTask(name: string, params?: any): Promise<ITask> {
+    async startTask<T = any>(name: string, params?: T): Promise<ITask> {
         const factory = this._factories.get(name);
         if (!factory) throw new Error(`No factory for '${name}' has been registered`);
 

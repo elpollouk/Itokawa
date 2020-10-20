@@ -5,6 +5,7 @@ import * as fs from "fs";
 import { fromHex, toHumanHex } from "../utils/hex";
 import { application } from "../application";
 import { FunctionAction } from "../devices/commandStations/commandStation";
+import { RunInParams, RunInTask } from "../taskmanager/tasks/runin";
 
 // Maintain a list of locos we've sent commands to for the 'estop' command
 const _seenLocos = new Set<number>();
@@ -208,10 +209,70 @@ raw_write.help = "Write raw bytes to the command station\n  Udate: raw_write HEX
 // Sleep
 export async function sleep(context: CommandContext, args: string[]) {
     const time = parseFloat(args[0]);
-    if (isNaN(time)) error(`'${time}' is not a valid sleep duration`);
+    if (isNaN(time)) error(`'${args[0]}' is not a valid sleep duration`);
 
     await timeout(time);
 }
 sleep.minArgs = 1;
 sleep.minArgs = 1;
 sleep.help = "Pause the CLI for the specified number of seconds.\n  Usage: sleep SECONDS";
+
+
+//-----------------------------------------------------------------------------------------------//
+// Tasks
+//-----------------------------------------------------------------------------------------------//
+
+// List running tasks
+export async function task_list(context: CommandContext, args: string[]) {
+    context.out("Running tasks:");
+    for (const task of application.taskmanager.listTasks()) {
+        const progress = task.progress;
+        if (progress.progress && progress.progressTarget) {
+            const percent = Math.floor(100 * progress.progress / progress.progressTarget);
+            context.out(`  ${task.id} ${task.name} - ${progress.progress}/${progress.progressTarget} (${percent}%)`);
+        }
+        else if (progress.progress) {
+            context.out(`  ${task.id} ${task.name} - ${progress.progress}`);
+        }
+        else {
+            context.out(`  ${task.id} ${task.name}`);
+        }
+    }
+}
+task_list.minArgs = 0;
+task_list.minArgs = 0;
+task_list.help = "List running background tasks\n  Usage: task_list";
+
+// Cancel a background task
+export async function task_cancel(context: CommandContext, args: string[]) {
+    const id = parseInt(args[0]);
+    if (isNaN(id)) error(`'${args[0]}' is not a valid task id`);
+
+    context.out(`Cancelling task ${id}...`);
+    await application.taskmanager.getTask(id).cancel();
+}
+task_cancel.minArgs = 1;
+task_cancel.minArgs = 1;
+task_cancel.help = "Cancel a background task\n  Usage: task_cancel TASK_ID";
+
+// Run in cycle
+export async function runin(context: CommandContext, args: string[]) {
+    const locoId = resolveLocoAddress(context, args[0]);
+    const seconds = parseFloat(args[1]);
+    if (isNaN(seconds)) error(`'${args[1]}' is not a valid time duration`);
+
+    const task = await application.taskmanager.startTask<RunInParams>(RunInTask.TASK_NAME, {
+        locoId: locoId,
+        speed: 64,
+        seconds: seconds
+    });
+
+    context.out(`Task ${task.id} started...`);
+    task.subscribe((progress) => {
+        if (!progress.finished) return;
+        context.out(`Task ${task.id} finished`);
+    });
+}
+runin.minArgs = 2;
+runin.minArgs = 2;
+runin.help = "Run in a locomotive\n  Usage: runin LOCO_ID SECONDS";
