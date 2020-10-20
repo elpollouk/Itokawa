@@ -22,8 +22,8 @@ export interface ITask {
 }
 
 export abstract class TaskBase implements ITask {
-    private readonly _taskResolve: Set<() => void> = new Set<() => void>();
-    private readonly _taskReject: Set<(error: Error) => void> = new Set<(error: Error) => void>();
+    private readonly _taskResolve: Set<() => void> = new Set();
+    private readonly _taskReject: Set<(error: Error) => void> = new Set();
     private _finalResult: TaskProgress = null;
     private readonly _listeners: Set<OnProgressCallback>;
 
@@ -100,19 +100,39 @@ export abstract class TaskBase implements ITask {
 }
 
 export class TaskManager {
-    registerTask(name: string, factory: TaskFactory) {
+    private readonly _factories: Map<string, TaskFactory> = new Map();
+    private readonly _tasks: Map<number, ITask> = new Map();
+    private _nextId = 0;
 
+    registerTaskFactory(name: string, factory: TaskFactory) {
+        if (this._factories.has(name)) throw new Error(`Factory '${name}' is already registered`);
+        this._factories.set(name, factory);
     }
 
-    async startTask(name: string, params?: any) {
+    async startTask(name: string, params?: any): Promise<ITask> {
+        const factory = this._factories.get(name);
+        if (!factory) throw new Error(`No factory for '${name}' has been registered`);
 
+        const id = this._nextId++;
+        const task = await factory(id, params);
+        // These are internal verification checks
+        if (id !== task.id) throw new Error("Task created with incorrect id");
+        if (name !== task.name) throw new Error("Task created with incorrect name");
+
+        this._tasks.set(id, task);
+        const removeTask = () => this._tasks.delete(id);
+        task.wait().then(removeTask, removeTask);
+
+        return task;
     }
 
-    listTasks() {
-
+    listTasks(): IterableIterator<ITask> {
+        return this._tasks.values();
     }
 
     getTask(id: number) {
-
+        const task = this._tasks.get(id);
+        if (!task) throw new Error(`Task ${id} is not running`);
+        return task;
     }
 }
