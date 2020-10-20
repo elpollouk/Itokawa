@@ -43,6 +43,10 @@ describe("Task Manager", () => {
                 expect(task.id).to.equal(123);
                 expect(task.name).to.equal("Test Task");
                 expect(task.params).to.equal("Foo");
+                expect(task.progress).to.eql({
+                    id: 123,
+                    finished: false
+                });
             })
         })
 
@@ -277,6 +281,12 @@ describe("Task Manager", () => {
                     finished: false,
                     out: "Foo"
                 });
+
+                expect(task.progress).to.eql({
+                    id: 1,
+                    finished: false,
+                    out: "Foo"
+                });
             })
 
             it("should raise an error if the wrong task id is used", () => {
@@ -315,6 +325,11 @@ describe("Task Manager", () => {
                     finished: true,
                     error: "Test Fail"
                 }]);
+                expect(task.progress).to.eql({
+                    id: 1234,
+                    finished: true,
+                    error: "Test Fail"
+                });
             })
 
             it("should raise an error if the task has already finished", () => {

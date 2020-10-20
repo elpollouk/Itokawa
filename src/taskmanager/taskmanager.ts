@@ -14,6 +14,7 @@ export interface TaskProgress {
 export interface ITask {
     readonly id: number;
     readonly name: string;
+    readonly progress: TaskProgress;
 
     cancel(): Promise<void>;
     wait(): Promise<void>;
@@ -24,17 +25,23 @@ export interface ITask {
 export abstract class TaskBase implements ITask {
     private readonly _taskResolve: Set<() => void> = new Set();
     private readonly _taskReject: Set<(error: Error) => void> = new Set();
-    private _finalResult: TaskProgress = null;
+    private _lastProgress: TaskProgress;
     private readonly _listeners: Set<OnProgressCallback>;
+
+    get progress() { return this._lastProgress; }
 
     protected constructor(readonly id: number, readonly name: string) {
         this._listeners = new Set<OnProgressCallback>();
+        this._lastProgress = {
+            id: id,
+            finished: false
+        }
     }
 
     protected abstract _onCancel();
 
     cancel(): Promise<void> {
-        !this._finalResult && this._onCancel();
+        !this._lastProgress.finished && this._onCancel();
         return this.wait();
     }
 
@@ -42,7 +49,7 @@ export abstract class TaskBase implements ITask {
         // We create a promise on demand each time to avoid the need to swallow errors if we create
         // a single promise up front
         return new Promise<void>((resolve, reject) => {
-            if (this._finalResult) {
+            if (this._lastProgress.finished) {
                 this._handleFinalProgress(resolve, reject);
             }
             else {
@@ -53,8 +60,8 @@ export abstract class TaskBase implements ITask {
     }
 
     private _handleFinalProgress(resolve: ()=>void, reject: (error:Error)=>void) {
-        if (this._finalResult.error) {
-            reject(new Error(this._finalResult.error));
+        if (this._lastProgress.error) {
+            reject(new Error(this._lastProgress.error));
         }
         else {
             resolve();
@@ -70,12 +77,12 @@ export abstract class TaskBase implements ITask {
     }
 
     protected _onProgress(progress: TaskProgress) {
-        if (this._finalResult) throw new Error("Task has already finished");
+        if (this._lastProgress.finished) throw new Error("Task has already finished");
         if (progress.id !== this.id) throw new Error("Invalid task id provided for progress");
+        this._lastProgress = progress;
 
         for (const listener of this._listeners) listener(progress);
         if (progress.finished) {
-            this._finalResult = progress;
             this._handleFinalProgress(() => this._resolve(), (e) => this._reject(e));
         }
     }
@@ -90,7 +97,7 @@ export abstract class TaskBase implements ITask {
 
     subscribe(onProgress: OnProgressCallback) {
         this._listeners.add(onProgress);
-        if (this._finalResult) process.nextTick(() => onProgress(this._finalResult));
+        if (this._lastProgress.finished) process.nextTick(() => onProgress(this._lastProgress));
         return onProgress;
     }
 
