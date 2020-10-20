@@ -58,15 +58,16 @@ export class RunInTask extends TaskBase {
         let count = 0;
         this._updateProgress(count, seconds);
 
+        // We need two loops, one loop to run forwards and a second loop to run backwards
         let reverse = false;
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 2 && !this._cancelled; i++) {
             await this._setSpeed(locoId, speed, reverse);
-            for (let j = 0; j < seconds / 2; j++) {
+
+            for (let j = 0; j < seconds / 2 && !this._cancelled; j++) {
                 await timeout(1);
-                if (this._cancelled) return;
-                count++;
-                this._updateProgress(count, seconds);
+                this._updateProgress(++count, seconds);
             }
+
             reverse = !reverse;
         }
 
