@@ -25,21 +25,10 @@ export class RunInTask extends TaskBase {
     }
 
     private _cancelled = false;
-    private readonly _status: string;
+    private _status: string;
 
-    constructor(id: number, params: RunInParams) {
+    constructor(id: number, readonly params: RunInParams) {
         super(id, RunInTask.TASK_NAME);
-
-        this._status = `Running in loco ${params.locoId}...`;
-
-        this._run(params.locoId, params.speed, params.seconds).then(() => {
-            this._onProgress({
-                id: this.id,
-                finished: true
-            });
-        }, (error) => {
-            this._fail(error.message);
-        });
     }
 
     private _updateProgress(count: number, target: number) {
@@ -58,7 +47,12 @@ export class RunInTask extends TaskBase {
         await batch.commit();
     }
 
-    private async _run(locoId: number, speed: number, seconds: number) {
+    protected async _run() {
+        const locoId = this.params.locoId;
+        const speed = this.params.speed;
+        const seconds = this.params.seconds;
+        this._status = `Running in loco ${locoId}...`;
+
         let count = 0;
         this._updateProgress(count, seconds);
 

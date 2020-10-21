@@ -41,6 +41,19 @@ export abstract class TaskBase implements ITask {
             id: id,
             finished: false
         }
+
+        process.nextTick(() => {
+            // We need to delay calling _run so that the full constructor can complete before
+            // attempting to start the task
+            const runPromise = this._run();
+            if (runPromise) {
+                runPromise.then(() => {
+                    this._finished();
+                }, (error) => {
+                    this._fail(error.message);
+                });
+            }
+        });
     }
 
     protected abstract _onCancel();
@@ -100,6 +113,18 @@ export abstract class TaskBase implements ITask {
             finished: true,
             error: message
         });
+    }
+
+    protected _finished() {
+        this._onProgress({
+            id: this.id,
+            finished: true
+        });
+    }
+
+    // Extended classes can override this to have task running managed by this base class
+    protected _run(): Promise<void> {
+        return null;
     }
 
     subscribe(onProgress: OnProgressCallback) {
