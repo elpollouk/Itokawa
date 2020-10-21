@@ -219,6 +219,93 @@
             <cvs>1-6,9-19,21-25,27-95,105,106,112-255</cvs>
         </profile>
 
+        <!-- DCCconcepts / RAILS-->
+        <profile man="36" ver="9" name="RAILS CONNECT">
+            <!--
+                This list is taken from the Zen docs as there doesn't seem to be any details
+                published for the Rails line of decoders.
+            -->
+            <locoCvNames>
+                <cv n="30">IMPULSE (stimulation frequency)</cv>
+                <cv n="31">IMPULSE (stimulation level) </cv>
+                <cv n="33">Front Light/F1 Function allocation (White)</cv>
+                <cv n="34">Reverse Light/F2 Function allocation (Yellow)</cv>
+                <cv n="35">F3/Aux1 Function allocation (Green)</cv>
+                <cv n="36">F4/Aux2 Function allocation (Purple)</cv>
+                <cv n="39">Function 3 Map (Brown 0-6)</cv>
+                <cv n="40">Function 4 Map (Pink 0-6)</cv>
+                <cv n="41">Function 3 Map (Brown 7-12)</cv>
+                <cv n="42">Function 4 Map (Pink 7-12)</cv>
+                <cv n="43">Function 5 Map (Pink/Purple 0-6)</cv>
+                <cv n="44">Function 6 Map (Green/Brown 0-6)</cv>
+                <cv n="45">Function 5 Map (Pink/Purple 7-12)</cv>
+                <cv n="46">Function 6 Map (Green/Brown 7-12)</cv>
+                <cv n="47">Fluorescent Light Effects</cv>
+                <cv n="49">Forward Light Feature (White)</cv>
+                <cv n="50">Reverse Light Feature (Yellow)</cv>
+                <cv n="51">Function One Feature (Green)</cv>
+                <cv n="52">Function Two Feature (Purple)</cv>
+                <cv n="60">Year and Month of Manufacture</cv>
+                <cv n="61">BEMF on/off, Dimming</cv>
+                <cv n="63">Ditch Light blink rate timing</cv>
+                <cv n="64">Constant dimming light level</cv>
+                <cv n="67">Step 1 Speed Table</cv>
+                <cv n="68">Step 2 Speed Table</cv>
+                <cv n="69">Step 3 Speed Table</cv>
+                <cv n="70">Step 4 Speed Table</cv>
+                <cv n="71">Step 5 Speed Table</cv>
+                <cv n="72">Step 6 Speed Table</cv>
+                <cv n="73">Step 7 Speed Table</cv>
+                <cv n="74">Step 8 Speed Table</cv>
+                <cv n="75">Step 9 Speed Table</cv>
+                <cv n="76">Step 10 Speed Table</cv>
+                <cv n="77">Step 11 Speed Table</cv>
+                <cv n="78">Step 12 Speed Table</cv>
+                <cv n="79">Step 13 Speed Table</cv>
+                <cv n="80">Step 14 Speed Table</cv>
+                <cv n="81">Step 15 Speed Table</cv>
+                <cv n="82">Step 16 Speed Table</cv>
+                <cv n="83">Step 17 Speed Table</cv>
+                <cv n="84">Step 18 Speed Table</cv>
+                <cv n="85">Step 19 Speed Table</cv>
+                <cv n="86">Step 20 Speed Table</cv>
+                <cv n="87">Step 21 Speed Table</cv>
+                <cv n="88">Step 22 Speed Table</cv>
+                <cv n="89">Step 23 Speed Table</cv>
+                <cv n="90">Step 24 Speed Table</cv>
+                <cv n="91">Step 25 Speed Table</cv>
+                <cv n="92">Step 26 Speed Table</cv>
+                <cv n="93">Step 27 Speed Table</cv>
+                <cv n="94">Step 28 Speed Table</cv>
+                <cv n="112">Mars Light, lowest light level</cv>
+                <cv n="113">Mars Light, Time at bright level</cv>
+                <cv n="114">Mars Light total cycle time</cv>
+                <cv n="115">Mars Light Mid Light Level</cv>
+                <cv n="116">Mars Light Brightest Light Level</cv>
+                <cv n="117">Ditch light blink rate frequency</cv>
+                <cv n="118">Rotary Beacon, lowest light level</cv>
+                <cv n="119">Rotary Beacon , Time at bright level</cv>
+                <cv n="120">Rotary Total Light Cycle</cv>
+                <cv n="121">Rotary Mid Brightness</cv>
+                <cv n="122">Rotary Max Brightness</cv>
+                <cv n="123">On/Off rule 17 Dimming</cv>
+                <cv n="124">Ditch Light Blink</cv>
+                <cv n="125">Rate 2 Starting Point</cv>
+                <cv n="126">Acceleration Rate 2</cv>
+                <cv n="127">Rate 3 Starting Point</cv>
+                <cv n="128">Acceleration Rate 3</cv>
+                <cv n="129">Rate 5 Ending Point</cv>
+                <cv n="130">Deceleration Rate 5</cv>
+                <cv n="131">Rate 4 Ending Point</cv>
+                <cv n="132">Deceleration Rate 4</cv>
+                <cv n="133">Power level (drive voltage) for button control of the motor circuit</cv>
+                <cv n="134">Button Control of Motor Circuit</cv>
+                <cv n="135">Random flicker</cv>
+                <cv n="136">BEMF ctrl / other</cv>
+            </locoCvNames>
+            <cvs>1-6,10,13-19,21-24,29-31,33-36,39-47,49-52,60,61,63,64,67-94,112-136</cvs>
+        </profile>
+
         <!-- Hornby Decoders -->
         <profile man="48" ver="131,133" name="R8249/R7150">
             <cvs>1,3,4,10,17,18,29</cvs>
