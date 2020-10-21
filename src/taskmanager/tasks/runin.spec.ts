@@ -46,6 +46,7 @@ describe("Run In Task", () => {
             expect(task.progress).to.eql({
                 id: 123,
                 finished: false,
+                status: "Running in loco 3...",
                 progress: 0,
                 progressTarget: 2
             });
@@ -87,6 +88,29 @@ describe("Run In Task", () => {
             for (let i = 0; i < timeoutStub.callCount; i++) {
                 expect(timeoutStub.getCall(i).args).to.eql([1]);
             }
+        })
+
+        it("should send the appropriate commands at the right times", async () => {
+            const setSpeedTimes: number[] = [];
+            const commitTimes: number[] = [];
+            commandStation.lastCommandBatch.setLocomotiveSpeed.callsFake(() => {
+                setSpeedTimes.push(timeoutStub.callCount);
+                return Promise.resolve();
+            });
+            commandStation.lastCommandBatch.commit.callsFake(() => {
+                commitTimes.push(timeoutStub.callCount);
+                return Promise.resolve();
+            });
+
+            const task = startTask(1, 64, 20);
+            await task.wait();
+
+            expect(setSpeedTimes).to.eql([0, 10, 20]);
+            expect(commitTimes).to.eql([0, 10, 20]);
+            const setLocoSpeedStub: SinonStub = commandStation.lastCommandBatch.setLocomotiveSpeed;
+            expect(setLocoSpeedStub.getCall(0).args).to.eql([1, 64, false]);
+            expect(setLocoSpeedStub.getCall(1).args).to.eql([1, 64, true]);
+            expect(setLocoSpeedStub.getCall(2).args).to.eql([1, 0, undefined]);
         })
 
         it("should fail task if there is a command station error", async () => {

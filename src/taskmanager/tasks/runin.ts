@@ -25,15 +25,18 @@ export class RunInTask extends TaskBase {
     }
 
     private _cancelled = false;
+    private readonly _status: string;
 
     constructor(id: number, params: RunInParams) {
         super(id, RunInTask.TASK_NAME);
+
+        this._status = `Running in loco ${params.locoId}...`;
 
         this._run(params.locoId, params.speed, params.seconds).then(() => {
             this._onProgress({
                 id: this.id,
                 finished: true
-            })
+            });
         }, (error) => {
             this._fail(error.message);
         });
@@ -43,6 +46,7 @@ export class RunInTask extends TaskBase {
         this._onProgress({
             id: this.id,
             finished: false,
+            status: this._status,
             progress: count,
             progressTarget: target
         });

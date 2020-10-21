@@ -6,6 +6,7 @@ import { fromHex, toHumanHex } from "../utils/hex";
 import { application } from "../application";
 import { FunctionAction } from "../devices/commandStations/commandStation";
 import { RunInParams, RunInTask } from "../taskmanager/tasks/runin";
+import { ITask, TaskProgress } from "../taskmanager/taskmanager";
 
 // Maintain a list of locos we've sent commands to for the 'estop' command
 const _seenLocos = new Set<number>();
@@ -214,7 +215,7 @@ export async function sleep(context: CommandContext, args: string[]) {
     await timeout(time);
 }
 sleep.minArgs = 1;
-sleep.minArgs = 1;
+sleep.maxArgs = 1;
 sleep.help = "Pause the CLI for the specified number of seconds.\n  Usage: sleep SECONDS";
 
 
@@ -223,24 +224,38 @@ sleep.help = "Pause the CLI for the specified number of seconds.\n  Usage: sleep
 //-----------------------------------------------------------------------------------------------//
 
 // List running tasks
+function formatTaskProgress(progress: TaskProgress): string {
+    let text = "";
+
+    if (progress.progress !== undefined && progress.progressTarget !== undefined) {
+        const percent = Math.floor(100 * progress.progress / progress.progressTarget);
+        text += `${progress.progress}/${progress.progressTarget} (${percent}%)`;
+    }
+    else if (progress.progress !== undefined) {
+        text += `${progress.progress}`;
+    }
+
+    if (progress.status) {
+        if (text) text += " - ";
+        text += progress.status;
+    }
+
+    return text;
+}
+
 export async function task_list(context: CommandContext, args: string[]) {
     context.out("Running tasks:");
     for (const task of application.taskmanager.listTasks()) {
-        const progress = task.progress;
-        if (progress.progress && progress.progressTarget) {
-            const percent = Math.floor(100 * progress.progress / progress.progressTarget);
-            context.out(`  ${task.id} ${task.name} - ${progress.progress}/${progress.progressTarget} (${percent}%)`);
-        }
-        else if (progress.progress) {
-            context.out(`  ${task.id} ${task.name} - ${progress.progress}`);
+        const info = formatTaskProgress(task.progress);
+        if (info) {
+            context.out(`  ${task.id} ${task.name} - ${info}`);
         }
         else {
             context.out(`  ${task.id} ${task.name}`);
         }
     }
 }
-task_list.minArgs = 0;
-task_list.minArgs = 0;
+task_list.maxArgs = 0;
 task_list.help = "List running background tasks\n  Usage: task_list";
 
 // Cancel a background task
@@ -252,7 +267,7 @@ export async function task_cancel(context: CommandContext, args: string[]) {
     await application.taskmanager.getTask(id).cancel();
 }
 task_cancel.minArgs = 1;
-task_cancel.minArgs = 1;
+task_cancel.maxArgs = 1;
 task_cancel.help = "Cancel a background task\n  Usage: task_cancel TASK_ID";
 
 // Run in cycle
@@ -276,5 +291,5 @@ export async function runin(context: CommandContext, args: string[]) {
     });
 }
 runin.minArgs = 2;
-runin.minArgs = 2;
+runin.maxArgs = 2;
 runin.help = "Run in a locomotive\n  Usage: runin LOCO_ID SECONDS";

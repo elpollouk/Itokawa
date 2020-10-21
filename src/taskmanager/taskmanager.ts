@@ -7,12 +7,13 @@ export interface TaskFactory {
 }
 
 export interface TaskProgress {
-    id: number;
-    finished: boolean;
-    out?: string;
-    error?: string;
-    progress?: number;
-    progressTarget?: number;
+    id: number;                 // Id of task producing this progress data
+    finished: boolean;          // Set to true if the task has finished running
+    out?: string;               // stdout style output from task
+    error?: string;             // Task error result
+    status?: string;            // Dispayable task status
+    progress?: number;          // Amount of work done so far
+    progressTarget?: number;    // Total work expected to be completed by task
 }
 
 export interface ITask {
@@ -83,6 +84,8 @@ export abstract class TaskBase implements ITask {
     protected _onProgress(progress: TaskProgress) {
         if (this._lastProgress.finished) throw new Error("Task has already finished");
         if (progress.id !== this.id) throw new Error("Invalid task id provided for progress");
+        if (this._lastProgress.status && !progress.status)
+            progress.status = this._lastProgress.status;
         this._lastProgress = progress;
 
         for (const listener of this._listeners) listener(progress);

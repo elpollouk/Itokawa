@@ -297,6 +297,64 @@ describe("Task Manager", () => {
                 });
             })
 
+            it("should preserve status text if no new text is provided", () => {
+                const listener = stub();
+                const task = new TestTask(1);
+                task.subscribe(listener);
+                
+                task.onProgress({
+                    id: 1,
+                    finished: false,
+                    status: "Running",
+                    progress: 0
+                });
+                expect(listener.lastCall.args).to.eql([{
+                    id: 1,
+                    finished: false,
+                    status: "Running",
+                    progress: 0
+                }]);
+                expect(task.progress).to.eql({
+                    id: 1,
+                    finished: false,
+                    status: "Running",
+                    progress: 0
+                });
+
+                task.onProgress({
+                    id: 1,
+                    finished: false,
+                    progress: 2
+                });
+                expect(listener.lastCall.args).to.eql([{
+                    id: 1,
+                    finished: false,
+                    status: "Running",
+                    progress: 2
+                }]);
+                expect(task.progress).to.eql({
+                    id: 1,
+                    finished: false,
+                    status: "Running",
+                    progress: 2
+                });
+
+                task.fail("Test Fail");
+                expect(listener.lastCall.args).to.eql([{
+                    id: 1,
+                    finished: true,
+                    error: "Test Fail",
+                    status: "Running"
+                }]);
+                expect(task.progress).to.eql({
+                    id: 1,
+                    finished: true,
+                    error: "Test Fail",
+                    status: "Running",
+                });
+
+            })
+
             it("should raise an error if the wrong task id is used", () => {
                 const task = new TestTask(1);
                 expect(() => task.onProgress({
