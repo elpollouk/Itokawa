@@ -11,6 +11,8 @@ import { ICommandStation } from "./devices/commandStations/commandStation"
 import { Database } from "./model/database";
 import { DeviceEnumerator } from "./devices/deviceEnumerator";
 import { ServerFeatureFlags } from "./server/serverFeatureFlags";
+import { TaskManager } from "./taskmanager/taskmanager";
+import { RunInTask } from "./taskmanager/tasks/runin";
 
 const log = new Logger("Application");
 
@@ -58,6 +60,7 @@ class Application {
     onshutdown: ()=>Promise<void> = null;
     onrestart: ()=>Promise<void> = null;
     commandStation: ICommandStation = null;
+    readonly taskmanager = new TaskManager();
     publicUrl: string = "";
     readonly featureFlags = new ServerFeatureFlags();
     
@@ -85,7 +88,7 @@ class Application {
     private _db: Database;
 
     constructor() {
-
+        this._registerTasks();
     }
 
     // Initialise server life cycle handling
@@ -204,6 +207,10 @@ class Application {
         if (devices.length === 0) throw Error("No command stations found");
     
         return await devices[0].open();
+    }
+
+    private _registerTasks() {
+        this.taskmanager.registerTaskFactory(RunInTask);
     }
 }
 

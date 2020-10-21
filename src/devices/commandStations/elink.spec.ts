@@ -83,7 +83,7 @@ describe("eLink", () => {
 
         setTimeoutStub = stub(global, "setTimeout").returns({} as NodeJS.Timeout);
         clearTimeoutStub = stub(global, "clearTimeout");
-        promiseTimeoutStub = stub(promiseUtils, "timeout").returns(Promise.resolve());
+        promiseTimeoutStub = stub(promiseUtils, "timeout").resolves();
     })
 
     afterEach(() => {
@@ -670,6 +670,53 @@ describe("eLink", () => {
                 [0x62],
                 [0x22, 0x40, 0x00]
             ];
+
+            const value = await cs.readLocoCv(2);
+            expect(value).to.equal(0x13);
+
+            expect(portWrites).to.eql([
+                // Select CV
+                [0x22, 0x15, 0x02, 0x35],
+                // Request Value
+                [0x21, 0x10, 0x31],
+                // Heartbeat
+                [0x21, 0x24, 0x05] 
+            ]);
+            expect(portReads).to.be.empty;
+        })
+
+        it("should handle acks being sent with a small delay", async () => {
+            const cs = await initCommandStation([
+                // CV selection confirmation
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x02, 0x63],
+                [0x61, 0x01, 0x60]
+            ]);
+
+            // We want to simulate further ACK messages arriving with a slight delay by refilling
+            // the read buffer while the code under test is in a timeout
+            promiseTimeoutStub.callsFake(() => {
+                portReads = [
+                    [0x61, 0x01, 0x60],
+                    [0x61, 0x01, 0x60]
+                ];
+
+                onReadBufferEmpty = () => [
+                    // CV value
+                    [0x63],
+                    [0x14, 0x02, 0x13, 0x66],
+                    // Status info
+                    [0x62],
+                    [0x22, 0x40, 0x00]
+                ];
+
+                // As we only want the buffer to refill once, revert back to simple resolve
+                // behaviour after this call
+                promiseTimeoutStub.resolves();
+                return Promise.resolve();
+            });
 
             const value = await cs.readLocoCv(2);
             expect(value).to.equal(0x13);

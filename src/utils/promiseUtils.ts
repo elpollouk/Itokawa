@@ -45,6 +45,6 @@ export function firedEvent(source: NodeJS.EventEmitter, event: string | symbol, 
 
 export function nextTick(): Promise<void> {
     return new Promise((resolve) => {
-        process.nextTick(() => resolve());
+        process.nextTick(resolve);
     });
 }
