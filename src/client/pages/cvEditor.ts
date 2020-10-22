@@ -100,7 +100,6 @@ export class CvEditorPage extends Page {
             else {
                 control.value = value;
             }
-            control.element.scrollIntoView();
         }
     }
 
@@ -129,7 +128,11 @@ export class CvEditorPage extends Page {
         }         
 
         for (const cv of batch) {
-            if (!this._cvControls.has(cv)) continue;
+            if (!this._cvControls.has(cv)) {
+                // Pre-populate CVs that aren't in the UI yet
+                const cvName = getLocoCvName(this._manufacturer, this._version, cv);
+                this._addCv(cv, cvName, 0);
+            };
             this._cvControls.get(cv).state = State.updating;
         }
 
