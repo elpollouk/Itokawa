@@ -314,6 +314,28 @@
             <cvs>1,3,4,10,17,18,29</cvs>
         </profile>
 
+        <!-- Gaugemaster -->
+        <profile man="65" ver="51" name="Ruby Decoder DCC90">
+            <locoCvNames>
+                <cv n="9">Motor Frequency SuperSonic</cv>
+                <cv n="33">Function Mapping: F0F</cv>
+                <cv n="34">Function Mapping: F0R</cv>
+                <cv n="35">Function Mapping: F1 (Green)</cv>
+                <cv n="36">Function Mapping: F2 (Violet)</cv>
+                <cv n="49">Forward Light Effect</cv>
+                <cv n="50">Reverse Light Effect</cv>
+                <cv n="51">F1 Effect (Green)</cv>
+                <cv n="52">F2 Effect (Violet)</cv>
+                <cv n="54">Switching Speed and Torque Compensation</cv>
+                <cv n="55">BEMF: Static Compensation</cv>
+                <cv n="56">BEMF: Dynamic Compensation</cv>
+                <cv n="57">BEMF: Speed Stabilisation-Droop</cv>
+                <cv n="62">FX Rate and PowerPal Adjust</cv>
+                <cv n="63">Ditch Light Blink Hold Time</cv>
+            </locoCvNames>
+            <cvs>1-6,9,15-19,21-22,29,33-36,49-52,54-57,62-63,65-95,105-106</cvs>
+        </profile>
+
         <!-- Hatton's Decoders -->
         <profile man="79" ver="9" name="Hattons DCC Decoder">
             <locoCvNames>
