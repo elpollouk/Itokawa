@@ -13,7 +13,6 @@
             ],
             "program": "${workspaceFolder}/dist/server/main.js",
             "args": [
-                "-d", "NullCommandStation",
                 "--log-level", "debug"
             ],
         },
@@ -26,10 +25,8 @@
             ],
             "program": "${workspaceFolder}/dist/cli/main.js",
             "args": [
-                "--log-level",
-                "DEBUG",
-                "-x",
-                ".test.txt"
+                "--log-level", "debug",
+                "-x", ".test.txt"
             ],
         },
         {
