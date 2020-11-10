@@ -127,7 +127,7 @@ describe("WebSocket Command Station", () => {
 
         it("should raise an exception if the service is not listening", async () => {
             restore();
-            await expect(WebSocketCommandStation.open("url=ws://127.0.0.1:0/")).to.be.rejectedWith(/EADDRNOTAVAIL/);
+            await expect(WebSocketCommandStation.open("url=ws://127.0.0.1:0/")).to.be.rejectedWith(/(EADDRNOTAVAIL)|(ECONNREFUSED)/);
         })
     })
 
