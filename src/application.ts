@@ -180,7 +180,7 @@ class Application {
             log.error("Command station error");
             log.error(err.stack);
 
-            const retryTime = this.config.getAs("application.deviceRetryTime", DEVICE_RETRY_TIME);
+            const retryTime = this.config.getAs("application.commandStation.retryTime", DEVICE_RETRY_TIME);
             log.info(`Schedulling retry in ${retryTime}ms`);
             setTimeout(() => this._initDevice(), retryTime);
         };
@@ -199,13 +199,22 @@ class Application {
     }
 
     private async _openDevice(): Promise<ICommandStation> {
+        // Allow command line args to override everything
         if (this._args.device) {
             return await DeviceEnumerator.openDevice(this._args.device, this._args.connectionString);
         }
-    
-        let devices = await DeviceEnumerator.listDevices();
+
+        // Check if a specific command station config has been provided
+        const deviceName = this.config.getAs<string>("application.commandStation.device");
+        if (deviceName) {
+            const connectionString = this.config.getAs<string>("application.commandStation.connectionString");
+            return await DeviceEnumerator.openDevice(deviceName, connectionString);
+        }
+
+        // Nothing explicit has been configured, try auto detecting a command station
+        const devices = await DeviceEnumerator.listDevices();
         if (devices.length === 0) throw Error("No command stations found");
-    
+
         return await devices[0].open();
     }
 
