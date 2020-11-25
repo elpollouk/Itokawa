@@ -3,7 +3,7 @@ import "mocha";
 import * as password from "./password";
 
 const TEST_PASSWORD = 'tEsT1_!{ "';
-const TEST_HASH = "$scrypt512$16384$dqTFQcWIpJ0tXeUKoC8v6ZSO$ipUfahbaUBMhC2vfgVqh34D/wb3ts6neX2k+tHMIGZwddJkVvkfg+FTyIGItDuSbkxXknAc51o7OI3rxA4pTzA==";
+const TEST_HASH = "$scrypt512$16384$dqTFQcWIpJ0tXeUKoC8v6ZSOipUfahbaUBMhC2vfgVqh34D/wb3ts6neX2k+tHMIGZwddJkVvkfg+FTyIGItDuSbkxXknAc51o7OI3rxA4pTzA==";
 
 describe("Password", () => {
     describe("hash", () => {
@@ -11,35 +11,32 @@ describe("Password", () => {
             const hash = await password.hash(TEST_PASSWORD);
             const parts = hash.split("$");
 
-            expect(parts).to.have.length(5);
+            expect(parts).to.have.length(4);
             expect(parts[0]).to.be.empty;
             expect(parts[1]).to.equal("scrypt512");     // Hash scheme
             expect(parts[2]).to.equal("16384");         // Cost
-            expect(parts[3]).to.have.length(24);        // Salt
-            expect(parts[4]).to.have.length(88);        // Hash
+            expect(parts[3]).to.have.length(112);       // Salt and hash
         })
 
         it("should generate a hash in the crrect format - Explicit cost", async () => {
             const hash = await password.hash(TEST_PASSWORD, 256);
             const parts = hash.split("$");
 
-            expect(parts).to.have.length(5);
+            expect(parts).to.have.length(4);
             expect(parts[0]).to.be.empty;
             expect(parts[1]).to.equal("scrypt512");     // Hash scheme
             expect(parts[2]).to.equal("256");           // Cost
-            expect(parts[3]).to.have.length(24);        // Salt
-            expect(parts[4]).to.have.length(88);        // Hash
+            expect(parts[3]).to.have.length(112);       // Salt and hash
         })
 
         it("should generate a new hash each time for the same password", async () => {
-            const [empty1, scheme1, cost1, salt1, key1] = (await password.hash(TEST_PASSWORD)).split("$");
-            const [empty2, scheme2, cost2, salt2, key2] = (await password.hash(TEST_PASSWORD)).split("$");
+            const [empty1, scheme1, cost1, saltAndHash1] = (await password.hash(TEST_PASSWORD)).split("$");
+            const [empty2, scheme2, cost2, saltAndHash2] = (await password.hash(TEST_PASSWORD)).split("$");
 
             expect(empty1).to.equal(empty2);
             expect(scheme1).to.equal(scheme2);
             expect(cost1).to.equal(cost2);
-            expect(salt1).to.not.equal(salt2);
-            expect(key1).to.not.equal(key2);
+            expect(saltAndHash1).to.not.equal(saltAndHash2);
         })
     })
 
@@ -66,23 +63,32 @@ describe("Password", () => {
         })
 
         it("should reject an empty cost", async () => {
-            await expect(password.verify("test", "$scrypt512$$salt$key")).to.be.eventually.rejectedWith(`"" is not a valid integer`);
+            const hash = "$scrypt512$$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF==";
+            await expect(password.verify("test", hash)).to.be.eventually.rejectedWith(`"" is not a valid integer`);
         })
 
         it("should reject a non-integer cost", async () => {
-            await expect(password.verify("test", "$scrypt512$foo$salt$key")).to.be.eventually.rejectedWith(`"foo" is not a valid integer`);
+            const hash = "$scrypt512$foo$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF==";
+            await expect(password.verify("test", hash)).to.be.eventually.rejectedWith(`"foo" is not a valid integer`);
         })
 
         it("should reject a negative cost", async () => {
-            await expect(password.verify("test", "$scrypt512$-1$salt$key")).to.be.eventually.rejectedWith(/out of range/);
+            const hash = "$scrypt512$-1$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF==";
+            await expect(password.verify("test", hash)).to.be.eventually.rejectedWith(/out of range/);
         })
 
-        it("should reject an empty salt", async () => {
-            await expect(password.verify("test", "$scrypt512$128$$key")).to.be.eventually.rejectedWith("Invalid salt");
+        it("should reject an empty salt and hash", async () => {
+            await expect(password.verify("test", "$scrypt512$128$")).to.be.eventually.rejectedWith("Invalid salt and hash");
         })
 
-        it("should reject an empty key", async () => {
-            await expect(password.verify("test", "$scrypt512$128$salt$")).to.be.eventually.rejectedWith("Invalid key");
+        it("should reject a salt and hash that is too short", async () => {
+            const hash = "$scrypt512$128$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF";
+            await expect(password.verify("test", hash)).to.be.eventually.rejectedWith("Invalid salt and hash");
+        })
+
+        it("should reject a salt and hash that is too long", async () => {
+            const hash = "$scrypt512$128$0abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF==";
+            await expect(password.verify("test", hash)).to.be.eventually.rejectedWith("Invalid salt and hash");
         })
     })
 
