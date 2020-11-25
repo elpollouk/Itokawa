@@ -10,7 +10,7 @@ export class UpdatePage extends Page {
     tty: TtyControl;
     private readonly _connection: ICommandConnection;
 
-    constructor () {
+    constructor (readonly action: LifeCycleAction) {
         super();
         this._connection = client.connection;
         this.content = this._buildUI();
@@ -40,17 +40,18 @@ export class UpdatePage extends Page {
             this.tty.stderr("Connection is busy. Try again later.");
             return;
         }
-    
+
         this.tty.stdout("Requesting update...\n");
-        this.tty.stdout(`Current git revision: ${this._connection.gitRevision}\n`);
-    
+        if (this.action == LifeCycleAction.update)
+            this.tty.stdout(`Current git revision: ${this._connection.gitRevision}\n`);
+
         this._connection.request<LifeCycleRequest>(RequestType.LifeCycle, {
-            action: LifeCycleAction.update
+            action: this.action
         }, (e, r) => this.onMessage(e, r));
     }
 }
 
 export const UpdatePageConstructor: IPageConstructor = {
     path: "update",
-    create: () => new UpdatePage()
+    create: (action) => new UpdatePage(action)
 }
