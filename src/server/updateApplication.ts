@@ -7,6 +7,7 @@ import * as messages from "../common/messages";
 const log = new Logger("Updater");
 
 const UPDATE_COMMAND =  "npm run prod-update";
+const UPDATE_OS_COMMAND = "sudo apt-get update && sudo apt-get -y dist-upgrade"
 
 let _updateInProgress = false;
 
@@ -14,12 +15,11 @@ let _updateInProgress = false;
 export let _spawnAsync = spawnAsync;
 export let _setTimeout = setTimeout;
 
-export async function updateApplication(send: (message: messages.CommandResponse)=>Promise<boolean>) {
+async function _runUpdate(command: string, send: (message: messages.CommandResponse)=>Promise<boolean>) {
     if (_updateInProgress) throw new Error("An update is already in progress");
     _updateInProgress = true;
 
     try {
-        const command = application.config.getAs<string>("server.commands.update", UPDATE_COMMAND);
         const exitCode = await _spawnAsync(command, (out: string) => {
             send({
                 lastMessage: false,
@@ -34,16 +34,8 @@ export async function updateApplication(send: (message: messages.CommandResponse
         if (exitCode !== 0) throw new Error(`Update failed, process exited with code ${exitCode}`);
         await send({
             lastMessage: true,
-            data: "\nScheduling restart in 3 seconds..."
+            data: "\nUpdate complete!"
         });
-
-        _setTimeout(() => {
-            _updateInProgress = false;
-            return application.restart().catch((err: Error) => {
-                log.error(`Failed to execute restart: ${err.message}`);
-                log.error(err.stack);
-            });
-        }, 3000);
     }
     catch (ex) {
         log.error("Update failed");
@@ -51,4 +43,26 @@ export async function updateApplication(send: (message: messages.CommandResponse
         _updateInProgress = false;
         throw ex;
     }
+}
+
+export async function updateApplication(send: (message: messages.CommandResponse)=>Promise<boolean>) {
+    const command = application.config.getAs<string>("server.commands.update", UPDATE_COMMAND);
+    await _runUpdate(command, send);
+
+    _setTimeout(() => {
+        _updateInProgress = false;
+        return application.restart().catch((err: Error) => {
+            log.error(`Failed to execute restart: ${err.message}`);
+            log.error(err.stack);
+        });
+    }, 3000);
+}
+
+export async function updateOS(send: (message: messages.CommandResponse)=>Promise<boolean>) {
+    let command = application.config.getAs<string>("server.commands.updateOS");
+    if (!command && process.platform != "linux") throw new Error(`OS update not configured for ${process.platform}`);
+    command = command ?? UPDATE_OS_COMMAND;
+
+    await _runUpdate(command, send);
+    _updateInProgress = false;
 }
