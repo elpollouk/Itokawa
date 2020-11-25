@@ -68,6 +68,7 @@ describe("Password", () => {
         it("should reject an empty cost", async () => {
             await expect(password.verify("test", "$scrypt512$$salt$key")).to.be.eventually.rejectedWith(`"" is not a valid integer`);
         })
+
         it("should reject a non-integer cost", async () => {
             await expect(password.verify("test", "$scrypt512$foo$salt$key")).to.be.eventually.rejectedWith(`"foo" is not a valid integer`);
         })
