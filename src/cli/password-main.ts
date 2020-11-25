@@ -30,7 +30,7 @@ function scrypt(password: string, salt: string, cost: number): Promise<string> {
 }
 
 async function hash(password: string, cost: number): Promise<string> {
-    const salt = crypto.randomBytes(16).toString("base64");
+    const salt = crypto.randomBytes(18).toString("base64");
     const derivedKey = await scrypt(password, salt, cost);
     // Encode the hash and salt in a way that's easy for us to modify or expand on in the future
     return `${HASH_FUNCTION_ID}$${cost}$${salt}$${derivedKey}`;
