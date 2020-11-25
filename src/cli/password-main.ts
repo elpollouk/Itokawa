@@ -9,7 +9,7 @@ Logger.logLevel = LogLevel.DISPLAY;
 
 const DEFAULT_COST = 16384;
 const CONFIG_XML = "config.xml";
-const HASH_FUNCTION_ID = "scrypt";
+const HASH_FUNCTION_ID = "scrypt512";
 
 async function readPassword(prompt: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -24,13 +24,13 @@ function scrypt(password: string, salt: string, cost: number): Promise<string> {
     return new Promise((resolve, reject) => {
         crypto.scrypt(password, salt, 64, { N: cost }, (err, derivedKey) => {
             if (err) reject(err);
-            else resolve(derivedKey.toString('hex'));
+            else resolve(derivedKey.toString('base64'));
         });
     });
 }
 
 async function hash(password: string, cost: number): Promise<string> {
-    const salt = crypto.randomBytes(16).toString("hex");
+    const salt = crypto.randomBytes(16).toString("base64");
     const derivedKey = await scrypt(password, salt, cost);
     // Encode the hash and salt in a way that's easy for us to modify or expand on in the future
     return `${HASH_FUNCTION_ID}$${cost}$${salt}$${derivedKey}`;
