@@ -44,11 +44,11 @@ export interface LocoFunctionRefreshRequest {
 }
 
 export enum LifeCycleAction {
-    ping = 0,
-    shutdown = 1,
-    restart = 2,
-    update =3,
-    updateOS = 4,
+    ping = 0,       // Check if the server is responding
+    shutdown = 1,   // Request a server shutdown
+    restart = 2,    // Request a server restart
+    update = 3,     // Request an application code update
+    updateOS = 4,   // Request a server OS update
 }
 
 export interface LifeCycleRequest {
