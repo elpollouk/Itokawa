@@ -6,9 +6,7 @@ import { Logger, LogLevel } from "../utils/logger";
 import * as password from "../utils/password";
 Logger.logLevel = LogLevel.DISPLAY;
 
-const DEFAULT_COST = 16384;
 const CONFIG_XML = "config.xml";
-const HASH_FUNCTION_ID = "scrypt512";
 
 async function readPassword(prompt: string): Promise<string> {
     return new Promise((resolve, reject) => {
