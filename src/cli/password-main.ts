@@ -29,7 +29,7 @@ function scrypt(password: string, salt: string, cost: number): Promise<string> {
     });
 }
 
-async function hash(password: string, cost: number): Promise<string> {
+async function hash(password: string, cost: number = DEFAULT_COST): Promise<string> {
     const salt = crypto.randomBytes(18).toString("base64");
     const derivedKey = await scrypt(password, salt, cost);
     // Encode the hash and salt in a way that's easy for us to modify or expand on in the future
@@ -56,7 +56,7 @@ async function main() {
         process.exit(1);
     }
 
-    const hashed = await hash(password, DEFAULT_COST);
+    const hashed = await hash(password);
 
     // This is a sanity check to make sure we can verify the password in future
     if (!await verify(password, hashed)) throw new Error("Hash was not verified");
