@@ -95,6 +95,7 @@ class Application {
 
     // Initialise server life cycle handling
     //  * Initialise the data directory
+    //  * Check for restore.zip and extract it if present
     //  * Load the config file
     //  * Load the feature flags
     //  * Configure logging
