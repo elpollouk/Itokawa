@@ -13,14 +13,15 @@ import { DeviceEnumerator } from "./devices/deviceEnumerator";
 import { ServerFeatureFlags } from "./server/serverFeatureFlags";
 import { TaskManager } from "./taskmanager/taskmanager";
 import { RunInTask } from "./taskmanager/tasks/runin";
+import { registerCommandStations } from "./devices/commandStations/commandStationDirectory";
 
 const log = new Logger("Application");
 
 const DATABASE_FILE = "data.sqlite3";
 const DEVICE_RETRY_TIME = 5000;
 
-function _initDataDirectory(dataPath: string) {
-    dataPath = dataPath || pathMod.join(os.homedir(), ".itokawa");
+export function initDataDirectory(dataPath?: string) {
+    dataPath = dataPath ?? pathMod.join(os.homedir(), ".itokawa");
 
     if (!fs.existsSync(dataPath)){
         fs.mkdirSync(dataPath);
@@ -107,7 +108,7 @@ class Application {
         // directory initialisation and config loading if needed
         applyLogLevel(args);
 
-        this._dataPath =_initDataDirectory(args.datadir);
+        this._dataPath = initDataDirectory(args.datadir);
         this._configPath = this.getDataPath("config.xml");
         this._config = await loadConfig(this._configPath);
 
@@ -134,6 +135,7 @@ class Application {
 
         // Technically, we don't need this await, but it improves the experience if a
         // device is already opened before starting the server
+        registerCommandStations();
         await this._initDevice();
     }
 

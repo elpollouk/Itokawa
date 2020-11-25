@@ -1,9 +1,13 @@
 import * as crypto from "crypto";
+import * as path from "path";
 import * as read from "read";
+import { initDataDirectory } from "../application";
+import { loadConfig, saveConfig } from "../utils/config";
 import { Logger, LogLevel } from "../utils/logger";
 Logger.logLevel = LogLevel.DISPLAY;
 
 const DEFAULT_COST = 16384;
+const CONFIG_XML = "config.xml";
 
 async function readPassword(prompt: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -44,10 +48,19 @@ async function main() {
     }
 
     const hashed = await hash(password, DEFAULT_COST);
-    console.log(`Hash: ${hashed}`);
 
     // This is a sanity check to make sure we can verify the password in future
     if (!await verify(password, hashed)) throw new Error("Hash was not verified");
+
+    // Load up the config file as directly set the admin password
+    let configPath = initDataDirectory();
+    configPath = path.join(configPath, CONFIG_XML);
+    console.log(`Modifying ${configPath}...`);
+    const config = await loadConfig(configPath);
+    config.set("server.admin.password", hashed);
+    await saveConfig(configPath, config);
+
+    console.log("Config updated!");
 }
 
 main().catch((err) => {
