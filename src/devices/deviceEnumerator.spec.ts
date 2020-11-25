@@ -3,11 +3,14 @@ import "mocha";
 import * as sinon from "sinon";
 
 import { DeviceEnumerator } from "./deviceEnumerator";
+import { registerCommandStations } from "./commandStations/commandStationDirectory";
 import * as SerialPort from "serialport";
 import { NullCommandStation } from "./commandStations/null";
 import { ICommandStationConstructable } from "./commandStations/commandStation";
 
 const ELINK_PNPID_WIN = "USB\\VID_04D8&PID_000A\\6&3A757EEC&1&2";
+
+registerCommandStations();
 
 describe("Device Enumerator", () => {
 

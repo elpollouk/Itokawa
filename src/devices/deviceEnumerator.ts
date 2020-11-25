@@ -1,7 +1,6 @@
 import { Logger } from "../utils/logger";
 import * as SerialPort from "serialport";
 import { ICommandStation, ICommandStationConstructable } from "./commandStations/commandStation";
-import { registerCommandStations } from "./commandStations/commandStationDirectory";
 
 let log = new Logger("Device");
 
@@ -73,5 +72,3 @@ export class DeviceEnumerator {
         return device.open(connectionString);
     }
 }
-
-registerCommandStations();
