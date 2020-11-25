@@ -3,7 +3,7 @@ import "mocha";
 import * as password from "./password";
 
 const TEST_PASSWORD = 'tEsT1_!{ "';
-const TEST_HASH = "$scrypt512$16384$dqTFQcWIpJ0tXeUKoC8v6ZSOipUfahbaUBMhC2vfgVqh34D/wb3ts6neX2k+tHMIGZwddJkVvkfg+FTyIGItDuSbkxXknAc51o7OI3rxA4pTzA==";
+const TEST_HASH = "$scrypt512$16384$dqTFQcWIpJ0tXeUKoC8v6ZSOipUfahbaUBMhC2vfgVqh34D/wb3ts6neX2k+tHMIGZwddJkVvkfg+FTyIGItDuSbkxXknAc51o7OI3rxA4pTzA";
 
 describe("Password", () => {
     describe("hash", () => {
@@ -15,7 +15,7 @@ describe("Password", () => {
             expect(parts[0]).to.be.empty;
             expect(parts[1]).to.equal("scrypt512");     // Hash scheme
             expect(parts[2]).to.equal("16384");         // Cost
-            expect(parts[3]).to.have.length(112);       // Salt and hash
+            expect(parts[3]).to.have.length(110);       // Salt and hash
         })
 
         it("should generate a hash in the crrect format - Explicit cost", async () => {
@@ -26,7 +26,7 @@ describe("Password", () => {
             expect(parts[0]).to.be.empty;
             expect(parts[1]).to.equal("scrypt512");     // Hash scheme
             expect(parts[2]).to.equal("256");           // Cost
-            expect(parts[3]).to.have.length(112);       // Salt and hash
+            expect(parts[3]).to.have.length(110);       // Salt and hash
         })
 
         it("should generate a new hash each time for the same password", async () => {
@@ -63,17 +63,17 @@ describe("Password", () => {
         })
 
         it("should reject an empty cost", async () => {
-            const hash = "$scrypt512$$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF==";
+            const hash = "$scrypt512$$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF";
             await expect(password.verify("test", hash)).to.be.eventually.rejectedWith(`"" is not a valid integer`);
         })
 
         it("should reject a non-integer cost", async () => {
-            const hash = "$scrypt512$foo$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF==";
+            const hash = "$scrypt512$foo$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF";
             await expect(password.verify("test", hash)).to.be.eventually.rejectedWith(`"foo" is not a valid integer`);
         })
 
         it("should reject a negative cost", async () => {
-            const hash = "$scrypt512$-1$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF==";
+            const hash = "$scrypt512$-1$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF";
             await expect(password.verify("test", hash)).to.be.eventually.rejectedWith(/out of range/);
         })
 
@@ -82,36 +82,46 @@ describe("Password", () => {
         })
 
         it("should reject a salt and hash that is too short", async () => {
-            const hash = "$scrypt512$128$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF";
+            const hash = "$scrypt512$128$abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDE";
             await expect(password.verify("test", hash)).to.be.eventually.rejectedWith("Invalid salt and hash");
         })
 
         it("should reject a salt and hash that is too long", async () => {
-            const hash = "$scrypt512$128$0abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF==";
+            const hash = "$scrypt512$128$0abcdefghij0123456789ABCDabcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789ABCDEF";
             await expect(password.verify("test", hash)).to.be.eventually.rejectedWith("Invalid salt and hash");
         })
     })
 
-    describe("scrypt", () => {
-        it("should return a valid key", async () => {
-            const key = await password.scrypt("test", "0123456789ABCDEF", 128);
-            expect(key).to.have.length(88);
+    describe("scrypt512", () => {
+        it("should return a valid hash", async () => {
+            const key = await password.scrypt512("test", "0123456789ABCDEF", 128);
+            expect(key).to.have.length(86);
+        })
+
+        it("should return a valid hash when using a shorter salt", async () => {
+            const key = await password.scrypt512("test", "01234567", 128);
+            expect(key).to.have.length(86);
+        })
+
+        it("should return a valid hash when using a longer salt", async () => {
+            const key = await password.scrypt512("test", "0123456789ABCDEF0123456789ABCDEF", 128);
+            expect(key).to.have.length(86);
         })
 
         it("should reject invalid cost values", async () => {
-            await expect(password.scrypt("test", "01234567890ABCDEF", 20000)).to.be.eventually.rejectedWith("Invalid scrypt parameter");
+            await expect(password.scrypt512("test", "01234567890ABCDEF", 20000)).to.be.eventually.rejectedWith("Invalid scrypt parameter");
         })
 
         it("should reject on too much memory use", async () => {
-            await expect(password.scrypt("test", "01234567890ABCDEF", 32768)).to.be.eventually.rejectedWith(/memory limit exceeded/);
+            await expect(password.scrypt512("test", "01234567890ABCDEF", 32768)).to.be.eventually.rejectedWith(/memory limit exceeded/);
         })
 
         it("should reject a null password", async () => {
-            await expect(password.scrypt(null, "01234567890ABCDEF", 128)).to.be.eventually.rejectedWith(/The "password" argument must be one of type string, Buffer, TypedArray, or DataView/);
+            await expect(password.scrypt512(null, "01234567890ABCDEF", 128)).to.be.eventually.rejectedWith(/The "password" argument must be one of type string, Buffer, TypedArray, or DataView/);
         });
 
         it("should reject a null salt", async () => {
-            await expect(password.scrypt("test", null, 128)).to.be.eventually.rejectedWith(/The "salt" argument must be one of type string, Buffer, TypedArray, or DataView/);
+            await expect(password.scrypt512("test", null, 128)).to.be.eventually.rejectedWith(/The "salt" argument must be one of type string, Buffer, TypedArray, or DataView/);
         });
     })
 })
