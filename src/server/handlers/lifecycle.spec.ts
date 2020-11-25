@@ -48,7 +48,7 @@ describe("Life Cycle Handler", () => {
         })
 
         afterEach(() => {
-            shutdownStub.restore();
+            restore();
         })
 
         it("should request an application shutdown", async () => {
@@ -76,7 +76,7 @@ describe("Life Cycle Handler", () => {
         })
 
         afterEach(() => {
-            restartStub.restore();
+            restore();
         })
 
         it("should request a restart", async () => {
@@ -111,7 +111,7 @@ describe("Life Cycle Handler", () => {
         })
 
         afterEach(() => {
-            updateApplicationStub.restore();
+            restore();
         })
 
         it("should request an update", async () => {
@@ -178,9 +178,7 @@ describe("Life Cycle Handler", () => {
         })
 
         afterEach(() => {
-            commandStationStub.restore();
-            gitRevStub.restore();
-            publicUrlStub.restore();
+            restore();
         })
 
         it("should return a ping response for a null command station", async () => {
