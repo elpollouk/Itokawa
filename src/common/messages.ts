@@ -48,6 +48,7 @@ export enum LifeCycleAction {
     shutdown = 1,
     restart = 2,
     update =3,
+    updateOS = 4,
 }
 
 export interface LifeCycleRequest {

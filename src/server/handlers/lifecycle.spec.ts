@@ -1,7 +1,7 @@
 import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
-import { stub, SinonStub, SinonSpy } from "sinon";
+import { stub, SinonStub, SinonSpy, restore } from "sinon";
 import { registerHandlers } from "./lifecycle";
 import { RequestType, LifeCycleRequest, LifeCycleAction } from "../../common/messages";
 import * as handlers from "./handlers";
@@ -127,6 +127,41 @@ describe("Life Cycle Handler", () => {
             expect(sendStub.lastCall.args).to.eql([{
                 lastMessage: false,
                 data: "Foo"
+            }]);
+        })
+    })
+
+    describe("Update OS Request", () => {
+        let updateOSStub: SinonStub;
+
+        beforeEach(() => {
+            updateOSStub = stub(applicationUpdate, "updateOS")
+                                    .callsFake((send: handlers.Sender) => {
+                                        send({
+                                            lastMessage: false,
+                                            data: "Bar"
+                                        });
+                                        return Promise.resolve();
+                                    });
+        })
+
+        afterEach(() => {
+            restore();
+        })
+
+        it("should request an update", async () => {
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await handlers.get(RequestType.LifeCycle)({
+                action: LifeCycleAction.updateOS
+            } as LifeCycleRequest, sendStub);
+
+            expect(updateOSStub.callCount).to.equal(1);
+            expect(sendStub.callCount).to.equal(1);
+            expect(sendStub.lastCall.args).to.eql([{
+                lastMessage: false,
+                data: "Bar"
             }]);
         })
     })
