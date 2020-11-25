@@ -24,7 +24,7 @@ function scrypt(password: string, salt: string, cost: number): Promise<string> {
     return new Promise((resolve, reject) => {
         crypto.scrypt(password, salt, 64, { N: cost }, (err, derivedKey) => {
             if (err) reject(err);
-            resolve(derivedKey.toString('hex'));
+            else resolve(derivedKey.toString('hex'));
         });
     });
 }
