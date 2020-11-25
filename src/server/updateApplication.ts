@@ -15,7 +15,7 @@ let _updateInProgress = false;
 export let _spawnAsync = spawnAsync;
 export let _setTimeout = setTimeout;
 
-async function _runUpdate(command: string, send: (message: messages.CommandResponse)=>Promise<boolean>) {
+async function _runUpdate(command: string, successMessage: string, send: (message: messages.CommandResponse)=>Promise<boolean>) {
     if (_updateInProgress) throw new Error("An update is already in progress");
     _updateInProgress = true;
 
@@ -34,7 +34,7 @@ async function _runUpdate(command: string, send: (message: messages.CommandRespo
         if (exitCode !== 0) throw new Error(`Update failed, process exited with code ${exitCode}`);
         await send({
             lastMessage: true,
-            data: "\nUpdate complete!"
+            data: `\n${successMessage}`
         });
     }
     catch (ex) {
@@ -47,7 +47,7 @@ async function _runUpdate(command: string, send: (message: messages.CommandRespo
 
 export async function updateApplication(send: (message: messages.CommandResponse)=>Promise<boolean>) {
     const command = application.config.getAs<string>("server.commands.update", UPDATE_COMMAND);
-    await _runUpdate(command, send);
+    await _runUpdate(command, "Scheduling restart in 3 seconds...", send);
 
     _setTimeout(() => {
         _updateInProgress = false;
@@ -63,6 +63,6 @@ export async function updateOS(send: (message: messages.CommandResponse)=>Promis
     if (!command && process.platform != "linux") throw new Error(`OS update not configured for ${process.platform}`);
     command = command ?? UPDATE_OS_COMMAND;
 
-    await _runUpdate(command, send);
+    await _runUpdate(command, "Update complete!", send);
     _updateInProgress = false;
 }
