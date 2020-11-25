@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import "mocha";
-import "./parsers";
 import { parseCommand, splitStringEx, parseConnectionString, parseIntStrict, parseFloatStrict } from "./parsers";
 
 describe("Parsers", () => {

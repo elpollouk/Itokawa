@@ -1,10 +1,9 @@
-import * as crypto from "crypto";
 import * as path from "path";
 import * as read from "read";
 import { initDataDirectory } from "../application";
 import { loadConfig, saveConfig } from "../utils/config";
 import { Logger, LogLevel } from "../utils/logger";
-import { parseIntStrict } from "../utils/parsers";
+import * as password from "../utils/password";
 Logger.logLevel = LogLevel.DISPLAY;
 
 const DEFAULT_COST = 16384;
@@ -20,46 +19,23 @@ async function readPassword(prompt: string): Promise<string> {
     });
 }
 
-function scrypt(password: string, salt: string, cost: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-        crypto.scrypt(password, salt, 64, { N: cost }, (err, derivedKey) => {
-            if (err) reject(err);
-            else resolve(derivedKey.toString('base64'));
-        });
-    });
-}
-
-async function hash(password: string, cost: number = DEFAULT_COST): Promise<string> {
-    const salt = crypto.randomBytes(18).toString("base64");
-    const derivedKey = await scrypt(password, salt, cost);
-    // Encode the hash and salt in a way that's easy for us to modify or expand on in the future
-    return `${HASH_FUNCTION_ID}$${cost}$${salt}$${derivedKey}`;
-}
-
-async function verify(password: string, hash: string): Promise<boolean> {
-    const [type, cost, salt, key] = hash.split("$");
-    if (type !== HASH_FUNCTION_ID) throw new Error(`Unknown hash function: ${type}`);
-    const derivedKey = await scrypt(password, salt, parseIntStrict(cost));
-    return key == derivedKey;
-}
-
 async function main() {
-    const password = await readPassword("New admin password: ");
-    if (!password) {
+    const pass = await readPassword("New admin password: ");
+    if (!pass) {
         console.error("No password provided!");
         process.exit(1);
     }
 
     const check = await readPassword("Repeat password: ");
-    if (password !== check) {
+    if (pass !== check) {
         console.error("Passwords did not match!");
         process.exit(1);
     }
 
-    const hashed = await hash(password);
+    const hashed = await password.hash(pass);
 
     // This is a sanity check to make sure we can verify the password in future
-    if (!await verify(password, hashed)) throw new Error("Hash was not verified");
+    if (!await password.verify(pass, hashed)) throw new Error("Hash was not verified");
 
     // Load up the config file directly to set the admin password
     let configPath = initDataDirectory();
