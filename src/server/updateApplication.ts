@@ -20,28 +20,37 @@ async function _runUpdate(command: string, successMessage: string, send: (messag
     _updateInProgress = true;
 
     try {
-        const exitCode = await _spawnAsync(command, (out: string) => {
-            send({
-                lastMessage: false,
-                data: out
+        const endOperation = application.beginSensitiveOperation();
+
+        try {
+            const exitCode = await _spawnAsync(command, (out: string) => {
+                send({
+                    lastMessage: false,
+                    data: out
+                });
+            }, (err: string) => {
+                send({
+                    lastMessage: false,
+                    error: err
+                });
             });
-        }, (err: string) => {
-            send({
-                lastMessage: false,
-                error: err
+            if (exitCode !== 0) throw new Error(`Update failed, process exited with code ${exitCode}`);
+            await send({
+                lastMessage: true,
+                data: `\n${successMessage}`
             });
-        });
-        if (exitCode !== 0) throw new Error(`Update failed, process exited with code ${exitCode}`);
-        await send({
-            lastMessage: true,
-            data: `\n${successMessage}`
-        });
+        }
+        catch (ex) {
+            log.error("Update failed");
+            log.error(ex.stack);
+            throw ex;
+        }
+        finally {
+            endOperation();
+        }
     }
-    catch (ex) {
-        log.error("Update failed");
-        log.error(ex.stack);
+    finally {
         _updateInProgress = false;
-        throw ex;
     }
 }
 
@@ -49,12 +58,14 @@ export async function updateApplication(send: (message: messages.CommandResponse
     const command = application.config.getAs<string>("server.commands.update", UPDATE_COMMAND);
     await _runUpdate(command, "Scheduling restart in 3 seconds...", send);
 
-    _setTimeout(() => {
-        _updateInProgress = false;
-        return application.restart().catch((err: Error) => {
+    // TODO - Move to client request so that the user can be asked if they want to restart
+    _setTimeout(async () => {
+        try {
+            await application.restart();
+        } catch (err) {
             log.error(`Failed to execute restart: ${err.message}`);
             log.error(err.stack);
-        });
+        }
     }, 3000);
 }
 
@@ -64,5 +75,4 @@ export async function updateOS(send: (message: messages.CommandResponse)=>Promis
     command = command ?? UPDATE_OS_COMMAND;
 
     await _runUpdate(command, "Update complete!", send);
-    _updateInProgress = false;
 }
