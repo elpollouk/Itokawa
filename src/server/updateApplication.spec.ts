@@ -9,7 +9,9 @@ import * as updater from "./updateApplication";
 describe("Updater", () => {
     let spawnAsyncStub: SinonStub;
     let setTimeoutStub: SinonStub;
+    let applicationBeginSensitiveOperation: SinonStub;
     let applicationRestartStub: SinonStub;
+    let endOperation: SinonStub;
     let sender: SinonStub;
     let platformStub: SinonStub;
     let spawnExitCode = 0;
@@ -18,6 +20,8 @@ describe("Updater", () => {
         spawnExitCode = 0;
         spawnAsyncStub = stub(updater, "_spawnAsync").callsFake(() => Promise.resolve(spawnExitCode));
         setTimeoutStub = stub(updater, "_setTimeout");
+        endOperation = stub();
+        applicationBeginSensitiveOperation = stub(application, "beginSensitiveOperation").returns(endOperation);
         applicationRestartStub = stub(application, "restart").returns(Promise.resolve());
         sender = stub().callsFake(() => Promise.resolve());
 
@@ -40,6 +44,7 @@ describe("Updater", () => {
             expect(setTimeoutStub.callCount).to.equal(1);
             expect(setTimeoutStub.lastCall.args[1]).to.equal(3000);
             expect(sender.lastCall.args[0].lastMessage).to.be.true;
+            expect(endOperation.callCount).to.equal(1);
 
             await setTimeoutStub.lastCall.args[0]();
             expect(applicationRestartStub.callCount).to.equal(1);
@@ -50,6 +55,7 @@ describe("Updater", () => {
             await setTimeoutStub.lastCall.args[0]();
             await updater.updateApplication(sender);
             expect(spawnAsyncStub.callCount).to.equal(2);
+            expect(applicationBeginSensitiveOperation.callCount).to.equal(2);
         })
 
         it("should catch restart errors", async () => {
@@ -58,14 +64,20 @@ describe("Updater", () => {
             await setTimeoutStub.lastCall.args[0]();
         })
 
+        it("should reject if a life cycle action is in progress", async () => {
+            applicationBeginSensitiveOperation.throws(new Error("Life cycle busy"));
+            await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("Life cycle busy");
+        })
+
         it("should reject a second attempt to update if an update is strill in progress", async () => {
             await updater.updateApplication(sender);
-            expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("An update is already in progress");
+            await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("An update is already in progress");
         })
 
         it("should report a failed update attempt", async () => {
             spawnExitCode = 1;
-            expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("Update failed, process exited with code 1");
+            await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("Update failed, process exited with code 1");
+            expect(endOperation.callCount).to.equal(1);
         })
 
         it("should send stdout", async () => {
@@ -112,17 +124,25 @@ describe("Updater", () => {
             expect(spawnAsyncStub.callCount).to.equal(1);
             expect(spawnAsyncStub.lastCall.args[0]).to.equal("sudo apt-get update && sudo apt-get -y dist-upgrade");
             expect(sender.lastCall.args[0].lastMessage).to.be.true;
+            expect(endOperation.callCount).to.equal(1);
         })
 
         it("should be possible to run another update after the first finishes", async () => {
             await updater.updateOS(sender);
             await updater.updateOS(sender);
             expect(spawnAsyncStub.callCount).to.equal(2);
+            expect(applicationBeginSensitiveOperation.callCount).to.equal(2);
+        })
+
+        it("should reject if a life cycle action is in progress", async () => {
+            applicationBeginSensitiveOperation.throws(new Error("Life cycle busy"));
+            await expect(updater.updateOS(sender)).to.be.eventually.rejectedWith("Life cycle busy");
         })
 
         it("should report a failed update attempt", async () => {
             spawnExitCode = 1;
-            expect(updater.updateOS(sender)).to.be.eventually.rejectedWith("Update failed, process exited with code 1");
+            await expect(updater.updateOS(sender)).to.be.eventually.rejectedWith("Update failed, process exited with code 1");
+            expect(endOperation.callCount).to.equal(1);
         })
 
         it("should send stdout", async () => {

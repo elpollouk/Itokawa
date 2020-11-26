@@ -16,6 +16,8 @@ export let _spawnAsync = spawnAsync;
 export let _setTimeout = setTimeout;
 
 async function _runUpdate(command: string, successMessage: string, send: (message: messages.CommandResponse)=>Promise<boolean>) {
+    const endOperation = application.beginSensitiveOperation();
+
     if (_updateInProgress) throw new Error("An update is already in progress");
     _updateInProgress = true;
 
@@ -42,6 +44,9 @@ async function _runUpdate(command: string, successMessage: string, send: (messag
         log.error(ex.stack);
         _updateInProgress = false;
         throw ex;
+    }
+    finally {
+        endOperation();
     }
 }
 
