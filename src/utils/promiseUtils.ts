@@ -1,5 +1,3 @@
-import e = require("express");
-
 export class OutArg<T> {
     value: T;
 }
