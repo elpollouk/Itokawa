@@ -184,19 +184,31 @@ class Application {
     }
 
     async shutdown() {
+        log.info("Shutdown requested...");
         this._ensureExclusiveLifeCycleLock();
-        if (this.onshutdownbegin) await this.onshutdownbegin();
-        await this._shutdown();
-        if (this.onshutdown) await this.onshutdown();
-        process.exit(0);
+        try {
+            if (this.onshutdownbegin) await this.onshutdownbegin();
+            await this._shutdown();
+            if (this.onshutdown) await this.onshutdown();
+            process.exit(0);
+        }
+        finally {
+            this._lifeCycleLockCount = 0;
+        }
     }
 
     async restart() {
+        log.info("Reboot requested...");
         this._ensureExclusiveLifeCycleLock();
-        if (this.onrestartbegin) await this.onrestartbegin();
-        await this._shutdown();
-        if (this.onrestart) await this.onrestart();
-        process.exit(0);
+        try {
+            if (this.onrestartbegin) await this.onrestartbegin();
+            await this._shutdown();
+            if (this.onrestart) await this.onrestart();
+            process.exit(0);
+        }
+        finally {
+            this._lifeCycleLockCount = 0;
+        }
     }
 
     private async _initDevice() {
