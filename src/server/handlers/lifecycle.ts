@@ -1,7 +1,7 @@
 import { HandlerMap, Sender, ok } from "./handlers"
 import { application } from "../../application";
 import { LifeCycleRequest, LifeCycleAction, LifeCyclePingResponse, RequestType } from "../../common/messages";
-import { updateApplication } from "../updateApplication";
+import { updateApplication, updateOS } from "../updateApplication";
 
 async function onLifeCycleMessage(request: LifeCycleRequest, send: Sender): Promise<void> {
     switch(request.action) {
@@ -30,6 +30,10 @@ async function onLifeCycleMessage(request: LifeCycleRequest, send: Sender): Prom
 
         case LifeCycleAction.update:
             await updateApplication(send);
+            break;
+
+        case LifeCycleAction.updateOS:
+            await updateOS(send);
             break;
 
         default:

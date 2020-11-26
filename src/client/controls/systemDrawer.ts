@@ -93,7 +93,7 @@ export class SystemDrawControl extends ControlBase {
         }
 
         prompt.stackedPrompt(
-            "Server Control",[
+            "Server Control", [
                 action("Shutdown", "Are you sure you want to shutdown server?", () => {
                     if (client.connection.state !== ConnectionState.Idle) return;
                     client.connection.request<LifeCycleRequest>(RequestType.LifeCycle, {
@@ -112,7 +112,11 @@ export class SystemDrawControl extends ControlBase {
                 }),
                 action("Update", "Are you sure you want to update server?", () => {
                     if (!(nav.currentPage instanceof UpdatePage))
-                        nav.open(UpdatePageConstructor.path);
+                        nav.open(UpdatePageConstructor.path, LifeCycleAction.update);
+                }),
+                action("Update OS", "Are you sure you want to update the server OS?", () => {
+                    if (!(nav.currentPage instanceof UpdatePage))
+                        nav.open(UpdatePageConstructor.path, LifeCycleAction.updateOS);
                 }),
                 { caption: "Cancel" }
             ]
