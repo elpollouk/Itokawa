@@ -69,11 +69,6 @@ describe("Updater", () => {
             await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("Life cycle busy");
         })
 
-        it("should reject a second attempt to update if an update is strill in progress", async () => {
-            await updater.updateApplication(sender);
-            await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("An update is already in progress");
-        })
-
         it("should report a failed update attempt", async () => {
             spawnExitCode = 1;
             await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("Update failed, process exited with code 1");

@@ -9,17 +9,12 @@ const log = new Logger("Updater");
 const UPDATE_COMMAND =  "npm run prod-update";
 const UPDATE_OS_COMMAND = "sudo apt-get update && sudo apt-get -y dist-upgrade"
 
-let _updateInProgress = false;
-
 // Hooks to allow for testing so that tests that use global functions can overlap
 export let _spawnAsync = spawnAsync;
 export let _setTimeout = setTimeout;
 
 async function _runUpdate(command: string, successMessage: string, send: (message: messages.CommandResponse)=>Promise<boolean>) {
     const endOperation = application.beginSensitiveOperation();
-
-    if (_updateInProgress) throw new Error("An update is already in progress");
-    _updateInProgress = true;
 
     try {
         const exitCode = await _spawnAsync(command, (out: string) => {
@@ -42,7 +37,6 @@ async function _runUpdate(command: string, successMessage: string, send: (messag
     catch (ex) {
         log.error("Update failed");
         log.error(ex.stack);
-        _updateInProgress = false;
         throw ex;
     }
     finally {
@@ -54,8 +48,8 @@ export async function updateApplication(send: (message: messages.CommandResponse
     const command = application.config.getAs<string>("server.commands.update", UPDATE_COMMAND);
     await _runUpdate(command, "Scheduling restart in 3 seconds...", send);
 
+    // TODO - Move to client request so that the user can be asked if they want to restart
     _setTimeout(() => {
-        _updateInProgress = false;
         return application.restart().catch((err: Error) => {
             log.error(`Failed to execute restart: ${err.message}`);
             log.error(err.stack);
@@ -69,5 +63,4 @@ export async function updateOS(send: (message: messages.CommandResponse)=>Promis
     command = command ?? UPDATE_OS_COMMAND;
 
     await _runUpdate(command, "Update complete!", send);
-    _updateInProgress = false;
 }
