@@ -120,7 +120,6 @@ describe("Updater", () => {
             expect(spawnAsyncStub.callCount).to.equal(2);
         })
 
-
         it("should report a failed update attempt", async () => {
             spawnExitCode = 1;
             expect(updater.updateOS(sender)).to.be.eventually.rejectedWith("Update failed, process exited with code 1");
