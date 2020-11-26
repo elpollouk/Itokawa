@@ -1,3 +1,5 @@
+import e = require("express");
+
 export class OutArg<T> {
     value: T;
 }
@@ -47,4 +49,38 @@ export function nextTick(): Promise<void> {
     return new Promise((resolve) => {
         process.nextTick(resolve);
     });
+}
+
+export class SignalablePromise<T = void> implements Promise<T> {
+    private readonly _promise: Promise<T>;
+    private _resolve: (result?: T | PromiseLike<T>) => void;
+    private _reject: (reason?: any) => void;
+
+    constructor() {
+        this._promise = new Promise<T>((resolve, reject) => {
+            this._resolve = resolve;
+            this._reject = reject;
+        });
+    }
+
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: (value: T) => TResult1 | PromiseLike<TResult1>, onrejected?: (reason: any) => TResult2 | PromiseLike<TResult2>): Promise<TResult1 | TResult2> {
+        return this._promise.then(onfulfilled, onrejected);
+    }
+
+    catch<TResult = never>(onrejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<T | TResult> {
+        return this._promise.catch(onrejected);
+    }
+
+    [Symbol.toStringTag]: string;
+    finally(onfinally?: () => void): Promise<T> {
+        return this._promise.finally(onfinally);
+    }
+
+    resolve(result?: T | PromiseLike<T>) {
+        this._resolve(result);
+    }
+
+    reject(reason?: any) {
+        this._reject(reason);
+    }
 }

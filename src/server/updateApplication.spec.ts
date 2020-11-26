@@ -3,6 +3,7 @@ import "mocha";
 import { stub, SinonStub, restore } from "sinon";
 import { application } from "../application";
 import { ConfigNode } from "../utils/config";
+import { SignalablePromise } from "../utils/promiseUtils";
 
 import * as updater from "./updateApplication";
 
@@ -76,15 +77,14 @@ describe("Updater", () => {
         })
 
         it("should send stdout", async () => {
-            let resolve: (exitCode: number)=>void;
-            const spawnPromise = new Promise<number>((_resolve) => { resolve = _resolve; });
+            const spawnPromise = new SignalablePromise<number>();
             spawnAsyncStub.returns(spawnPromise);
 
             const updatePromise = updater.updateApplication(sender);
             spawnAsyncStub.lastCall.args[1]("stdout data");
 
             // Finish up the 
-            resolve(0);
+            spawnPromise.resolve(0);
             await updatePromise;
 
             expect(sender.callCount).to.equal(2);
@@ -95,14 +95,13 @@ describe("Updater", () => {
         })
 
         it("should send stderr", async () => {
-            let resolve: (exitCode: number)=>void;
-            const spawnPromise = new Promise<number>((_resolve) => { resolve = _resolve; });
+            const spawnPromise = new SignalablePromise<number>();
             spawnAsyncStub.returns(spawnPromise);
 
             const updatePromise = updater.updateApplication(sender);
             spawnAsyncStub.lastCall.args[2]("stderr data");
 
-            resolve(0);
+            spawnPromise.resolve(0);
             await updatePromise;
 
             expect(sender.callCount).to.equal(2);
@@ -141,15 +140,14 @@ describe("Updater", () => {
         })
 
         it("should send stdout", async () => {
-            let resolve: (exitCode: number)=>void;
-            const spawnPromise = new Promise<number>((_resolve) => { resolve = _resolve; });
+            const spawnPromise = new SignalablePromise<number>();
             spawnAsyncStub.returns(spawnPromise);
 
             const updatePromise = updater.updateOS(sender);
             spawnAsyncStub.lastCall.args[1]("stdout data");
 
             // Finish up the 
-            resolve(0);
+            spawnPromise.resolve(0);
             await updatePromise;
 
             expect(sender.callCount).to.equal(2);
@@ -160,14 +158,13 @@ describe("Updater", () => {
         })
 
         it("should send stderr", async () => {
-            let resolve: (exitCode: number)=>void;
-            const spawnPromise = new Promise<number>((_resolve) => { resolve = _resolve; });
+            const spawnPromise = new SignalablePromise<number>();
             spawnAsyncStub.returns(spawnPromise);
 
             const updatePromise = updater.updateOS(sender);
             spawnAsyncStub.lastCall.args[2]("stderr data");
 
-            resolve(0);
+            spawnPromise.resolve(0);
             await updatePromise;
 
             expect(sender.callCount).to.equal(2);

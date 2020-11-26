@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import "mocha";
-import { mock } from "sinon";
+import { mock, SinonStub, stub } from "sinon";
 import { EventEmitter } from "events";
-import { firedEvent, nextTick, OutArg, CancelFunc, timeout } from "./promiseUtils";
+import { firedEvent, nextTick, OutArg, CancelFunc, timeout, SignalablePromise } from "./promiseUtils";
 
 describe("Promise Utils", () => {
     describe("timeout", () => {
@@ -188,4 +188,72 @@ describe("Promise Utils", () => {
             expect(rejected.callCount).to.equal(0);
         });
     });
+
+    describe("SignalablePromise", () => {
+
+        let resolvedCb: SinonStub;
+        let rejectedCb: SinonStub;
+        let catchCb: SinonStub;
+        let finallyCb: SinonStub;
+
+        function createPromise<T = void>() {
+            resolvedCb = stub();
+            rejectedCb = stub();
+            catchCb = stub();
+            finallyCb = stub();
+            const promise = new SignalablePromise<T>();
+            promise.then(resolvedCb, rejectedCb);
+            promise.catch(catchCb);
+            promise.finally(finallyCb);
+
+            return promise;
+        }
+
+        describe("resolve", () => {
+            it("should trigger then and finally callbacks for a void promise", async () => {
+                const promise = createPromise();
+
+                promise.resolve();
+                await nextTick();
+
+                expect(resolvedCb.callCount).to.eql(1);
+                expect(rejectedCb.callCount).to.eql(0);
+                expect(catchCb.callCount).to.eql(0);
+                expect(finallyCb.callCount).to.eql(1);
+                expect(finallyCb.lastCall.args).to.be.empty;
+            })
+
+            it("should trigger then and finally callbacks for a string promise", async () => {
+                const promise = createPromise<string>();
+
+                promise.resolve("Test");
+                await nextTick();
+
+                expect(resolvedCb.callCount).to.eql(1);
+                expect(resolvedCb.lastCall.args).to.eql(["Test"]);
+                expect(rejectedCb.callCount).to.eql(0);
+                expect(catchCb.callCount).to.eql(0);
+                expect(finallyCb.callCount).to.eql(1);
+                expect(finallyCb.lastCall.args).to.be.empty;
+            })
+
+            it ("should return value to waiters", async () => {
+                const promise = new SignalablePromise<number>();
+
+                promise.resolve(123);
+
+                expect(await promise).to.eql(123);
+            })
+        })
+
+        describe("reject", () => {
+            it("should trigger errors for waiters when rejected", async () => {
+                const promise = new SignalablePromise();
+                
+                promise.reject(new Error("Test Error"));
+
+                await expect(promise).to.be.eventually.rejectedWith("Test Error");
+            })
+        })
+    })
 });
