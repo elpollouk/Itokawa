@@ -65,6 +65,19 @@ describe("Updater", () => {
             await setTimeoutStub.lastCall.args[0]();
         })
 
+        it("should reject a second attempt to update if an update is still in progress", async () => {
+            const spawnPromise = new SignalablePromise<number>();
+            spawnAsyncStub.returns(spawnPromise);
+            const updatePromise = updater.updateApplication(sender);
+            try {
+                await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("An update is already in progress");
+            }
+            finally {
+                spawnPromise.resolve(0);
+                await updatePromise;
+            }
+        })
+
         it("should reject if a life cycle action is in progress", async () => {
             applicationBeginSensitiveOperation.throws(new Error("Life cycle busy"));
             await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("Life cycle busy");
@@ -126,6 +139,19 @@ describe("Updater", () => {
             await updater.updateOS(sender);
             expect(spawnAsyncStub.callCount).to.equal(2);
             expect(applicationBeginSensitiveOperation.callCount).to.equal(2);
+        })
+
+        it("should reject a second attempt to update if an update is still in progress", async () => {
+            const spawnPromise = new SignalablePromise<number>();
+            spawnAsyncStub.returns(spawnPromise);
+            const updatePromise = updater.updateOS(sender);
+            try {
+                await expect(updater.updateOS(sender)).to.be.eventually.rejectedWith("An update is already in progress");
+            }
+            finally {
+                spawnPromise.resolve(0);
+                await updatePromise;
+            }
         })
 
         it("should reject if a life cycle action is in progress", async () => {
