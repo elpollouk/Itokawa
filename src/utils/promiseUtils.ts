@@ -61,7 +61,7 @@ export class SignalablePromise<T = void> implements Promise<T> {
         });
     }
 
-    [Symbol.toStringTag]: string;
+    readonly [Symbol.toStringTag] = "SignalablePromise";
 
     then<TResult1 = T, TResult2 = never>(onfulfilled?: (value: T) => TResult1 | PromiseLike<TResult1>, onrejected?: (reason: any) => TResult2 | PromiseLike<TResult2>): Promise<TResult1 | TResult2> {
         return this._promise.then(onfulfilled, onrejected);
