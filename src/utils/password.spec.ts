@@ -117,11 +117,11 @@ describe("Password", () => {
         })
 
         it("should reject a null password", async () => {
-            await expect(password.scrypt512(null, "01234567890ABCDEF", 128)).to.be.eventually.rejectedWith(/The "password" argument must be one of type string, Buffer, TypedArray, or DataView/);
+            await expect(password.scrypt512(null, "01234567890ABCDEF", 128)).to.be.eventually.rejectedWith(/The "password" argument must be( one)? of type string/);
         });
 
         it("should reject a null salt", async () => {
-            await expect(password.scrypt512("test", null, 128)).to.be.eventually.rejectedWith(/The "salt" argument must be one of type string, Buffer, TypedArray, or DataView/);
+            await expect(password.scrypt512("test", null, 128)).to.be.eventually.rejectedWith(/The "salt" argument must be( one)? of type string/);
         });
     })
 })
