@@ -177,7 +177,8 @@ class Application {
         // We return a release function to ensure that it is only possible to decrement the lock once per operation
         let app = this;
         return () => {
-            if (app) app._lifeCycleLockCount--;
+            if (!app) throw new Error("Operation has already signaled completion");
+            app._lifeCycleLockCount--;
             app = null;
         };
     }
