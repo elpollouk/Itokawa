@@ -8,7 +8,7 @@ Try an online demo built from the code in this repo [here](https://elpollouk.git
 
 * Install [Node.js](https://nodejs.org/en/download/)
 * Install [Git](https://git-scm.com/downloads)
-* Create a new directory on your PC and open a command prompt in the new directory.
+* Open a command prompt on your PC in the location you want to install Itokawa to (e.g. `C:\Projects`).
 * Run the following commands:
 ```
 git clone https://github.com/elpollouk/Itokawa.git
@@ -23,6 +23,8 @@ Expanding the status bar by clicking on it and then clicking `About` should prov
 
 You can update to the latest code at any time by running `npm run prod-update` again or by clicking `Update` in the `Server` menu within the app.
 
+You can launch Itokawa again by running `npm start` in the Itokawa installation directory.
+
 ## Tested Command Stations
  * [Hornby eLink 1.07 (R8312)](https://www.hornby.com/uk-en/elink-and-railmaster-combination-pack.html)
  
@@ -33,3 +35,6 @@ You can update to the latest code at any time by running `npm run prod-update` a
 
 ## Dedicated Setup Guides
 * [Raspberry Pi](https://github.com/elpollouk/Itokawa/wiki/Raspberry-Pi-Setup-Guide)
+
+## Further Reading
+* [Config XML Reference](https://github.com/elpollouk/Itokawa/wiki/Config-XML)
