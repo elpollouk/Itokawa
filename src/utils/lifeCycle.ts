@@ -1,0 +1,65 @@
+
+import { Logger } from "./logger";
+const log = new Logger("LifeCycle");
+
+async function mask(promise: Promise<void>) {
+    try { await promise; } catch {};
+}
+
+export class LifeCycle {
+    // Callbacks to check if it's valid to proceed with life cycle change
+    onshutdownbegin: ()=>Promise<void> = () => Promise.resolve();
+    onrestartbegin: ()=>Promise<void> = () => Promise.resolve();
+    // Callbacks to perform the actual life cycle changes
+    onshutdown: ()=>Promise<void> = () => Promise.resolve();
+    onrestart: ()=>Promise<void> = () => Promise.resolve();
+
+    // If the count is positive, a senstive operation is in progress
+    // If it's negative, a life cycle change is in progress
+    private _lifeCycleLockCount = 0;
+
+    constructor(private readonly _cleanUp: () => Promise<void> = () => Promise.resolve()) {
+
+    }
+
+    private _ensureExclusiveLifeCycleLock() {
+        if (this._lifeCycleLockCount !== 0) throw new Error("Life cycle change unavailable at this time");
+        this._lifeCycleLockCount = -1;
+    }
+
+    beginSensitiveOperation(): ()=>void {
+        if (this._lifeCycleLockCount < 0) throw new Error("Life cycle change in progress");
+        this._lifeCycleLockCount++;
+
+        // We return a release function to ensure that it is only possible to decrement the lock once per operation
+        let app = this;
+        return () => {
+            if (!app) throw new Error("Operation has already signaled completion");
+            app._lifeCycleLockCount--;
+            app = null;
+        };
+    }
+
+    private async _handleLifeCycleChange(begin: () => Promise<void>, exec: () => Promise<void>) {
+        this._ensureExclusiveLifeCycleLock();
+        try {
+            await begin();
+            await this._cleanUp();
+            await mask(exec());
+            process.exit(0);
+        }
+        finally {
+            this._lifeCycleLockCount = 0;
+        }
+    }
+
+    shutdown() {
+        log.info("Shutdown requested...");
+        return this._handleLifeCycleChange(this.onshutdownbegin, this.onshutdown);
+    }
+
+    restart() {
+        log.info("Reboot requested...");
+        return this._handleLifeCycleChange(this.onrestartbegin, this.onrestart);
+    }
+}
