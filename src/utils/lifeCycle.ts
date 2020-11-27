@@ -18,7 +18,9 @@ export class LifeCycle {
     onshutdown: ()=>Promise<void> = () => Promise.resolve();
     onrestart: ()=>Promise<void> = () => Promise.resolve();
 
-    // If the count is positive, a senstive operation is in progress
+    // If the count is positive, a senstive operation is in progress. A sensitive operation is any
+    // task that could result in a currupt installation if interrupted by a life cycle change (e.g.
+    // updating the OS).
     // If it's negative, a life cycle change is in progress
     private _lifeCycleLockCount = 0;
 
