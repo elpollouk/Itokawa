@@ -48,7 +48,7 @@ export class LifeCycle {
         }
     }
 
-    beginSensitiveOperation(): ()=>void {
+    beginSensitiveOperation() {
         // If a life cycle change is in progress, we want to reject any attempt to start a sensitive operation
         if (this._lifeCycleLockCount < 0) throw new Error("Life cycle change in progress");
         this._lifeCycleLockCount++;
