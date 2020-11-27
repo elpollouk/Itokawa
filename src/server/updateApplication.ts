@@ -20,7 +20,7 @@ async function _runUpdate(command: string, successMessage: string, send: (messag
     _updateInProgress = true;
 
     try {
-        const endOperation = application.beginSensitiveOperation();
+        const endOperation = application.lifeCycle.beginSensitiveOperation();
 
         try {
             const exitCode = await _spawnAsync(command, (out: string) => {
@@ -61,7 +61,7 @@ export async function updateApplication(send: (message: messages.CommandResponse
     // TODO - Move to client request so that the user can be asked if they want to restart
     _setTimeout(async () => {
         try {
-            await application.restart();
+            await application.lifeCycle.restart();
         } catch (err) {
             log.error(`Failed to execute restart: ${err.message}`);
             log.error(err.stack);

@@ -44,7 +44,7 @@ describe("Life Cycle Handler", () => {
         let shutdownStub: SinonStub;
 
         beforeEach(() => {
-            shutdownStub = stub(application, "shutdown").returns(Promise.resolve());
+            shutdownStub = stub(application.lifeCycle, "shutdown").returns(Promise.resolve());
         })
 
         afterEach(() => {
@@ -72,7 +72,7 @@ describe("Life Cycle Handler", () => {
         let restartStub: SinonStub;
 
         beforeEach(() => {
-            restartStub = stub(application, "restart").returns(Promise.resolve());
+            restartStub = stub(application.lifeCycle, "restart").returns(Promise.resolve());
         })
 
         afterEach(() => {

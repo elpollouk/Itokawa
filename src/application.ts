@@ -15,6 +15,7 @@ import { TaskManager } from "./taskmanager/taskmanager";
 import { RunInTask } from "./taskmanager/tasks/runin";
 import { registerCommandStations } from "./devices/commandStations/commandStationDirectory";
 import * as backup from "./utils/backup";
+import { LifeCycle } from "./utils/lifeCycle";
 
 const log = new Logger("Application");
 
@@ -55,18 +56,11 @@ async function _getGitRevision() {
 }
 
 class Application {
-    // The begin events fire before the DB is closed. This allows the application an opportunity to either abort
-    // the shutdown/restart or perform cirtical tasks that require DB access.
-    onshutdownbegin: ()=>Promise<void> = null;
-    onrestartbegin: ()=>Promise<void> = null;
-    onshutdown: ()=>Promise<void> = null;
-    onrestart: ()=>Promise<void> = null;
+    publicUrl = "";
     commandStation: ICommandStation = null;
     readonly taskmanager = new TaskManager();
-    publicUrl = "";
     readonly featureFlags = new ServerFeatureFlags();
-    
-    private _lifeCycleLockCount = 0;
+    readonly lifeCycle = new LifeCycle(() => this._shutdown());
     
     get config() {
         return this._config;
@@ -162,52 +156,6 @@ class Application {
         await this._db.close();
         if (this.commandStation) {
             this.commandStation.close();
-        }
-    }
-
-    private _ensureExclusiveLifeCycleLock() {
-        if (this._lifeCycleLockCount !== 0) throw new Error("Life cycle change unavailable at this time");
-        this._lifeCycleLockCount = -1;
-    }
-
-    beginSensitiveOperation(): ()=>void {
-        if (this._lifeCycleLockCount < 0) throw new Error("Life cycle change in progress");
-        this._lifeCycleLockCount++;
-
-        // We return a release function to ensure that it is only possible to decrement the lock once per operation
-        let app = this;
-        return () => {
-            if (!app) throw new Error("Operation has already signaled completion");
-            app._lifeCycleLockCount--;
-            app = null;
-        };
-    }
-
-    async shutdown() {
-        log.info("Shutdown requested...");
-        this._ensureExclusiveLifeCycleLock();
-        try {
-            if (this.onshutdownbegin) await this.onshutdownbegin();
-            await this._shutdown();
-            if (this.onshutdown) await this.onshutdown();
-            process.exit(0);
-        }
-        finally {
-            this._lifeCycleLockCount = 0;
-        }
-    }
-
-    async restart() {
-        log.info("Reboot requested...");
-        this._ensureExclusiveLifeCycleLock();
-        try {
-            if (this.onrestartbegin) await this.onrestartbegin();
-            await this._shutdown();
-            if (this.onrestart) await this.onrestart();
-            process.exit(0);
-        }
-        finally {
-            this._lifeCycleLockCount = 0;
         }
     }
 

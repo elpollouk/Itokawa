@@ -101,7 +101,7 @@ exec.help = "Execute a script.\n  Usage: exec SCRIPT_PATH"
 
 // Exit
 export async function exit(context: CommandContext, args?: string[]) {
-    await application.shutdown();
+    await application.lifeCycle.shutdown();
 }
 exit.maxArgs = 0;
 exit.help = "Exits this application";
