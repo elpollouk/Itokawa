@@ -19,12 +19,12 @@ async function onLifeCycleMessage(request: LifeCycleRequest, send: Sender): Prom
             break;
 
         case LifeCycleAction.shutdown:
-            await application.shutdown();
+            await application.lifeCycle.shutdown();
             await ok(send);
             break;
 
         case LifeCycleAction.restart:
-            await application.restart();
+            await application.lifeCycle.restart();
             await ok(send);
             break;
 

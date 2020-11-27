@@ -31,10 +31,10 @@ async function main()
     program.parse(process.argv);
 
     await application.start(program, true);
-    application.onshutdownbegin = shutdownCheck;
-    application.onshutdown = execShutdown;
-    application.onrestartbegin = restartCheck;
-    application.onrestart = execRestart;
+    application.lifeCycle.onshutdownbegin = shutdownCheck;
+    application.lifeCycle.onshutdown = execShutdown;
+    application.lifeCycle.onrestartbegin = restartCheck;
+    application.lifeCycle.onrestart = execRestart;
 
     const ews = expressWs(express());
     const app = ews.app;

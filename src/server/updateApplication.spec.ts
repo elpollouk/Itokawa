@@ -22,8 +22,8 @@ describe("Updater", () => {
         spawnAsyncStub = stub(updater, "_spawnAsync").callsFake(() => Promise.resolve(spawnExitCode));
         setTimeoutStub = stub(updater, "_setTimeout");
         endOperation = stub();
-        applicationBeginSensitiveOperation = stub(application, "beginSensitiveOperation").returns(endOperation);
-        applicationRestartStub = stub(application, "restart").returns(Promise.resolve());
+        applicationBeginSensitiveOperation = stub(application.lifeCycle, "beginSensitiveOperation").returns(endOperation);
+        applicationRestartStub = stub(application.lifeCycle, "restart").returns(Promise.resolve());
         sender = stub().callsFake(() => Promise.resolve());
 
         platformStub = stub(process, "platform").value("linux");

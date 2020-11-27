@@ -49,7 +49,7 @@ async function main() {
     program.parse(process.argv);
     executor.registerCommands(Commands);
 
-    application.onshutdown = _onExit;
+    application.lifeCycle.onshutdown = _onExit;
     await application.start(program);
     if (!application.commandStation) {
         console.error("No command station connected");
