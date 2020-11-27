@@ -3,7 +3,11 @@ import { Logger } from "./logger";
 const log = new Logger("LifeCycle");
 
 async function mask(promise: Promise<void>) {
-    try { await promise; } catch {};
+    try {
+        await promise;
+    } catch (ex) {
+        log.error(ex.stack ?? ex);
+    };
 }
 
 export class LifeCycle {
@@ -27,7 +31,23 @@ export class LifeCycle {
         this._lifeCycleLockCount = -1;
     }
 
+    private async _handleLifeCycleChange(check: () => Promise<void>, exec: () => Promise<void>) {
+        // Although many sensitive operations can be in progress at the same time, life cycle changes must
+        // be run in isolation to avoid data corruption
+        this._ensureExclusiveLifeCycleLock();
+        try {
+            await check();
+            await this._cleanUp();
+            await mask(exec()); // If the life cycle change fails, we still want to exit as we've already cleaned up
+            process.exit(0);
+        }
+        finally {
+            this._lifeCycleLockCount = 0;
+        }
+    }
+
     beginSensitiveOperation(): ()=>void {
+        // If a life cycle change is in progress, we want to reject any attempt to start a sensitive operation
         if (this._lifeCycleLockCount < 0) throw new Error("Life cycle change in progress");
         this._lifeCycleLockCount++;
 
@@ -38,19 +58,6 @@ export class LifeCycle {
             app._lifeCycleLockCount--;
             app = null;
         };
-    }
-
-    private async _handleLifeCycleChange(begin: () => Promise<void>, exec: () => Promise<void>) {
-        this._ensureExclusiveLifeCycleLock();
-        try {
-            await begin();
-            await this._cleanUp();
-            await mask(exec());
-            process.exit(0);
-        }
-        finally {
-            this._lifeCycleLockCount = 0;
-        }
     }
 
     shutdown() {

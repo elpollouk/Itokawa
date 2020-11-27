@@ -170,8 +170,18 @@ describe("LifeCycle", () => {
             expect(processExitStub.callCount).to.eql(0);
         })
 
-        it("should still exit the process if onshut fails", async () => {
+        it("should still exit the process if onshutdown fails", async () => {
             onrestart.rejects(new Error("Test Error"));
+
+            const lifeCycle = createLifeCycle();
+            await lifeCycle.restart();
+
+            expect(processExitStub.callCount).to.eql(1);
+            expect(processExitStub.lastCall.args).to.eql([0]);
+        })
+
+        it("should still exit the process if onshutdown fails with a non-Error value", async () => {
+            onrestart.rejects(-1);
 
             const lifeCycle = createLifeCycle();
             await lifeCycle.restart();
