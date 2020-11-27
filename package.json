@@ -1,14 +1,14 @@
 {
   "name": "itokawa",
-  "version": "0.3.3",
+  "version": "0.4.0-dev",
   "description": "DCC Train Control",
   "private": true,
   "scripts": {
     "start": "node dist/server/main.js",
     "build": "npm run tsc && npm run bundle",
-    "tsc": "node_modules/.bin/tsc",
-    "bundle": "node_modules/.bin/webpack",
-    "test": "node_modules/.bin/nyc node_modules/.bin/mocha -r ts-node/register \"src/**/*.spec.ts\"",
+    "tsc": "tsc",
+    "bundle": "webpack",
+    "test": "nyc mocha -r ts-node/register \"src/**/*.spec.ts\"",
     "cli": "node dist/cli/main.js",
     "password": "node dist/cli/password-main.js",
     "dev-update": "git pull && npm install && npm run build && npm test",
@@ -45,7 +45,7 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "adm-zip": "^0.5.0",
+    "adm-zip": "^0.5.1",
     "commander": "^4.1.1",
     "express": "^4.17.1",
     "express-ws": "^4.0.0",

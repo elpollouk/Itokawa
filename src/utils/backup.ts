@@ -20,11 +20,7 @@ export async function restore(archivePath: string, targetDir: string) {
         }
 
         log.info(`Extracting ${entry.name}...`);
-
-        // Two bugs going on here
-        // adm-zip has a bug where it's not properly checking if the output file name is being set correctly (https://github.com/cthackers/adm-zip/issues/335)
-        // @types/adm-zip doesn't have the output file name parameter
-        zip.extractEntryTo.call(zip, entry, targetDir, false, true, entry.name);
+        zip.extractEntryTo(entry, targetDir, false, true);
         extractCount++;
     }
 
