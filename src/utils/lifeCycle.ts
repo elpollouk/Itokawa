@@ -54,11 +54,11 @@ export class LifeCycle {
         this._lifeCycleLockCount++;
 
         // We return a release function to ensure that it is only possible to decrement the lock once per operation
-        let app = this;
+        let lifeCycle = this;
         return () => {
-            if (!app) throw new Error("Operation has already signaled completion");
-            app._lifeCycleLockCount--;
-            app = null;
+            if (!lifeCycle) throw new Error("Operation has already signaled completion");
+            lifeCycle._lifeCycleLockCount--;
+            lifeCycle = null;
         };
     }
 
