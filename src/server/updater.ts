@@ -15,7 +15,7 @@ let _updateInProgress = false;
 export let _spawnAsync = spawnAsync;
 export let _setTimeout = setTimeout;
 
-async function _runUpdate(command: string, successMessage: string, send: (message: messages.CommandResponse)=>Promise<boolean>) {
+async function _runUpdate(command: string, send: (message: messages.CommandResponse)=>Promise<boolean>) {
     if (_updateInProgress) throw new Error("An update is already in progress");
     _updateInProgress = true;
 
@@ -37,7 +37,7 @@ async function _runUpdate(command: string, successMessage: string, send: (messag
             if (exitCode !== 0) throw new Error(`Update failed, process exited with code ${exitCode}`);
             await send({
                 lastMessage: true,
-                data: `\n${successMessage}`
+                data: "\nUpdate complete!"
             });
         }
         catch (ex) {
@@ -56,17 +56,7 @@ async function _runUpdate(command: string, successMessage: string, send: (messag
 
 export async function updateApplication(send: (message: messages.CommandResponse)=>Promise<boolean>) {
     const command = application.config.getAs<string>("server.commands.update", UPDATE_COMMAND);
-    await _runUpdate(command, "Scheduling restart in 3 seconds...", send);
-
-    // TODO - Move to client request so that the user can be asked if they want to restart
-    _setTimeout(async () => {
-        try {
-            await application.lifeCycle.restart();
-        } catch (err) {
-            log.error(`Failed to execute restart: ${err.message}`);
-            log.error(err.stack);
-        }
-    }, 3000);
+    await _runUpdate(command, send);
 }
 
 export async function updateOS(send: (message: messages.CommandResponse)=>Promise<boolean>) {
@@ -74,5 +64,5 @@ export async function updateOS(send: (message: messages.CommandResponse)=>Promis
     if (!command && process.platform != "linux") throw new Error(`OS update not configured for ${process.platform}`);
     command = command ?? UPDATE_OS_COMMAND;
 
-    await _runUpdate(command, "Update complete!", send);
+    await _runUpdate(command, send);
 }
