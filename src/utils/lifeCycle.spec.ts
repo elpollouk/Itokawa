@@ -194,7 +194,7 @@ describe("LifeCycle", () => {
     describe("beginSensitiveOperation", () => {
         it("should not be possible to shutdown or restart while a sensitive operation is in progress", async () => {
             const lifeCycle = createLifeCycle();
-            const endOperation = lifeCycle.beginSensitiveOperation();
+            const endOperation = lifeCycle.beginSensitiveOperation("test");
 
             expect(endOperation).to.be.instanceOf(Function);
             await expect(lifeCycle.shutdown()).to.be.eventually.rejectedWith("Life cycle change unavailable at this time");
@@ -207,9 +207,9 @@ describe("LifeCycle", () => {
             expect(processExitStub.callCount).to.eql(0);
         })
 
-        it("should not be possible to shutdown after a sensitive operation completes", async () => {
+        it("should be possible to shutdown after a sensitive operation completes", async () => {
             const lifeCycle = createLifeCycle();
-            const endOperation = lifeCycle.beginSensitiveOperation();
+            const endOperation = lifeCycle.beginSensitiveOperation("test");
             endOperation();
 
             await lifeCycle.shutdown();
@@ -219,9 +219,9 @@ describe("LifeCycle", () => {
             expect(processExitStub.callCount).to.eql(1);
         })
 
-        it("should not be possible to restart after a sensitive operation completes", async () => {
+        it("should be possible to restart after a sensitive operation completes", async () => {
             const lifeCycle = createLifeCycle();
-            const endOperation = lifeCycle.beginSensitiveOperation();
+            const endOperation = lifeCycle.beginSensitiveOperation("test");
             endOperation();
 
             await lifeCycle.restart();
@@ -233,8 +233,8 @@ describe("LifeCycle", () => {
 
         it("should multiple sensitive operations should be tracked", async () => {
             const lifeCycle = createLifeCycle();
-            const endOperation1 = lifeCycle.beginSensitiveOperation();
-            const endOperation2 = lifeCycle.beginSensitiveOperation();
+            const endOperation1 = lifeCycle.beginSensitiveOperation("test 1");
+            const endOperation2 = lifeCycle.beginSensitiveOperation("test 2");
 
             endOperation1();
             await expect(lifeCycle.shutdown()).to.be.eventually.rejectedWith("Life cycle change unavailable at this time");
@@ -247,19 +247,32 @@ describe("LifeCycle", () => {
             expect(processExitStub.callCount).to.eql(1);
         })
 
+        it("should not be possible to start multiple sensitive operations of the same type", async () => {
+            const lifeCycle = createLifeCycle();
+            lifeCycle.beginSensitiveOperation("test");
+            expect(() => lifeCycle.beginSensitiveOperation("test")).to.throw("This operation is already in progress");
+        })
+
+        it("should be possible to a second operation of the same type after the first finished", () => {
+            const lifeCycle = createLifeCycle();
+            const endOperation = lifeCycle.beginSensitiveOperation("test");
+            endOperation();
+            lifeCycle.beginSensitiveOperation("test");
+        })
+
         it("should be possible to being a sensitive operation after a life cycle change fails", async () => {
             onrestartbegin.rejects(new Error("Foo"));
             const lifeCycle = createLifeCycle();
 
             await expect(lifeCycle.restart()).to.be.eventually.rejectedWith("Foo");
 
-            const endOperation = lifeCycle.beginSensitiveOperation();
+            const endOperation = lifeCycle.beginSensitiveOperation("test");
             expect(endOperation).to.be.instanceOf(Function);
         })
 
         it("should not be possible to end a sensitive operation twice", () => {
             const lifeCycle = createLifeCycle();
-            const endOperation = lifeCycle.beginSensitiveOperation();
+            const endOperation = lifeCycle.beginSensitiveOperation("test");
             endOperation();
             
             expect(() => endOperation()).to.throw("Operation has already signaled completion");
@@ -271,7 +284,7 @@ describe("LifeCycle", () => {
 
             lifeCycle.shutdown();
 
-            expect(() => lifeCycle.beginSensitiveOperation()).to.throw("Life cycle change in progress");
+            expect(() => lifeCycle.beginSensitiveOperation("test")).to.throw("Life cycle change in progress");
         })
     })
 })
