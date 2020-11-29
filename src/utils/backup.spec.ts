@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import "mocha";
-import { stub, restore } from "sinon";
 import * as fs from "fs";
 import * as crypto from "crypto";
 import * as backup from "./backup";
@@ -26,10 +25,6 @@ describe("Backup", () => {
     beforeEach(() => {
         if (fs.existsSync(TEST_DIR)) fs.rmdirSync(TEST_DIR, {recursive: true});
         fs.mkdirSync(TEST_DIR);
-    })
-
-    afterEach(() => {
-        restore();
     })
 
     describe("restore", () => {
