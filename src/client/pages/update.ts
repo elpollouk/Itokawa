@@ -3,6 +3,7 @@ import { CommandResponse } from "../../common/messages";
 import { ICommandConnection, ConnectionState, client } from "../client";
 import { TtyControl } from "../controls/ttyControl";
 import { LifeCycleRequest, RequestType, LifeCycleAction } from "../../common/messages";
+import * as prompt from "../controls/promptControl";
 
 export class UpdatePage extends Page {
     path: string = UpdatePageConstructor.path;
@@ -26,6 +27,13 @@ export class UpdatePage extends Page {
         return container;
     }
 
+    private _restart() {
+        this.tty.stdout("\n");
+        this._connection.request<LifeCycleRequest>(RequestType.LifeCycle, {
+            action: LifeCycleAction.restart
+        }, (e, r) => this.onMessage(e, r));
+    }
+
     onMessage(err: Error, response?: CommandResponse) {
         if (err) {
             this.tty.stderr(err.message);
@@ -47,7 +55,16 @@ export class UpdatePage extends Page {
 
         this._connection.request<LifeCycleRequest>(RequestType.LifeCycle, {
             action: this.action
-        }, (e, r) => this.onMessage(e, r));
+        }, (e, r) => {
+            this.onMessage(e, r);
+
+            // If the task finised successfully, prompt the user for a restart
+            if (r.lastMessage && !r.error) {
+                prompt.confirm("Would you like to restart Itokawa?").then((yes) => { 
+                    if (yes) this._restart();
+                });
+            }
+        });
     }
 }
 
