@@ -5,7 +5,7 @@ import { application } from "../application";
 import { ConfigNode } from "../utils/config";
 import { SignalablePromise } from "../utils/promiseUtils";
 
-import * as updater from "./updateApplication";
+import * as updater from "./updater";
 
 describe("Updater", () => {
     let spawnAsyncStub: SinonStub;
