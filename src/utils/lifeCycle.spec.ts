@@ -231,7 +231,7 @@ describe("LifeCycle", () => {
             expect(processExitStub.callCount).to.eql(1);
         })
 
-        it("should multiple sensitive operations should be tracked", async () => {
+        it("should allow multiple different sensitive operations to run in parallel", async () => {
             const lifeCycle = createLifeCycle();
             const endOperation1 = lifeCycle.beginSensitiveOperation("test 1");
             const endOperation2 = lifeCycle.beginSensitiveOperation("test 2");

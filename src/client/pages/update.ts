@@ -58,7 +58,7 @@ export class UpdatePage extends Page {
         }, (e, r) => {
             this.onMessage(e, r);
 
-            // If the task finised successfully, prompt the user for a restart
+            // If the task finished successfully, prompt the user for a restart
             if (r.lastMessage && !r.error) {
                 prompt.confirm("Would you like to restart Itokawa?").then((yes) => { 
                     if (yes) this._restart();
