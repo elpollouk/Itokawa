@@ -11,7 +11,6 @@ const UPDATE_OS_COMMAND = "sudo apt-get update && sudo apt-get -y dist-upgrade"
 
 // Hooks to allow for testing so that tests that use global functions can overlap
 export let _spawnAsync = spawnAsync;
-export let _setTimeout = setTimeout;
 
 async function _runUpdate(command: string, operationId: string, send: (message: messages.CommandResponse)=>Promise<boolean>) {
     const endOperation = application.lifeCycle.beginSensitiveOperation(operationId);

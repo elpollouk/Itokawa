@@ -20,7 +20,6 @@ import { LifeCycle } from "./utils/lifeCycle";
 const log = new Logger("Application");
 
 const DATABASE_FILE = "data.sqlite3";
-const DEVICE_RETRY_TIME = 5000;
 
 export function initDataDirectory(dataPath?: string) {
     dataPath = dataPath ?? pathMod.join(os.homedir(), ".itokawa");
@@ -138,7 +137,7 @@ class Application {
         // Technically, we don't need this await, but it improves the experience if a
         // device is already opened before starting the server
         registerCommandStations();
-        await this._initDevice();
+        await DeviceEnumerator.monitorForDevice(args);
     }
 
     getDataPath(path?: string) {
@@ -157,55 +156,6 @@ class Application {
         if (this.commandStation) {
             this.commandStation.close();
         }
-    }
-
-    private async _initDevice() {
-        // This will start monitoring for device errors and attempt recovery
-        const errorHandler = (err: Error) => {
-            if (this.commandStation) {
-                // Remove the error handler to avoid memory leaks associated with it
-                this.commandStation.off("error", errorHandler);
-            }
-
-            log.error("Command station error");
-            log.error(err.stack);
-
-            const retryTime = this.config.getAs("application.commandStation.retryTime", DEVICE_RETRY_TIME);
-            log.info(`Schedulling retry in ${retryTime}ms`);
-            setTimeout(() => this._initDevice(), retryTime);
-        };
-
-        try {
-            if (this.commandStation) await this.commandStation.close();
-            log.info("Attempting to open device...");
-            this.commandStation = await this._openDevice();
-            log.display(`Using ${this.commandStation.deviceId} ${this.commandStation.version}`);
-
-            this.commandStation.on("error", errorHandler);
-        }
-        catch (err) {
-            errorHandler(err);
-        }
-    }
-
-    private async _openDevice(): Promise<ICommandStation> {
-        // Allow command line args to override everything
-        if (this._args.device) {
-            return await DeviceEnumerator.openDevice(this._args.device, this._args.connectionString);
-        }
-
-        // Check if a specific command station config has been provided
-        const deviceName = this.config.getAs<string>("application.commandStation.device");
-        if (deviceName) {
-            const connectionString = this.config.getAs<string>("application.commandStation.connectionString");
-            return await DeviceEnumerator.openDevice(deviceName, connectionString);
-        }
-
-        // Nothing explicit has been configured, try auto detecting a command station
-        const devices = await DeviceEnumerator.listDevices();
-        if (devices.length === 0) throw Error("No command stations found");
-
-        return await devices[0].open();
     }
 
     private _registerTasks() {

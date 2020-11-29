@@ -1,12 +1,14 @@
 import { expect } from "chai";
 import "mocha";
-import * as sinon from "sinon";
+import { SinonStub, stub, restore } from "sinon";
 
 import { DeviceEnumerator } from "./deviceEnumerator";
 import { registerCommandStations } from "./commandStations/commandStationDirectory";
 import * as SerialPort from "serialport";
 import { NullCommandStation } from "./commandStations/null";
 import { ICommandStationConstructable } from "./commandStations/commandStation";
+import { CommanderStatic } from "commander";
+import { application } from "../application";
 
 const ELINK_PNPID_WIN = "USB\\VID_04D8&PID_000A\\6&3A757EEC&1&2";
 
@@ -14,8 +16,9 @@ registerCommandStations();
 
 describe("Device Enumerator", () => {
 
-    let stubSerialPort_list: sinon.SinonStub;
+    let stubSerialPort_list: SinonStub;
     let mockPorts: SerialPort.PortInfo[];
+    let args: CommanderStatic;
 
     function addPort(path: string, manufacturer: string, pnpId?: string) {
         mockPorts.push({
@@ -27,12 +30,14 @@ describe("Device Enumerator", () => {
 
     beforeEach(() => {
         mockPorts = [];
+        args = {} as CommanderStatic;
 
-        stubSerialPort_list = sinon.stub(SerialPort, 'list').returns(Promise.resolve(mockPorts));
+        stubSerialPort_list = stub(SerialPort, 'list').returns(Promise.resolve(mockPorts));
+        application.commandStation = null;
     });
 
     afterEach(() => {
-        stubSerialPort_list.restore();
+        restore();
     });
 
     it("should construct", () => {
@@ -98,7 +103,7 @@ describe("Device Enumerator", () => {
 
     it ("should provide a default empty command string if none supplied by caller", async () => {
         const testDevice = {
-            open: sinon.stub().returns({})
+            open: stub().returns({})
         }
         await DeviceEnumerator.openDevice(testDevice as unknown as ICommandStationConstructable);
 
@@ -111,4 +116,25 @@ describe("Device Enumerator", () => {
     it ("should fail if attempting to open an invalid device directly", () => {
         expect(() => DeviceEnumerator.openDevice("Invalid", "Foo")).to.throw();
     });
+
+    describe("monitorForDevice", () => {
+        it("should start monitoring is no devices are initially connected", async () => {
+            const setTimeoutStub = stub(global, "setTimeout");
+            await DeviceEnumerator.monitorForDevice(args);
+
+            expect(setTimeoutStub.callCount).to.equal(1);
+            expect(setTimeoutStub.lastCall.args[0]).to.be.instanceOf(Function);
+            expect(setTimeoutStub.lastCall.args[1]).to.equal(5000);
+        })
+
+        it("should set the application command station if one is detected", async () => {
+            addPort("/dev/ttyS0", "__TEST__");
+            const setTimeoutStub = stub(global, "setTimeout");
+
+            await DeviceEnumerator.monitorForDevice(args);
+
+            expect(setTimeoutStub.callCount).to.equal(0);
+            expect(application.commandStation).to.be.instanceOf(NullCommandStation);
+        })
+    })
 });
