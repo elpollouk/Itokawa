@@ -77,7 +77,6 @@ class Application {
         return this._db;
     }
 
-    private _args: CommanderStatic;
     private _config: ConfigNode = new ConfigNode();
     private _configPath: string;
     private _gitrev: string = "";
@@ -99,8 +98,6 @@ class Application {
     //  * Open the local database
     //  * Start the command station mointoring process
     async start(args: CommanderStatic, savepid: boolean = false): Promise<void> {
-        this._args = args;
-
         // We apply an initial log level based on the command line args so that we can debug
         // directory initialisation and config loading if needed
         applyLogLevel(args);
