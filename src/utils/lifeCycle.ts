@@ -52,11 +52,11 @@ export class LifeCycle {
         this._sensitiveOperations.add(id);
 
         // We return a release function to ensure that it is only possible to decrement the lock once per operation
-        let lifeCycle = this;
+        let operations = this._sensitiveOperations;
         return () => {
-            if (!lifeCycle) throw new Error("Operation has already signaled completion");
-            lifeCycle._sensitiveOperations.delete(id);
-            lifeCycle = null;
+            if (!operations) throw new Error("Operation has already signaled completion");
+            operations.delete(id);
+            operations = null;
         };
     }
 

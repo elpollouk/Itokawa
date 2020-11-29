@@ -109,7 +109,7 @@ class Application {
         this._dataPath = initDataDirectory(args.datadir);
 
         // Check if there are any backup files that need restoring before starting to load data
-        await this._simpleRestoreCheck();
+        await backup.checkAndRestore(this._dataPath);
 
         this._configPath = this.getDataPath("config.xml");
         this._config = await loadConfig(this._configPath);
@@ -210,27 +210,6 @@ class Application {
 
     private _registerTasks() {
         this.taskmanager.registerTaskFactory(RunInTask);
-    }
-
-    // Checks the data directory for "restore.zip" and restores it if found
-    private async _simpleRestoreCheck() {
-        log.verbose("Checking for restore.zip...");
-        const archive = this.getDataPath("restore.zip");
-        const finalArchive = this.getDataPath(".restore.zip");
-        if (!fs.existsSync(archive)) return;
-
-        log.display(`Restoring ${archive}...`);
-        await backup.restore(archive, this._dataPath);
-
-        if (fs.existsSync(finalArchive)) {
-            log.info("Deleting old .restore.zip file...");
-            fs.unlinkSync(finalArchive);
-        }
-        
-        log.info("Renaming restore.zip to .restore.zip...");
-        fs.renameSync(archive, finalArchive);
-
-        log.info("Backup restored");
     }
 }
 

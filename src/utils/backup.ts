@@ -1,5 +1,7 @@
 import AdmZip = require("adm-zip");
 import { Logger } from "./logger";
+import * as fs from "fs";
+import * as path from "path";
 
 const log = new Logger("Backup");
 
@@ -28,4 +30,24 @@ export async function restore(archivePath: string, targetDir: string) {
     if (extractCount === 0) throw new Error(`No valid files in ${archivePath}`);
 
     log.info("Backup restored")
+}
+
+export async function checkAndRestore(targetPath: string) {
+    log.verbose(() => `Checking for restore.zip in ${targetPath}...`);
+    const archive = path.join(targetPath, "restore.zip");
+    const finalArchive = path.join(targetPath, ".restore.zip");
+    if (!fs.existsSync(archive)) return;
+
+    log.display(`Restoring ${archive}...`);
+    await restore(archive, targetPath);
+
+    if (fs.existsSync(finalArchive)) {
+        log.info("Deleting old .restore.zip file...");
+        fs.unlinkSync(finalArchive);
+    }
+    
+    log.info("Renaming restore.zip to .restore.zip...");
+    fs.renameSync(archive, finalArchive);
+
+    log.info("Backup restored");
 }
