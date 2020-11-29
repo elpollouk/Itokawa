@@ -6,7 +6,7 @@ import { registerHandlers } from "./lifecycle";
 import { RequestType, LifeCycleRequest, LifeCycleAction } from "../../common/messages";
 import * as handlers from "./handlers";
 import { application } from "../../application";
-import * as applicationUpdate from "../updateApplication";
+import * as applicationUpdate from "../updater";
 let packageVersion = require("../../../package.json").version;
 
 function createHandlerMap(): handlers.HandlerMap {

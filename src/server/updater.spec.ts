@@ -5,13 +5,11 @@ import { application } from "../application";
 import { ConfigNode } from "../utils/config";
 import { SignalablePromise } from "../utils/promiseUtils";
 
-import * as updater from "./updateApplication";
+import * as updater from "./updater";
 
 describe("Updater", () => {
     let spawnAsyncStub: SinonStub;
-    let setTimeoutStub: SinonStub;
-    let applicationBeginSensitiveOperation: SinonStub;
-    let applicationRestartStub: SinonStub;
+    let lifecycleBeginSensitiveOperation: SinonStub;
     let endOperation: SinonStub;
     let sender: SinonStub;
     let platformStub: SinonStub;
@@ -20,66 +18,50 @@ describe("Updater", () => {
     beforeEach(() => {
         spawnExitCode = 0;
         spawnAsyncStub = stub(updater, "_spawnAsync").callsFake(() => Promise.resolve(spawnExitCode));
-        setTimeoutStub = stub(updater, "_setTimeout");
         endOperation = stub();
-        applicationBeginSensitiveOperation = stub(application.lifeCycle, "beginSensitiveOperation").returns(endOperation);
-        applicationRestartStub = stub(application.lifeCycle, "restart").returns(Promise.resolve());
+        lifecycleBeginSensitiveOperation = stub(application.lifeCycle, "beginSensitiveOperation").returns(endOperation);
         sender = stub().callsFake(() => Promise.resolve());
 
         platformStub = stub(process, "platform").value("linux");
     })
 
     afterEach(async () => {
-        // Flush out any hanging restarts
-        if (setTimeoutStub.callCount != 0) {
-            await setTimeoutStub.lastCall.args[0]();
-        }
         restore();
     })
 
     describe("updateApplication", () => {
-        it("should schedule a restart if update is successful", async () => {
+        it("should issue default update command if not specified in config", async () => {
             await updater.updateApplication(sender);
+            expect(lifecycleBeginSensitiveOperation.callCount).to.equal(1);
+            expect(lifecycleBeginSensitiveOperation.lastCall.args).to.eql(["updateApplication"]);
             expect(spawnAsyncStub.callCount).to.equal(1);
             expect(spawnAsyncStub.lastCall.args[0]).to.equal("npm run prod-update");
-            expect(setTimeoutStub.callCount).to.equal(1);
-            expect(setTimeoutStub.lastCall.args[1]).to.equal(3000);
-            expect(sender.lastCall.args[0].lastMessage).to.be.true;
+            expect(sender.lastCall.args[0]).to.eql({
+                lastMessage: true,
+                data: "\nUpdate complete!"
+            });
             expect(endOperation.callCount).to.equal(1);
+        })
 
-            await setTimeoutStub.lastCall.args[0]();
-            expect(applicationRestartStub.callCount).to.equal(1);
+        it("should pick up custom update command from config.xml", async () => {
+            const config = new ConfigNode();
+            config.set("server.commands.update", "bash update.sh");
+            stub(application, "config").value(config);
+
+            await updater.updateApplication(sender);
+            expect(spawnAsyncStub.callCount).to.equal(1);
+            expect(spawnAsyncStub.lastCall.args[0]).to.equal("bash update.sh");
         })
 
         it("should be possible to run another update after the first finishes", async () => {
             await updater.updateApplication(sender);
-            await setTimeoutStub.lastCall.args[0]();
             await updater.updateApplication(sender);
             expect(spawnAsyncStub.callCount).to.equal(2);
-            expect(applicationBeginSensitiveOperation.callCount).to.equal(2);
-        })
-
-        it("should catch restart errors", async () => {
-            applicationRestartStub.returns(Promise.reject(new Error("Test error")));
-            await updater.updateApplication(sender);
-            await setTimeoutStub.lastCall.args[0]();
-        })
-
-        it("should reject a second attempt to update if an update is still in progress", async () => {
-            const spawnPromise = new SignalablePromise<number>();
-            spawnAsyncStub.returns(spawnPromise);
-            const updatePromise = updater.updateApplication(sender);
-            try {
-                await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("An update is already in progress");
-            }
-            finally {
-                spawnPromise.resolve(0);
-                await updatePromise;
-            }
+            expect(lifecycleBeginSensitiveOperation.callCount).to.equal(2);
         })
 
         it("should reject if a life cycle action is in progress", async () => {
-            applicationBeginSensitiveOperation.throws(new Error("Life cycle busy"));
+            lifecycleBeginSensitiveOperation.throws(new Error("Life cycle busy"));
             await expect(updater.updateApplication(sender)).to.be.eventually.rejectedWith("Life cycle busy");
         })
 
@@ -128,9 +110,14 @@ describe("Updater", () => {
     describe("updateOS", () => {
         it("issue the correct command", async () => {
             await updater.updateOS(sender);
+            expect(lifecycleBeginSensitiveOperation.callCount).to.equal(1);
+            expect(lifecycleBeginSensitiveOperation.lastCall.args).to.eql(["updateOS"]);
             expect(spawnAsyncStub.callCount).to.equal(1);
             expect(spawnAsyncStub.lastCall.args[0]).to.equal("sudo apt-get update && sudo apt-get -y dist-upgrade");
-            expect(sender.lastCall.args[0].lastMessage).to.be.true;
+            expect(sender.lastCall.args[0]).to.eql({
+                lastMessage: true,
+                data: "\nUpdate complete!"
+            });
             expect(endOperation.callCount).to.equal(1);
         })
 
@@ -138,24 +125,11 @@ describe("Updater", () => {
             await updater.updateOS(sender);
             await updater.updateOS(sender);
             expect(spawnAsyncStub.callCount).to.equal(2);
-            expect(applicationBeginSensitiveOperation.callCount).to.equal(2);
-        })
-
-        it("should reject a second attempt to update if an update is still in progress", async () => {
-            const spawnPromise = new SignalablePromise<number>();
-            spawnAsyncStub.returns(spawnPromise);
-            const updatePromise = updater.updateOS(sender);
-            try {
-                await expect(updater.updateOS(sender)).to.be.eventually.rejectedWith("An update is already in progress");
-            }
-            finally {
-                spawnPromise.resolve(0);
-                await updatePromise;
-            }
+            expect(lifecycleBeginSensitiveOperation.callCount).to.equal(2);
         })
 
         it("should reject if a life cycle action is in progress", async () => {
-            applicationBeginSensitiveOperation.throws(new Error("Life cycle busy"));
+            lifecycleBeginSensitiveOperation.throws(new Error("Life cycle busy"));
             await expect(updater.updateOS(sender)).to.be.eventually.rejectedWith("Life cycle busy");
         })
 
