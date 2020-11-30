@@ -1,8 +1,12 @@
 import { Logger } from "../utils/logger";
 import * as SerialPort from "serialport";
 import { ICommandStation, ICommandStationConstructable } from "./commandStations/commandStation";
+import { CommanderStatic } from "commander";
+import { application } from "../application";
 
 let log = new Logger("Device");
+
+const DEVICE_RETRY_TIME = 5000;
 
 const deviceManufacturerMap = new Map<string, ICommandStationConstructable[]>();
 const deviceIdMap = new Map<string, ICommandStationConstructable>();
@@ -70,5 +74,54 @@ export class DeviceEnumerator {
 
         log.info(() => `Requesting open of device ${device.deviceId} with connection string "${connectionString}"`);
         return device.open(connectionString);
+    }
+
+    static async monitorForDevice(args: CommanderStatic) {
+        // This will start monitoring for device errors and attempt recovery
+        const errorHandler = (err: Error) => {
+            if (application.commandStation) {
+                // Remove the error handler to avoid memory leaks associated with it
+                application.commandStation.off("error", errorHandler);
+            }
+
+            log.error("Command station error");
+            log.error(err.stack);
+
+            const retryTime = application.config.getAs("application.commandStation.retryTime", DEVICE_RETRY_TIME);
+            log.info(`Schedulling retry in ${retryTime}ms`);
+            setTimeout(() => this.monitorForDevice(args), retryTime);
+        };
+
+        try {
+            if (application.commandStation) await application.commandStation.close();
+            log.info("Attempting to open device...");
+            application.commandStation = await this._detectDevice(args);
+            log.display(`Using ${application.commandStation.deviceId} ${application.commandStation.version}`);
+
+            application.commandStation.on("error", errorHandler);
+        }
+        catch (err) {
+            errorHandler(err);
+        }
+    }
+
+    private static async _detectDevice(args: CommanderStatic): Promise<ICommandStation> {
+        // Allow command line args to override everything
+        if (args.device) {
+            return await DeviceEnumerator.openDevice(args.device, args.connectionString);
+        }
+
+        // Check if a specific command station config has been provided
+        const deviceName = application.config.getAs<string>("application.commandStation.device");
+        if (deviceName) {
+            const connectionString = application.config.getAs<string>("application.commandStation.connectionString");
+            return await DeviceEnumerator.openDevice(deviceName, connectionString);
+        }
+
+        // Nothing explicit has been configured, try auto detecting a command station
+        const devices = await DeviceEnumerator.listDevices();
+        if (devices.length === 0) throw Error("No command stations found");
+
+        return await devices[0].open();
     }
 }

@@ -113,6 +113,11 @@ export class AsyncSerialPort extends EventEmitter {
     close(): Promise<void> {
         this._closeRequested = true;
         return new Promise((resolve, reject) => {
+            if (!this._port) {
+                resolve();
+                return;
+            }
+            
             _snapshotAdd("Close", this._port.path);
             this._port.close((err) => {
                 if (err) reject(err);
