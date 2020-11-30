@@ -88,6 +88,17 @@ describe("AsyncSerialPort", () => {
             expect(closeSpy.callCount).to.equal(1);
         });
 
+        it("should be safe to call multiple times", async () => {
+            let port = await open();
+            expect(closeSpy.callCount).to.equal(0);
+
+            await port.close();
+            await port.close();
+            await port.close();
+
+            expect(closeSpy.callCount).to.equal(1);
+        })
+
         it("should reject promise on error", async () => {
             closeSpy.restore();
             let closeMock = stub(MockBinding.prototype, "close");
