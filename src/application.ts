@@ -150,9 +150,7 @@ export class Application {
 
     private async _shutdown() {
         await this._db.close();
-        if (this.commandStation) {
-            this.commandStation.close();
-        }
+        await this.commandStation?.close();
     }
 
     private _registerTasks() {
