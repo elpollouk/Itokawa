@@ -138,7 +138,7 @@ describe("Application", () => {
             expect(level).to.eql(LogLevel.VERBOSE);
         })
 
-        it("should not be possible to decrease below command line args the log level via confix.xml", async () => {
+        it("should not be possible to decrease below command line args log level setting via confix.xml", async () => {
             configXML.set("application.log.level", "ERROR");
             loggerLogLevelStub.set(() => { throw new Error("Log level setter should not be called") });
 
