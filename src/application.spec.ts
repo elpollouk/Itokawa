@@ -146,6 +146,14 @@ describe("Application", () => {
             await app.start(args);
         })
 
+        it("should ignore invalid log levels in config.xml", async () => {
+            configXML.set("application.log.level", "INVALID");
+            loggerLogLevelStub.set(() => { throw new Error("Log level setter should not be called") });
+
+            const app = new Application();
+            await app.start(args);
+        })
+
         it("should set feature flags if present in config.xml", async () => {
             configXML.set("featureFlags.a", new config.ConfigNode());
             configXML.set("featureFlags.b", new config.ConfigNode());
@@ -157,6 +165,26 @@ describe("Application", () => {
             expect(app.featureFlags.isSet("a")).to.be.true;
             expect(app.featureFlags.isSet("b")).to.be.true;
             expect(app.featureFlags.isSet("c")).to.be.true;
+        })
+
+        it("should set feature flags from the command line args", async () => {
+            args.features = "d,e,f";
+
+            const app = new Application();
+            await app.start(args);
+
+            expect(app.featureFlags.isSet("d")).to.be.true;
+            expect(app.featureFlags.isSet("e")).to.be.true;
+            expect(app.featureFlags.isSet("f")).to.be.true;
+        })
+
+        it("should allow for an alternative data directory to be specified via the command line args", async () => {
+            args.datadir = path.join(TEST_HOME_DIR, "altpath");
+            const app = new Application();
+            await app.start(args, true);
+
+            expect(fs.existsSync(args.datadir)).to.be.true;
+            expect(fs.existsSync(path.join(TEST_HOME_DIR, "altpath", "pid"))).to.be.true;
         })
     })
 

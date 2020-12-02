@@ -138,8 +138,6 @@ export class Application {
     }
 
     getDataPath(path?: string) {
-        if (!this._dataPath) throw new Error("Data directory has not been initialised");
-    
         if (path) return pathMod.join(this._dataPath, path);
         return this._dataPath;
     }
