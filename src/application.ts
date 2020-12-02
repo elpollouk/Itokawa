@@ -54,7 +54,7 @@ async function _getGitRevision() {
     return rev;
 }
 
-class Application {
+export class Application {
     publicUrl = "";
     commandStation: ICommandStation = null;
     readonly taskmanager = new TaskManager();
@@ -138,8 +138,6 @@ class Application {
     }
 
     getDataPath(path?: string) {
-        if (!this._dataPath) throw new Error("Data directory has not been initialised");
-    
         if (path) return pathMod.join(this._dataPath, path);
         return this._dataPath;
     }
@@ -150,9 +148,7 @@ class Application {
 
     private async _shutdown() {
         await this._db.close();
-        if (this.commandStation) {
-            this.commandStation.close();
-        }
+        await this.commandStation?.close();
     }
 
     private _registerTasks() {
