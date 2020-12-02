@@ -54,7 +54,7 @@ async function _getGitRevision() {
     return rev;
 }
 
-class Application {
+export class Application {
     publicUrl = "";
     commandStation: ICommandStation = null;
     readonly taskmanager = new TaskManager();
