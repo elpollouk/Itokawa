@@ -462,6 +462,7 @@ export class ELinkCommandStation extends CommandStationBase {
             try {
                 await this._port.write([MessageType.INFO_REQ, 0x24, 0x05]);
                 await this._disbatchResponse();
+                return;
             }
             catch (error) {
                 if (error.message !== "Read timeout" || retryCount-- === 0) throw error;
