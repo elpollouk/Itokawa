@@ -2,7 +2,7 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 
 import "mocha";
-import { spy, SinonSpy, stub, SinonStub } from "sinon";
+import { spy, SinonSpy, stub, SinonStub, restore } from "sinon";
 import { nextTick } from "../utils/promiseUtils";
 import * as fs from "fs";
 import * as time from "../common/time";
@@ -39,10 +39,7 @@ describe("AsyncSerialPort", () => {
     });
 
     afterEach(() => {
-        openSpy.restore();
-        closeSpy.restore();
-        writeSpy.restore();
-        drainSpy.restore();
+        restore();
     });
 
     function open(): Promise<AsyncSerialPort> {
@@ -215,6 +212,20 @@ describe("AsyncSerialPort", () => {
 
             await expect(promise).to.eventually.be.rejected;
         });
+
+        it("should return an empty array if the read times out", async () => {
+            const setTimeoutStub = stub(global, "setTimeout");
+
+            let port = await open();
+            let promise = port.read(1, 0.5);
+
+            expect(setTimeoutStub.callCount).to.equal(1);
+            expect(setTimeoutStub.lastCall.args[0]).to.be.instanceOf(Function);
+            expect(setTimeoutStub.lastCall.args[1]).to.equal(500);
+
+            setTimeoutStub.lastCall.args[0]();
+            expect(await promise).to.eql([]);
+        })
     });
 
     describe("concatRead", () => {
