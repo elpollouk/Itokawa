@@ -92,13 +92,21 @@ export class AsyncSerialPort extends EventEmitter {
         });
     }
 
-    read(size: number): Promise<number[]> {
+    read(size: number, timeoutSeconds?: number): Promise<number[]> {
         if (this._updateReader != _nullUpdate) return Promise.reject(new Error("Read already in progress"));
 
         return new Promise<number[]>((resolve, reject) => {
+            let timeoutToken = null;
+            if (timeoutSeconds) {
+                timeoutToken = setTimeout(() => {
+                    this._updateReader = _nullUpdate;
+                    reject(new Error("Read timeout"));
+                }, timeoutSeconds * 1000);
+            }
             this._updateReader = () => {
                 if (this._buffer.length >= size) {
                     this._updateReader = _nullUpdate;
+                    clearTimeout(timeoutToken);
                     resolve(this._buffer.splice(0, size));
                 }
             };

@@ -457,12 +457,21 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     private async _sendStatusRequest() {
-        await this._port.write([MessageType.INFO_REQ, 0x24, 0x05]);
-        await this._disbatchResponse();
+        let retryCount = 3;
+        while (true) {
+            try {
+                await this._port.write([MessageType.INFO_REQ, 0x24, 0x05]);
+                await this._disbatchResponse();
+            }
+            catch (error) {
+                if (error.message !== "Read timeout" || retryCount-- === 0) throw error;
+                log.verbose("Timeout waiting for for status response, retrying...");
+            }
+        }
     }
 
     private async _disbatchResponse() {
-        let data = await this._port.read(1);
+        let data = await this._port.read(1, 3);
     
         switch (data[0])
         {
