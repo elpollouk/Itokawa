@@ -226,6 +226,25 @@ describe("AsyncSerialPort", () => {
             setTimeoutStub.lastCall.args[0]();
             expect(await promise).to.eql([]);
         })
+
+        it("should reject if a port error is raised during a read", async () => {
+            let port = await open();
+            port.on("error", stub());
+            let promise = port.read(1);
+
+            port["_port"].emit("error", new Error("Test Error"));
+
+            await expect(promise).to.be.eventually.rejectedWith("Test Error");
+        })
+
+        it("should reject if the port is closed during a read", async () => {
+            let port = await open();
+            port.on("error", stub());
+            let promise = port.read(1);
+            await port.close();
+
+            await expect(promise).to.be.eventually.rejectedWith("Port closed");
+        })
     });
 
     describe("concatRead", () => {
