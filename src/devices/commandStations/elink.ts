@@ -260,7 +260,7 @@ export class ELinkCommandStation extends CommandStationBase {
         // We need to wait a bit and see if there are any more messages in the buffer before we can continue
         while (true) {
             resMessage = await this._port.read(3, 0.5);
-            if (resMessage.length === 0) break;
+            if (!resMessage) break;
             ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
             if (resMessage[1] !== 1) throw new Error(`Unexpected message: ${toHumanHex(resMessage)}`);
         }
@@ -465,7 +465,7 @@ export class ELinkCommandStation extends CommandStationBase {
 
     private async _disbatchResponse(): Promise<boolean> {
         let data = await this._port.read(1, 3);
-        if (data.length === 0) return false;
+        if (!data) return false;
     
         switch (data[0])
         {

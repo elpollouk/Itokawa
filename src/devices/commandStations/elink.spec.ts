@@ -58,7 +58,7 @@ describe("eLink", () => {
                 return Promise.reject(new Error(`Unexpect port read in test, size=${size}`));
             }
             const data = portReads.shift();
-            if (data.length !== size && data.length !== 0) return Promise.reject(new Error(`Unexpected port read size in test, expected=${data.length}, actual=${size}`));
+            if (data !== null && data.length !== size) return Promise.reject(new Error(`Unexpected port read size in test, expected=${data.length}, actual=${size}`));
             return Promise.resolve(data);
         });
         serialPortStub.concatRead.callsFake(async (originalData, size) => {
@@ -125,9 +125,9 @@ describe("eLink", () => {
 
         it ("should retry 3 times if no info response is initially received", async () => {
             portReads = [
-                [],
-                [],
-                [],
+                null,
+                null,
+                null,
                 [0x01],
                 [0x02, 0x03],
                 [0x35, 0x00, 0x00, 0x00, 0x00, 0x00, 0x35],
@@ -152,10 +152,10 @@ describe("eLink", () => {
 
         it ("should fail if no info response after the 3rd retry", async () => {
             portReads = [
-                [],
-                [],
-                [],
-                []
+                null,
+                null,
+                null,
+                null
             ];
 
             await expect(ELinkCommandStation.open(CONNECTION_STRING)).to.be.eventually.rejectedWith("No response from command station");
@@ -613,7 +613,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read
-                [],
+                null,
                 // CV value
                 [0x63],
                 [0x14, 0x01, 0x03, 0x75],
@@ -646,7 +646,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read,
-                [],
+                null,
                 // CV value
                 [0x63],
                 [0x14, 0x02, 0x03, 0x76],
@@ -680,7 +680,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read
-                [],
+                null,
                 // CV value
                 [0x63],
                 [0x14, 0x02, 0x13, 0x66],
@@ -715,7 +715,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read,
-                [],
+                null,
                 // CV value
                 [0x63],
                 [0x14, 0x08, 0x30, 0x4F],
@@ -765,7 +765,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read
-                [],
+                null,
                 // CV value
                 [0x61],
                 [0x13, 0x72]
@@ -787,7 +787,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read
-                [],
+                null,
                 // CV value
                 [0xFF]
             ]);
@@ -807,7 +807,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read
-                [],
+                null,
                 // CV value
                 [0x63],
                 [0x14, 0x02, 0x03, 0x76],
@@ -877,7 +877,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read
-                [],
+                null,
                 // CV value
                 [0x63],
                 [0x14, 0x01, 0x03, 0x70],
@@ -905,7 +905,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read
-                [],
+                null,
                 // CV value
                 [0x63],
                 [0x14, 0x01, 0x10, 0x66],
@@ -939,7 +939,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read
-                [],
+                null,
                 // CV value
                 [0x63],
                 [0x14, 0x01, 0x10, 0x66],
@@ -998,7 +998,7 @@ describe("eLink", () => {
                 [0x61, 0x01, 0x60],
                 [0x61, 0x01, 0x60],
                 // Time out read
-                [],
+                null,
                 [0x63],
                 [0x14, 0x01, 0x10, 0x66],
             ]);

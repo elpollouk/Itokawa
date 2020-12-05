@@ -224,7 +224,7 @@ describe("AsyncSerialPort", () => {
             expect(setTimeoutStub.lastCall.args[1]).to.equal(500);
 
             setTimeoutStub.lastCall.args[0]();
-            expect(await promise).to.eql([]);
+            expect(await promise).to.be.null;
         })
 
         it("should reject if a port error is raised during a read", async () => {

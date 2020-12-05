@@ -113,7 +113,7 @@ export class AsyncSerialPort extends EventEmitter {
                 timeoutToken = setTimeout(() => {
                     this._updateReader = _nullUpdate;
                     this._rejects.delete(reject);
-                    resolve([]);
+                    resolve(null);
                 }, timeoutSeconds * 1000);
             }
             this._updateReader = () => {
