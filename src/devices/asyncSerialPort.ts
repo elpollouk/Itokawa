@@ -116,6 +116,7 @@ export class AsyncSerialPort extends EventEmitter {
                     resolve(null);
                 }, timeoutSeconds * 1000);
             }
+
             this._updateReader = () => {
                 if (this._buffer.length >= size) {
                     this._updateReader = _nullUpdate;
