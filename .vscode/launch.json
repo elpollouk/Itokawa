@@ -25,7 +25,7 @@
             ],
             "program": "${workspaceFolder}/dist/cli/main.js",
             "args": [
-                "--log-level", "verbose",
+                "--log-level", "debug",
                 "-x", ".test.txt"
             ],
         },
