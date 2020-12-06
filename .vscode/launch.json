@@ -26,8 +26,7 @@
             "program": "${workspaceFolder}/dist/cli/main.js",
             "args": [
                 "--log-level", "verbose",
-                "-d", "eLink", "-c", "port=COM3"
-                //"-x", ".test.txt"
+                "-x", ".test.txt"
             ],
         },
         {
