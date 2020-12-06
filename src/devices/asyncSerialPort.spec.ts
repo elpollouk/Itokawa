@@ -213,7 +213,7 @@ describe("AsyncSerialPort", () => {
             await expect(promise).to.eventually.be.rejected;
         });
 
-        it("should return an empty array if the read times out", async () => {
+        it("should return null if the read times out", async () => {
             const setTimeoutStub = stub(global, "setTimeout");
 
             let port = await open();
@@ -225,6 +225,29 @@ describe("AsyncSerialPort", () => {
 
             setTimeoutStub.lastCall.args[0]();
             expect(await promise).to.be.null;
+        })
+
+        it("should clear the timeout if the read completes within required time", async () => {
+            const setTimeoutStub = stub(global, "setTimeout").returns("token" as any);
+            const clearTimeoutStub = stub(global, "clearTimeout");
+
+            let port = await open();
+            let promise = port.read(4, 0.5);
+            emitData(Buffer.from([3, 2, 1, 0]));
+
+            expect(await promise).to.eql([3, 2, 1, 0]);
+            expect(clearTimeoutStub.callCount).to.equal(1);
+            expect(clearTimeoutStub.lastCall.args).to.eql(["token"]);
+        })
+
+        it("should not set a timeout if no time limit is specified", async () => {
+            const setTimeoutStub = stub(global, "setTimeout");
+            let port = await open();
+            port.read(1);
+            await nextTick();
+            await nextTick();
+
+            expect(setTimeoutStub.callCount).to.equal(0);
         })
 
         it("should reject if a port error is raised during a read", async () => {
