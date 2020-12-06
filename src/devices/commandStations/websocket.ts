@@ -19,8 +19,8 @@ function createRequest<T>(type: messages.RequestType, data: T): messages.Transpo
 }
 
 export class WebSocketCommandStation extends CommandStationBase {
-    static readonly deviceId = "WebSocketCommandStation";
-    readonly version: string = "1.0.0"
+    static readonly deviceId = "WebSocket";
+    readonly version: string = "1.0.1"
     readonly deviceId: string = WebSocketCommandStation.deviceId;
 
     readonly url: string = null;
