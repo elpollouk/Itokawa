@@ -34,6 +34,7 @@ export class AsyncSerialPort extends EventEmitter {
     private _closeRequested = false;
     private _buffer: number[] = [];
     private _updateReader: () => void = _nullUpdate;
+    private _rejects = new Set<(err: Error)=>void>();
 
     get bytesAvailable(): number {
         return this._buffer.length;
@@ -62,6 +63,7 @@ export class AsyncSerialPort extends EventEmitter {
             this._updateReader();
         });
         this._port.on("close", () => {
+            this._rejectOutstandingPromises(new Error("Port closed"));
             if (!this._closeRequested) {
                 log.warning("Serial port closed");
                 this.emit("error", new Error("Unexpected serial port close event"));
@@ -69,8 +71,16 @@ export class AsyncSerialPort extends EventEmitter {
         });
         this._port.on("error", (err) => {
             log.warning(`Serial port error: ${err}`);
+            this._rejectOutstandingPromises(err);
             this.emit("error", err);
         });
+    }
+
+    private _rejectOutstandingPromises(error: Error) {
+        log.debug(() => `Rejecting ${this._rejects.size} outstanding promises`);
+        for (const reject of this._rejects)
+            reject(error);
+        this._rejects.clear();
     }
 
     write(data: Buffer | number[]): Promise<void> {
@@ -92,13 +102,26 @@ export class AsyncSerialPort extends EventEmitter {
         });
     }
 
-    read(size: number): Promise<number[]> {
+    read(size: number, timeoutSeconds?: number): Promise<number[]> {
         if (this._updateReader != _nullUpdate) return Promise.reject(new Error("Read already in progress"));
 
         return new Promise<number[]>((resolve, reject) => {
+            this._rejects.add(reject);
+
+            let timeoutToken = null;
+            if (timeoutSeconds) {
+                timeoutToken = setTimeout(() => {
+                    this._updateReader = _nullUpdate;
+                    this._rejects.delete(reject);
+                    resolve(null);
+                }, timeoutSeconds * 1000);
+            }
+
             this._updateReader = () => {
                 if (this._buffer.length >= size) {
                     this._updateReader = _nullUpdate;
+                    clearTimeout(timeoutToken);
+                    this._rejects.delete(reject);
                     resolve(this._buffer.splice(0, size));
                 }
             };

@@ -259,12 +259,8 @@ export class ELinkCommandStation extends CommandStationBase {
         // The eLink is really annoying as we have no idea how many of these we'll receive, could be 3, could be 4
         // We need to wait a bit and see if there are any more messages in the buffer before we can continue
         while (true) {
-            // TODO - Add timeout support to reads
-            if (this._port.bytesAvailable === 0) {
-                await timeout(0.5);
-                if (this._port.bytesAvailable === 0) break;
-            }
-            resMessage = await this._port.read(3);
+            resMessage = await this._port.read(3, 0.5);
+            if (!resMessage) break;
             ensureValidMessage(resMessage, MessageType.CV_SELECT_RESPONSE);
             if (resMessage[1] !== 1) throw new Error(`Unexpected message: ${toHumanHex(resMessage)}`);
         }
@@ -457,12 +453,19 @@ export class ELinkCommandStation extends CommandStationBase {
     }
 
     private async _sendStatusRequest() {
-        await this._port.write([MessageType.INFO_REQ, 0x24, 0x05]);
-        await this._disbatchResponse();
+        let retryCount = 3;
+        while (true) {
+            await this._port.write([MessageType.INFO_REQ, 0x24, 0x05]);
+            const success = await this._disbatchResponse();
+            if (success) break;
+            if (retryCount-- === 0) throw new CommandStationError("No response from command station");
+            log.verbose("Timeout waiting for for status response, retrying...");
+        }
     }
 
-    private async _disbatchResponse() {
-        let data = await this._port.read(1);
+    private async _disbatchResponse(): Promise<boolean> {
+        let data = await this._port.read(1, 3);
+        if (!data) return false;
     
         switch (data[0])
         {
@@ -479,6 +482,8 @@ export class ELinkCommandStation extends CommandStationBase {
             log.error(message);
             throw new CommandStationError(message);
         }
+
+        return true;
     }
 
     private async _handleHandshake(data: number[]) {

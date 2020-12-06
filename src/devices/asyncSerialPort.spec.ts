@@ -2,7 +2,7 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 
 import "mocha";
-import { spy, SinonSpy, stub, SinonStub } from "sinon";
+import { spy, SinonSpy, stub, SinonStub, restore } from "sinon";
 import { nextTick } from "../utils/promiseUtils";
 import * as fs from "fs";
 import * as time from "../common/time";
@@ -39,10 +39,7 @@ describe("AsyncSerialPort", () => {
     });
 
     afterEach(() => {
-        openSpy.restore();
-        closeSpy.restore();
-        writeSpy.restore();
-        drainSpy.restore();
+        restore();
     });
 
     function open(): Promise<AsyncSerialPort> {
@@ -215,6 +212,62 @@ describe("AsyncSerialPort", () => {
 
             await expect(promise).to.eventually.be.rejected;
         });
+
+        it("should return null if the read times out", async () => {
+            const setTimeoutStub = stub(global, "setTimeout");
+
+            let port = await open();
+            let promise = port.read(1, 0.5);
+
+            expect(setTimeoutStub.callCount).to.equal(1);
+            expect(setTimeoutStub.lastCall.args[0]).to.be.instanceOf(Function);
+            expect(setTimeoutStub.lastCall.args[1]).to.equal(500);
+
+            setTimeoutStub.lastCall.args[0]();
+            expect(await promise).to.be.null;
+        })
+
+        it("should clear the timeout if the read completes within required time", async () => {
+            const setTimeoutStub = stub(global, "setTimeout").returns("token" as any);
+            const clearTimeoutStub = stub(global, "clearTimeout");
+
+            let port = await open();
+            let promise = port.read(4, 0.5);
+            emitData(Buffer.from([3, 2, 1, 0]));
+
+            expect(await promise).to.eql([3, 2, 1, 0]);
+            expect(clearTimeoutStub.callCount).to.equal(1);
+            expect(clearTimeoutStub.lastCall.args).to.eql(["token"]);
+        })
+
+        it("should not set a timeout if no time limit is specified", async () => {
+            const setTimeoutStub = stub(global, "setTimeout");
+            let port = await open();
+            port.read(1);
+            await nextTick();
+            await nextTick();
+
+            expect(setTimeoutStub.callCount).to.equal(0);
+        })
+
+        it("should reject if a port error is raised during a read", async () => {
+            let port = await open();
+            port.on("error", stub());
+            let promise = port.read(1);
+
+            port["_port"].emit("error", new Error("Test Error"));
+
+            await expect(promise).to.be.eventually.rejectedWith("Test Error");
+        })
+
+        it("should reject if the port is closed during a read", async () => {
+            let port = await open();
+            port.on("error", stub());
+            let promise = port.read(1);
+            await port.close();
+
+            await expect(promise).to.be.eventually.rejectedWith("Port closed");
+        })
     });
 
     describe("concatRead", () => {
