@@ -35,6 +35,11 @@ export class SystemDrawControl extends ControlBase {
         getById(container, "trains").onclick = () => nav.open("trains");
         getById(container, "server").onclick = () => this.openServerPopup();
         getById(container, "about").onclick = () => this.openAbout();
+        getById(container, "estop").onclick = (ev) => {
+            this.emergencyStop();
+            // We want to keep the panel open
+            ev.stopPropagation();
+        };
         getById(container, "back").onclick = (ev: MouseEvent) => {
             nav.back();
             // We don't want the click to raise the containers event in this case
@@ -105,5 +110,15 @@ export class SystemDrawControl extends ControlBase {
 
     private openAbout() {
         AboutControl.open();
+    }
+
+    private emergencyStop() {
+        const connection = client.connection;
+        if (connection.state !== ConnectionState.Idle) {
+            setTimeout(() => this.emergencyStop(), 100);
+            return;
+        }
+
+        connection.request(RequestType.EmergencyStop, null);
     }
 }
