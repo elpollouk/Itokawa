@@ -11,16 +11,10 @@ import { ConnectionStatus } from "./connectionStatus";
 import { ConnectionState } from "../client";
 import { UpdatePage, UpdatePageConstructor } from "../pages/update";
 import { PromptButton } from "../controls/promptControl";
-import { createElement, getById, parseHtml } from "../utils/dom";
+import { getById, parseHtml } from "../utils/dom";
 import { AboutControl } from "./about";
 
 const html = require("./systemDrawer.html");
-
-function createControlContainer(parent: HTMLElement) {
-    const div = createElement(parent, "div");
-    div.className = "container";
-    return div;
-}
 
 export class SystemDrawControl extends ControlBase {
     constructor(parent: HTMLElement) {
@@ -33,10 +27,10 @@ export class SystemDrawControl extends ControlBase {
 
         new PublicUrlQrCode(getById(container, "qrContainer"));
         getById(container, "trains").onclick = () => nav.open("trains");
-        getById(container, "server").onclick = () => this.openServerPopup();
-        getById(container, "about").onclick = () => this.openAbout();
+        getById(container, "server").onclick = () => this._openServerPopup();
+        getById(container, "about").onclick = () => this._openAbout();
         getById(container, "estop").onclick = (ev) => {
-            this.emergencyStop();
+            this._emergencyStop();
             // We want to keep the panel open
             ev.stopPropagation();
         };
@@ -51,25 +45,25 @@ export class SystemDrawControl extends ControlBase {
         // interactions with it
         container.onclick = () => {
             if (this.parent.classList.contains("expanded"))
-                this.closeDrawer();
+                this._closeDrawer();
             else
-                this.openDrawer();
+                this._openDrawer();
         }
 
         return container;
     }
 
-    private openDrawer() {
+    private _openDrawer() {
         this.parent.classList.add("expanded");
-        protection.enableProtection(() => this.closeDrawer());
+        protection.enableProtection(() => this._closeDrawer());
     }
 
-    private closeDrawer() {
+    private _closeDrawer() {
         this.parent.classList.remove("expanded");
         protection.disableProtection();
     }
 
-    private openServerPopup() {
+    private _openServerPopup() {
         function action(caption: string, message: string, onyes:()=>void): PromptButton {
             return {
                 caption: caption,
@@ -108,14 +102,14 @@ export class SystemDrawControl extends ControlBase {
         );
     }
 
-    private openAbout() {
+    private _openAbout() {
         AboutControl.open();
     }
 
-    private emergencyStop() {
+    private _emergencyStop() {
         const connection = client.connection;
         if (connection.state !== ConnectionState.Idle) {
-            setTimeout(() => this.emergencyStop(), 100);
+            setTimeout(() => this._emergencyStop(), 100);
             return;
         }
 
