@@ -29,7 +29,6 @@ class IndexPage extends Page {
         const page = parseHtml(html);
 
         this._trainControlsContainer = getById(page, "trains");
-        getById(page, "emergencyStop").onclick = () => this._emergencyStop();
         getById(page, "add").onclick = () => nav.open(TrainRosterConstructor.path);
         
         return page;
@@ -65,16 +64,6 @@ class IndexPage extends Page {
             console.error(err);
             prompt.error(`Failed to load train list.\n${err.message}`);
         });
-    }
-
-    private _emergencyStop() {
-        const connection = client.connection;
-        if (connection.state !== ConnectionState.Idle) {
-            setTimeout(() => this._emergencyStop(), 100);
-            return;
-        }
-
-        connection.request(RequestType.EmergencyStop, null);
     }
 
     private _updateSpeed(request: LocoSpeedRequest) {

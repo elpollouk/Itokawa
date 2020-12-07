@@ -11,14 +11,10 @@ import { ConnectionStatus } from "./connectionStatus";
 import { ConnectionState } from "../client";
 import { UpdatePage, UpdatePageConstructor } from "../pages/update";
 import { PromptButton } from "../controls/promptControl";
-import { createElement } from "../utils/dom";
+import { getById, parseHtml } from "../utils/dom";
 import { AboutControl } from "./about";
 
-function createControlContainer(parent: HTMLElement) {
-    const div = createElement(parent, "div");
-    div.className = "container";
-    return div;
-}
+const html = require("./systemDrawer.html");
 
 export class SystemDrawControl extends ControlBase {
     constructor(parent: HTMLElement) {
@@ -27,64 +23,47 @@ export class SystemDrawControl extends ControlBase {
     }
 
     protected _buildUi(): HTMLElement {
-        const container = document.createElement("div");
+        const container = parseHtml(html);
 
-        new PublicUrlQrCode(createControlContainer(container));
-
-        const globalControls = createControlContainer(container);
-        globalControls.classList.add("globalControls");
-
-        const trainsButton = createElement(globalControls, "button");
-        trainsButton.innerText = "Trains";
-        trainsButton.onclick = () => nav.open("trains");
-
-        const serverButton = createElement(globalControls, "button");
-        serverButton.innerText = "Server";
-        serverButton.onclick = () => this.openServerPopup();
-
-        const aboutButton = createElement(globalControls, "button");
-        aboutButton.innerText = "About";
-        aboutButton.onclick = () => this.openAbout();
-
-        // Back button
-        const backButton = createElement(container, "button");
-        backButton.className = "backButton";
-        backButton.onclick = (ev: MouseEvent) => {
+        new PublicUrlQrCode(getById(container, "qrContainer"));
+        getById(container, "trains").onclick = () => nav.open("trains");
+        getById(container, "server").onclick = () => this._openServerPopup();
+        getById(container, "about").onclick = () => this._openAbout();
+        getById(container, "estop").onclick = (ev) => {
+            this._emergencyStop();
+            // We want to keep the panel open
+            ev.stopPropagation();
+        };
+        getById(container, "back").onclick = (ev: MouseEvent) => {
             nav.back();
             // We don't want the click to raise the containers event in this case
             ev.stopPropagation();
         };
-        backButton.innerText = "<";
-
-        const handle = createElement(container, "div", "handle");
-        handle.innerText = "...";
-
         new ConnectionStatus(container);
-
 
         // If the system drawer doesn't contain any children, then don't bother enabling
         // interactions with it
         container.onclick = () => {
             if (this.parent.classList.contains("expanded"))
-                this.closeDrawer();
+                this._closeDrawer();
             else
-                this.openDrawer();
+                this._openDrawer();
         }
 
         return container;
     }
 
-    private openDrawer() {
+    private _openDrawer() {
         this.parent.classList.add("expanded");
-        protection.enableProtection(() => this.closeDrawer());
+        protection.enableProtection(() => this._closeDrawer());
     }
 
-    private closeDrawer() {
+    private _closeDrawer() {
         this.parent.classList.remove("expanded");
         protection.disableProtection();
     }
 
-    private openServerPopup() {
+    private _openServerPopup() {
         function action(caption: string, message: string, onyes:()=>void): PromptButton {
             return {
                 caption: caption,
@@ -123,7 +102,17 @@ export class SystemDrawControl extends ControlBase {
         );
     }
 
-    private openAbout() {
+    private _openAbout() {
         AboutControl.open();
+    }
+
+    private _emergencyStop() {
+        const connection = client.connection;
+        if (connection.state !== ConnectionState.Idle) {
+            setTimeout(() => this._emergencyStop(), 100);
+            return;
+        }
+
+        connection.request(RequestType.EmergencyStop, null);
     }
 }

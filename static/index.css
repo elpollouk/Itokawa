@@ -195,6 +195,17 @@ a:visited {
     width: calc(25% - 4px);;
 }
 
+.globalControls .estop {
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.globalControls .estop:active {
+    background-color: darkred;
+}
+
 /* Back button */
 .backButton {
     position: absolute;
@@ -450,27 +461,6 @@ a:visited {
 
 .noTrains .noTrainsContainer {
     display: unset;
-}
-
-.emergencyStop {
-    padding: 1em;
-}
-
-.emergencyStop button {
-    width: calc(100% - 4px);
-    height: 4em;
-    background-color: red;
-    color: white;
-    font-weight: bold;
-    font-size: x-large;
-}
-
-.emergencyStop button:active {
-    background-color: darkred;
-}
-
-.noTrains .emergencyStop, .loading .emergencyStop {
-    display: none;
 }
 
 
