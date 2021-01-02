@@ -310,7 +310,7 @@
         </profile>
 
         <!-- Hornby Decoders -->
-        <profile man="48" ver="131,133" name="R8249/R7150">
+        <profile man="48" ver="131,133,135" name="R8249/R7150/R7274">
             <cvs>1,3,4,10,17,18,29</cvs>
         </profile>
 
