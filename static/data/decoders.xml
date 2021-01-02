@@ -315,7 +315,7 @@
         </profile>
 
         <!-- Gaugemaster -->
-        <profile man="65" ver="51npm" name="Ruby Decoder DCC90">
+        <profile man="65" ver="51" name="Ruby Decoder DCC90">
             <locoCvNames>
                 <cv n="9">Motor Frequency SuperSonic</cv>
                 <cv n="33">Function Mapping: F0F</cv>
