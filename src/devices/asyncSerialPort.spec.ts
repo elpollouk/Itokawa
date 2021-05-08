@@ -223,7 +223,8 @@ describe("AsyncSerialPort", () => {
             expect(setTimeoutStub.lastCall.args[0]).to.be.instanceOf(Function);
             expect(setTimeoutStub.lastCall.args[1]).to.equal(500);
 
-            setTimeoutStub.lastCall.args[0]();
+            const cb = (setTimeoutStub.lastCall.args[0] as Function);
+            cb();
             expect(await promise).to.be.null;
         })
 

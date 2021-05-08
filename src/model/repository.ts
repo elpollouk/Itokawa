@@ -34,7 +34,7 @@ export abstract class Repository<T> {
         await this._prepareStatements();
     }
 
-    abstract async release(): Promise<void>;
+    abstract release(): Promise<void>;
 
     abstract _prepareStatements(): Promise<void>;
     abstract _indexItemForSearch(item: T): string;
@@ -98,7 +98,7 @@ export abstract class Repository<T> {
                 }
                 else {
                     if (!row) {
-                        resolve();
+                        resolve(null);
                     }
                     else {
                         const data = row.item;

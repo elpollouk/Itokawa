@@ -10,6 +10,7 @@ import { ELinkCommandStation, ELinkCommandBatch, applyChecksum } from "./elink";
 import { CommandStationState, FunctionAction } from "./commandStation";
 
 const CONNECTION_STRING = "port=/dev/ttyACM0";
+const MOCK_TIMEOUT_TOKEN = 0xADE;
 
 describe("eLink", () => {
     let serialPortOpenStub: SinonStub;
@@ -73,7 +74,7 @@ describe("eLink", () => {
         serialPortOpenStub = stub(AsyncSerialPort, "open")
             .returns(Promise.resolve(serialPortStub));
 
-        setTimeoutStub = stub(global, "setTimeout").returns({} as NodeJS.Timeout);
+        setTimeoutStub = stub(global, "setTimeout").returns(MOCK_TIMEOUT_TOKEN);
         clearTimeoutStub = stub(global, "clearTimeout");
         promiseTimeoutStub = stub(promiseUtils, "timeout").resolves();
     })

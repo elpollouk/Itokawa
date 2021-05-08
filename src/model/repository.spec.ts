@@ -297,7 +297,7 @@ describe("Repository", () => {
         it("should return undefined for non-existing item", async () => {
             const repo = await _db.openRepository(LocoRepository);
             const item = await repo.get(123);
-            expect(item).to.be.undefined;
+            expect(item).to.be.null;
         })
 
         it("should reject with error if execution of get fails", async () => {

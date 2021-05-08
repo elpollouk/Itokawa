@@ -13,21 +13,21 @@ class MockWebSocket extends ws {
     send = stub();
     eventHandlers = new Map<string, Function>();
 
-    constructor() {
+    constructor(readyState: number = 1) {
         super(null);
         Object.defineProperties(this, {
             on: {
                 value: (event: string, cb: Function) => this.eventHandlers[event] = cb
             },
             readyState: {
-                value: 1
+                value: readyState
             }
         });
     }
 }
 
-function connectSocket(route: Function): MockWebSocket {
-    const socket = new MockWebSocket();
+function connectSocket(route: Function, readyState: number = 1): MockWebSocket {
+    const socket = new MockWebSocket(readyState);
     route(socket, null, stub());
     return socket;
 }
@@ -95,7 +95,7 @@ describe("WebSocket Handlers", () => {
         it("should ignore unregistered handler types", async () => {
             const route = getControlWebSocketRoute();            
             const ws = new MockWebSocket();
-            route(ws as any, null, stub());
+            route(ws as any, null, () => {});
 
             await ws.eventHandlers["message"]('{"type":0,"data":"foo"}');
         })
@@ -147,8 +147,7 @@ describe("WebSocket Handlers", () => {
                 sent = await send("Test Data" as any);
             });
             const route = getControlWebSocketRoute();            
-            const socket = connectSocket(route);
-            socket.readyState = 0;
+            const socket = connectSocket(route, 0);
 
             await socket.eventHandlers["message"]('{"type":2,"data":{},"tag":"client:123"}');
 

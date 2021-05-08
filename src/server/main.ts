@@ -46,13 +46,7 @@ async function main()
     let port = program.port || application.config.get("server.port", 8080);
     if (typeof(port) === "string") port = parseIntStrict(port);
 
-    const server = app.listen(port, (err: any) => {
-        if (err) {
-            log.error(`Failed to start listening on port ${port}`);
-            log.error(err);
-            return;
-        }
-
+    const server = app.listen(port, () => {
         const address: AddressInfo = server.address() as AddressInfo;
         application.publicUrl = `http://${os.hostname()}:${address.port}/`;
         log.display(`Listening on ${application.publicUrl}`);
