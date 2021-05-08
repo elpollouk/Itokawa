@@ -1,6 +1,6 @@
 {
   "name": "itokawa",
-  "version": "0.4.3-dev",
+  "version": "0.4.3",
   "description": "DCC Train Control",
   "private": true,
   "scripts": {
