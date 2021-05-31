@@ -10,7 +10,6 @@ import { application } from "../application";
 
 import { AsyncSerialPort } from "./asyncSerialPort";
 import { ConfigNode } from "../utils/config";
-import { Logger, LogLevel } from "../utils/logger";
 const SerialPort = require('@serialport/stream');
 const MockBinding = require('@serialport/binding-mock');
 
