@@ -3,9 +3,12 @@ use(require("chai-as-promised"));
 import "mocha";
 import { stub, restore } from "sinon";
 
-import { SessionManager, ADMIN_USERNAME, ADMIN_PASSWORD_KEY } from "./sessionmanager";
+import { SessionManager, ADMIN_USERNAME, ADMIN_PASSWORD_KEY, } from "./sessionmanager";
+import * as sessionManager from "./sessionmanager";
 import { application } from "../application";
 import { ConfigNode } from "../utils/config";
+
+const ADMIN_PASSWORD = "abc123";
 
 describe("Session Manager", () => {
     let sm: SessionManager;
@@ -32,7 +35,7 @@ describe("Session Manager", () => {
         })
 
         it ("should return a valid session for valid credentails", async () => {
-            const session = await sm.signIn(ADMIN_USERNAME, "abc123");
+            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
             expect(session).to.not.be.null.and.not.be.undefined;
             expect(session.isValid).to.be.true;
         })

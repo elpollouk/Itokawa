@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as read from "read";
 import { initDataDirectory } from "../application";
+import { ADMIN_PASSWORD_KEY } from "../server/sessionmanager";
 import { loadConfig, saveConfig } from "../utils/config";
 import { Logger, LogLevel } from "../utils/logger";
 import * as password from "../utils/password";
@@ -40,7 +41,7 @@ async function main() {
     configPath = path.join(configPath, CONFIG_XML);
     console.log(`Modifying ${configPath}...`);
     const config = await loadConfig(configPath);
-    config.set("server.admin.password", hashed);
+    config.set(ADMIN_PASSWORD_KEY, hashed);
     await saveConfig(configPath, config);
 
     console.log("Config updated!");

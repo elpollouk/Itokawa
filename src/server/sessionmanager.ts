@@ -20,7 +20,7 @@ const ROLES: { [key: string]: string[]} = {
     "GUEST": []
 };
 
-function getExpireDate(): Date {
+export function getExpireDate(): Date {
     const expire = new Date();
     expire.setDate(
         expire.getDate() + application.config.getAs<number>(SESSION_LENGTH_KEY, SESSION_LENGTH_DEFAULT)
@@ -39,7 +39,7 @@ export class Session {
     }
 
     public get isValid(): boolean {
-        return new Date() < this._expires;
+        return !!this._expires && new Date() < this._expires;
     }
 
     constructor() {
@@ -53,6 +53,10 @@ export class Session {
 
     addRole(roleName: string) {
 
+    }
+
+    expire() {
+        this._expires = null;
     }
 }
 
