@@ -352,6 +352,75 @@
             <cvs>1-6,10,15-18,29,33-36,49-52,61</cvs>
         </profile>
 
+        <!-- LaisDCC Decoders -->
+        <profile man="134" ver="1,2,3,4" name="LaisDCC Decoder">
+            <locoCvNames>
+                <cv n="30">Reset (CV30=4)</cv>
+                <cv n="33">Forward Headlight FL(F0F)/White Wire</cv>
+                <cv n="34">Reverse Headlight FL(F0R)/Yellow Wire</cv>
+                <cv n="35">Function 1/Green Wire(0-6)</cv>
+                <cv n="36">Function 2/Purple Wire(0-6)</cv>
+                <cv n="37">Function 1/Green Wire(7-12)</cv>
+                <cv n="38">Function 2/Purple Wire(7-12)</cv>
+                <cv n="39">Function 3/Brown Wire(0-6)</cv>
+                <cv n="40">Function 4/Pink Wire(0-6)</cv>
+                <cv n="41">Function 3/Brown Wire(7-12)</cv>
+                <cv n="42">Function 4/Pink Wire(7-12)</cv>
+                <cv n="43">Function 5/Pink/Purple Wire(0-6)</cv>
+                <cv n="44">Function 6/Green/Brown Wire(0-6)</cv>
+                <cv n="45">Function 5/Pink/Purple Wire(7-12)</cv>
+                <cv n="46">Function 6/Green/Brown Wire(7-12)</cv>
+                <cv n="47">For USER Use</cv>
+                <cv n="48">USER ID #3</cv>
+                <cv n="49">White Wire/FL Feature</cv>
+                <cv n="50">Yellow Wire/RL Feature</cv>
+                <cv n="51">Green Wire/F1 Feature</cv>
+                <cv n="52">Violet Wire/F2 Feature</cv>
+                <cv n="53">Brown Wire/F3 Feature/When Available</cv>
+                <cv n="54">Pink Wire/F4 Feature/When Available</cv>
+                <cv n="56">Dither Frequency</cv>
+                <cv n="57">Dither Ampitude</cv>
+                <cv n="59">Passenger/Coaches Light F0 Control</cv>
+                <cv n="60">Production Location</cv>
+                <cv n="61">Configuration Options</cv>
+                <cv n="62">USER ID #4</cv>
+                <cv n="63">Ditch Light Blink Holad Over</cv>
+                <cv n="64">Dim Value</cv>
+                <cv n="65">USER ID #5</cv>
+                <cv n="66">USER ID #6</cv>
+                <cv n="112">Mars Min Brightness</cv>
+                <cv n="113">Mars Max Brightness Time</cv>
+                <cv n="114">Mars Total Light Cycle</cv>
+                <cv n="115">Mars Mid Brightness</cv>
+                <cv n="116">Mars Max Brightness</cv>
+                <cv n="117">Ditch Light Blink Rate</cv>
+                <cv n="118">Rotary Min. Bright</cv>
+                <cv n="119">Rotary Min. Bright Time</cv>
+                <cv n="120">Rotary Total Light Cycle</cv>
+                <cv n="121">Rotary Mid Brightness</cv>
+                <cv n="122">Rotary Max Brightness</cv>
+                <cv n="123">ON/OFF Rule 17 Dimming</cv>
+                <cv n="124">ON/OFF Ditch Light Blink</cv>
+                <cv n="125">Rate 2 Ending Point</cv>
+                <cv n="126">Dec Rate 2</cv>
+                <cv n="127">Rate 3 Ending Point</cv>
+                <cv n="128">Dec Rate 3</cv>
+                <cv n="129">Rate 2 Starting Point</cv>
+                <cv n="130">Acc. Rate 2</cv>
+                <cv n="131">Rate 3 Starting Point</cv>
+                <cv n="132">Acc. Rate 3</cv>
+                <cv n="133">Power Level for Button Control</cv>
+                <cv n="134">Button Control of Motor Circuit</cv>
+                <cv n="135">Random Flicker Adjust</cv>
+                <cv n="136">BEMF Map</cv>
+                <cv n="137">Production Year (Upper)</cv>
+                <cv n="138">Production Year</cv>
+                <cv n="139">Production Month</cv>
+                <cv n="140">Production Day</cv>
+            </locoCvNames>
+            <cvs>1-6,10,13-19,21-24,29-30,33-54,56-57,59-94,105-106,112-140</cvs>
+        </profile>
+
         <!-- Zimo Decoders -->
         <profile man="145" ver="37" name="MX645">
             <locoCvNames>
