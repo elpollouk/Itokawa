@@ -50,3 +50,13 @@ export function fromHex(hex: string): number[] {
 
     return data;
 }
+
+export function randomHex(length: number): string {
+    let result = "";
+    const hex = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+
+    for (let i = 0; i < length; i++)
+      result += hex[Math.floor(Math.random() * 16)];
+
+    return result;
+}
