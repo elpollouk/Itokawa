@@ -1,6 +1,9 @@
 import { application } from "../application";
 import { randomHex } from "../utils/hex";
+import { Logger } from "../utils/logger";
 import { verify } from "../utils/password";
+
+const log = new Logger("SessionManager");
 
 export const ADMIN_USERNAME = "admin";
 export const ADMIN_PASSWORD_KEY = "server.admin.password";
@@ -41,7 +44,7 @@ export class Session {
     }
 
     public get isValid(): boolean {
-        return !!this._expires && new Date() < this._expires;
+        return new Date() < this._expires;
     }
 
     constructor() {
@@ -50,18 +53,21 @@ export class Session {
     }
 
     ping(): Promise<void> {
+        log.verbose(() => { return "Pinging session " + this.id; });
         this._expires = getExpireDate();
         return Promise.resolve();
     }
 
     addRole(roleName: string) {
+        log.verbose(() => { return "Adding role " + roleName + " to session " + this.id; });
         for (const permission of ROLES[roleName])
             this.permissions.add(permission);
         this.roles.add(roleName);
     }
 
     expire(): Promise<void> {
-        this._expires = null;
+        log.info(() => { return "Expiring session " + this.id; })
+        this._expires = new Date(0);
         return Promise.resolve();
     }
 }
@@ -75,11 +81,29 @@ export class SessionManager {
     private readonly _sessions: Map<string, Session> = new Map();
     
     async signIn(username: string, password: string): Promise<Session> {
-        if (username != ADMIN_USERNAME || !password) throw new Error(INVALID_CREDENTIALS_ERROR);
+        if (username != ADMIN_USERNAME) {
+            log.warning("Attempt to login with username '" + username + "'");
+            throw new Error(INVALID_CREDENTIALS_ERROR);
+        }
+        if (!password) {
+            log.error("Null password provided");
+            throw new Error(INVALID_CREDENTIALS_ERROR);
+        }
+
         const phash = application.config.getAs<string>(ADMIN_PASSWORD_KEY);
-        if (await verify(password, phash) == false) throw new Error(INVALID_CREDENTIALS_ERROR);
+        if (!phash) {
+            log.error("No password has been configured");
+            throw new Error(INVALID_CREDENTIALS_ERROR);
+        }
+
+        log.info(() => { return "Attemping to login user '" + username + "'"; });
+        if (await verify(password, phash) == false) {
+            log.warning("Failed to authenticate '" + username + "'");
+            throw new Error(INVALID_CREDENTIALS_ERROR);
+        }
 
         const session = new Session();
+        log.info(() => { return "User '" + username + "' authenticated with session " + session.id; });
 
         for (let role in ROLES) {
             session.addRole(role);

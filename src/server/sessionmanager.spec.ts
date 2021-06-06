@@ -42,6 +42,11 @@ describe("Session Manager", () => {
             await expect(sm.signIn(ADMIN_USERNAME, null)).to.be.eventually.rejectedWith("Invalid username or password");
         })
 
+        it ("should reject if password not set", async () => {
+            application.config.set(ADMIN_PASSWORD_KEY, null);
+            await expect(sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD)).to.be.eventually.rejectedWith("Invalid username or password");
+        })
+
         it ("should return a valid session for valid credentails", async () => {
             const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
 
@@ -159,7 +164,7 @@ describe("Session Manager", () => {
                 await session.expire();
 
                 expect(session.isValid).to.be.false;
-                expect(session.expires).to.be.null;
+                expect(session.expires).to.eql(new Date(0));
             })
 
             it("should be safe to expire a session multiple times", async () => {
@@ -169,7 +174,7 @@ describe("Session Manager", () => {
                 await session.expire();
 
                 expect(session.isValid).to.be.false;
-                expect(session.expires).to.be.null;
+                expect(session.expires).to.eql(new Date(0));
             })
         })
 
