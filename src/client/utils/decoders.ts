@@ -12,6 +12,8 @@ export const Manufactures: NameMap = {};
 export const LocoCvNames: NameMap = {};
 export const LocoDecoderProfiles = new Map<number, Map<number, LocoDecoderProfile>>();
 
+let _decoderDataVersion = "";
+
 function parseData(data: Document) {
     const root = data.getElementsByTagName("decoders")[0];
 
@@ -42,6 +44,9 @@ function parseData(data: Document) {
         if (node.nodeName !== "profile") continue;
         loadProfile(node);
     }
+
+    // Finally, set the data version
+    _decoderDataVersion = root.getAttribute("version") ?? "Unknown";
 }
 
 function* parseRange(range: string): IterableIterator<number> {
@@ -141,6 +146,7 @@ export function loadData(cb: (error?: Error) => void) {
     }
     client.open("GET", "data/decoders.xml");
     client.send();
+    _decoderDataVersion = ""
 }
 
 export function getLocoDecoderProfile(manufacturer: number, version: number): LocoDecoderProfile {
@@ -149,7 +155,7 @@ export function getLocoDecoderProfile(manufacturer: number, version: number): Lo
     return decoders.get(version) || null;
 }
 
-export function getLocoScanCvs() {
+export function getLocoScanCvs(): number[] {
     return getLocoDecoderProfile(0, 0).cvs;
 }
 
@@ -157,4 +163,8 @@ export function getLocoCvName(manufacturer: number, version: number, cv: number)
     const profile = getLocoDecoderProfile(manufacturer, version);
     if (!profile) return LocoCvNames[cv] ?? "";
     return profile.getCvName(cv);
+}
+
+export function getDecoderDataVersion(): string {
+    return _decoderDataVersion;
 }

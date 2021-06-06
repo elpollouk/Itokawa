@@ -1,4 +1,4 @@
-<decoders>
+<decoders version="1.15">
     <!-- Data from https://www.nmra.org/sites/default/files/standards/sandrp/pdf/s-9.2.2_decoder_cvs_2012.07.pdf -->
     <locoCvNames>
         <cv n="1">Primary Address</cv>
