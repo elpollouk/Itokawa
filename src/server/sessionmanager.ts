@@ -160,16 +160,15 @@ export class SessionManager {
         }
     }
 
-    private getSession(id: string): Session {
-        const session = this._sessions.get(id);
-        if (!session || !session.isValid) {
-            return new GuestSession();
-        }
-        return session;
+    getSession(id: string): Session {
+        return this._sessions.get(id);
     }
 
     async getAndPingSession(id: string): Promise<Session> {
-        const session = this.getSession(id);
+        let session = this.getSession(id);
+        if (!session || !session.isValid) {
+            return new GuestSession();
+        }
         await session.ping();
         return session;
     }
@@ -205,7 +204,7 @@ export class SessionManager {
     }
 
     hasPermission(permission: Permissions, sessionId: string): boolean {
-        const session = this.getSession(sessionId);
-        return session.permissions.has(permission);
+        const session = this.getSession(sessionId) ?? new GuestSession();
+        return session.isValid ? session.permissions.has(permission) : false;
     }
 }
