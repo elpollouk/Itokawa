@@ -305,5 +305,16 @@ describe("Session Manager", () => {
                 expect(() => session.addRole("SERVER_ADMIN")).to.throw("Attempt to modify guest permissions");
             })
         })
+
+        describe("No admin password configured", () => {
+            it("should have all permissions", async () => {
+                application.config.set(ADMIN_PASSWORD_KEY, null);
+                const session = await sm.getAndPingSession("safgsfg");
+
+                for (const permission in sessionManager.Permissions) {
+                    expect(session.permissions).to.contain(permission);
+                }
+            })
+        })
     })
 })

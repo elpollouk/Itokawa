@@ -85,6 +85,14 @@ class GuestSession extends Session {
         super();
         this._expires = MAX_DATE;
         this.roles.add("GUEST");
+
+        // If no admin passwrd has been configured, then guests need all permissions, an admin party!
+        const phash = application.config.getAs<string>(ADMIN_PASSWORD_KEY);
+        if (!phash) {
+            for (const permission in Permissions) {
+                this.permissions.add(permission);
+            }
+        }
     }
 
     ping(): Promise<void> {
@@ -99,8 +107,6 @@ class GuestSession extends Session {
         return Promise.reject(new Error(GUEST_EXPIRE_ERROR));
     }
 }
-
-const GUEST_SESSION = new GuestSession();
 
 export class SessionManager {
     private readonly _sessions: Map<string, Session> = new Map();
@@ -157,9 +163,9 @@ export class SessionManager {
     async getAndPingSession(id: string): Promise<Session> {
         if (!id) throw new Error(NULL_SESSION_ID_ERROR);
 
-        let session = this._sessions.get(id) ?? GUEST_SESSION;
-        if (!session.isValid) {
-            session = GUEST_SESSION;
+        let session = this._sessions.get(id);
+        if (!session || !session.isValid) {
+            session = new GuestSession();
         }
         await session.ping();
 
