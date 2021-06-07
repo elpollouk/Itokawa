@@ -66,6 +66,30 @@ describe("Session Manager", () => {
         })
     })
 
+    describe("signOut", () => {
+        it("should expire valid sessions", async () => {
+            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+            await sm.signOut(session.id);
+
+            expect(session.isValid).to.be.false;
+            expect(new Set<Session>(sm.getSessions())).to.be.empty;
+        })
+
+        it("should ignore invalid sessions", async () => {
+            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+            await sm.signOut("ffgds");
+
+            expect(session.isValid).to.be.true;
+            expect(new Set<Session>(sm.getSessions())).to.not.be.empty;
+        })
+
+        it("should reject null session ids", async () => {
+            await expect(sm.signOut(null)).to.be.eventually.rejectedWith("Null session id");
+        })
+    })
+
     describe("getAndPingSession", () => {
         it("should return valid sessions", async () => {
             const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);

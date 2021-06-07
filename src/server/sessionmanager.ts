@@ -90,7 +90,7 @@ class GuestSession extends Session {
         return Promise.resolve();
     }
 
-    addRole(roleName: string) {
+    addRole(_roleName: string) {
         throw new Error(GUEST_ADDROLE_ERROR);
     }
 
@@ -138,6 +138,21 @@ export class SessionManager {
         return session;
     }
 
+    async signOut(sessionId: string): Promise<void> {
+        log.info(() => `Attempting to sign out seddion ${sessionId}`);
+        if (!sessionId) throw new Error(NULL_SESSION_ID_ERROR);
+
+        const session = this._sessions.get(sessionId);
+        if (session) {
+            this._sessions.delete(session.id);
+            await session.expire();
+            log.info("Session signed out");
+        }
+        else {
+            log.info("Session not signed in");
+        }
+    }
+
     async getAndPingSession(id: string): Promise<Session> {
         if (!id) throw new Error(NULL_SESSION_ID_ERROR);
 
@@ -167,6 +182,7 @@ export class SessionManager {
         for (const id of toRemove) {
             this._sessions.delete(id);
         }
+
         return Promise.resolve();
     }
 }

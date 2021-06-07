@@ -8,6 +8,7 @@ import { timestamp } from "../../common/time";
 import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
 import * as cvHandler from "./cv";
+import { COOKIE_SESSION_ID } from "../../common/constants";
 
 const log = new Logger("ControlMessageHandler");
 
@@ -61,6 +62,8 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
     cvHandler.registerHandlers(messageHandlers);
     
     return (ws, req) => {
+        const sessionId = req.cookies[COOKIE_SESSION_ID];
+
         // We wrap WebSocket sending so that we can perform additional checks and augment the
         // message with diagnostics data.
         // It also protects us againsts accidental WebSocket misuse as we never provide handlers
@@ -110,5 +113,6 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
 
         clientSockets.add(ws);
         log.info("Web socket connected");
+        if (sessionId) log.info(() => `Session id: ${sessionId}`);
     };
 }
