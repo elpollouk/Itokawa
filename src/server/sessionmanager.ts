@@ -60,20 +60,20 @@ export class Session {
     }
 
     ping(): Promise<void> {
-        log.verbose(() => { return "Pinging session " + this.id; });
+        log.verbose(() => `Pinging session ${this.id}`);
         this._expires = getExpireDate();
         return Promise.resolve();
     }
 
     addRole(roleName: string) {
-        log.verbose(() => { return "Adding role " + roleName + " to session " + this.id; });
+        log.verbose(() => `Adding role ${roleName} to session ${this.id}`);
         for (const permission of ROLES[roleName])
             this.permissions.add(permission);
         this.roles.add(roleName);
     }
 
     expire(): Promise<void> {
-        log.info(() => { return "Expiring session " + this.id; })
+        log.info(() => `Expiring session ${this.id}`)
         this._expires = new Date(0);
         return Promise.resolve();
     }
@@ -106,7 +106,7 @@ export class SessionManager {
     
     async signIn(username: string, password: string): Promise<Session> {
         if (username != ADMIN_USERNAME) {
-            log.warning("Attempt to login with username '" + username + "'");
+            log.warning(`Attempt to login with username '${username}'`);
             throw new Error(INVALID_CREDENTIALS_ERROR);
         }
         if (!password) {
@@ -120,14 +120,14 @@ export class SessionManager {
             throw new Error(INVALID_CREDENTIALS_ERROR);
         }
 
-        log.info(() => { return "Attemping to login user '" + username + "'"; });
+        log.info(() => `Attemping to login user '${username}'`);
         if (await verify(password, phash) == false) {
-            log.warning("Failed to authenticate '" + username + "'");
+            log.warning(`Failed to authenticate '${username}'`);
             throw new Error(INVALID_CREDENTIALS_ERROR);
         }
 
         const session = new Session();
-        log.info(() => { return "User '" + username + "' authenticated with session " + session.id; });
+        log.info(() => `User '${username}' authenticated with session ${session.id}`);
 
         for (let role in ROLES) {
             session.addRole(role);
@@ -148,5 +148,25 @@ export class SessionManager {
         await session.ping();
 
         return session;
+    }
+
+    getSessions(): IterableIterator<Session> {
+        return this._sessions.values();
+    }
+
+    removeExpired(): Promise<void> {
+        log.info("Checking for expired sessions...");
+        const toRemove: string[] = [];
+        for (const session of this._sessions.values()) {
+            if (!session.isValid) {
+                toRemove.push(session.id);
+            }
+        }
+
+        log.info(() => `Removing ${toRemove.length} sessions`);
+        for (const id of toRemove) {
+            this._sessions.delete(id);
+        }
+        return Promise.resolve();
     }
 }

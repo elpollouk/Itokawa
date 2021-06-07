@@ -117,6 +117,58 @@ describe("Session Manager", () => {
         })
     })
 
+    describe("getSessions", () => {
+        it("should return valid sessions", async () => {
+            const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+            const sessions = new Set<Session>(sm.getSessions());
+
+            expect(sessions.size).to.eql(2);
+            expect(sessions).to.contain(session1);
+            expect(sessions).to.contain(session2);
+        })
+
+        it("should contain expired sessions", async () => {
+            const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            await session1.expire();
+
+
+            const sessions = new Set<Session>(sm.getSessions());
+
+            expect(sessions.size).to.eql(2);
+            expect(sessions).to.contain(session1);
+            expect(sessions).to.contain(session2);
+        })
+    })
+
+    describe("removeExpired", () => {
+        it("should not remove valid sessions", async () => {
+            const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+            await sm.removeExpired();
+
+            const sessions = new Set<Session>(sm.getSessions());
+            expect(sessions.size).to.eql(2);
+            expect(sessions).to.contain(session1);
+            expect(sessions).to.contain(session2);
+        })
+
+        it("should remove expired sessions", async () => {
+            const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            await session1.expire();
+
+            await sm.removeExpired();
+
+            const sessions = new Set<Session>(sm.getSessions());
+            expect(sessions.size).to.eql(1);
+            expect(sessions).to.contain(session2);
+        })
+    })
+
     describe("Session", () => {
         describe("construct", () => {
             it("should create a valid session", () => {
