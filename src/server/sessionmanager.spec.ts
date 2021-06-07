@@ -125,8 +125,12 @@ describe("Session Manager", () => {
             expect(session.permissions).to.be.empty;
         })
 
-        it("should reject a null session id", async () => {
-            await expect(sm.getAndPingSession(null)).to.be.eventually.rejectedWith("Null session id");
+        it("should return a guest session for a null session id", async () => {
+            const session = await sm.getAndPingSession(null);
+
+            expect(session.isValid).to.be.true;
+            expect(session.roles).to.have.keys(["GUEST"]);
+            expect(session.permissions).to.be.empty;
         })
 
         it("should return a guest session for expired sessions", async () => {
@@ -138,6 +142,33 @@ describe("Session Manager", () => {
             expect(session2.isValid).to.be.true;
             expect(session2.roles).to.have.keys(["GUEST"]);
             expect(session2.permissions).to.be.empty;
+        })
+    })
+
+    describe("ping", () => {
+        it("should update valid session", async () => {
+            application.config.set(SESSION_LENGTH_KEY, 1);
+            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const initialExpiry = session.expires;
+            application.config.set(SESSION_LENGTH_KEY, 10);
+
+            await expect(sm.ping(session.id)).to.be.eventually.true;
+            expect(session.expires).to.be.greaterThan(initialExpiry);
+        })
+
+        it("should return false for a guest session", async () => {
+            await expect(sm.ping("sfgfff")).to.be.eventually.false;
+        })
+
+        it("should return false for an undefined session", async () => {
+            await expect(sm.ping(undefined)).to.be.eventually.false;
+        })
+
+        it("should return false for an expired session", async () => {
+            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            await session.expire();
+
+            await expect(sm.ping(session.id)).to.be.eventually.false;
         })
     })
 
@@ -190,6 +221,25 @@ describe("Session Manager", () => {
             const sessions = new Set<Session>(sm.getSessions());
             expect(sessions.size).to.eql(1);
             expect(sessions).to.contain(session2);
+        })
+    })
+
+    describe("hasPermission", () => {
+        it("should return true for signed in admin", async () => {
+            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+            expect(sm.hasPermission(sessionManager.Permissions.APP_UPDATE, session.id)).to.be.true;
+        })
+
+        it("should return false for expired sessions", async () => {
+            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            await session.expire();
+
+            expect(sm.hasPermission(sessionManager.Permissions.APP_UPDATE, session.id)).to.be.false;
+        })
+
+        it("should return false for invalid/guest essions", () => {
+            expect(sm.hasPermission(sessionManager.Permissions.APP_UPDATE, "dsfdsf")).to.be.false;
         })
     })
 
@@ -314,6 +364,8 @@ describe("Session Manager", () => {
                 for (const permission in sessionManager.Permissions) {
                     expect(session.permissions).to.contain(permission);
                 }
+
+                expect(sm.hasPermission(sessionManager.Permissions.SERVER_UPDATE, "dgsdsf")).to.be.true;
             })
         })
     })

@@ -11,7 +11,9 @@ function createHandlerMap(): handlers.HandlerMap {
     return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();
 }
 
-const MOCK_CONTEXT: handlers.ConnectionContext = {};
+const MOCK_CONTEXT: handlers.ConnectionContext = {
+    hasPermission: () => true
+};
 
 describe("CV Handler", () => {
 

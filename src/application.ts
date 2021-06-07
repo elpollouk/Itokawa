@@ -16,6 +16,7 @@ import { RunInTask } from "./taskmanager/tasks/runin";
 import { registerCommandStations } from "./devices/commandStations/commandStationDirectory";
 import * as backup from "./utils/backup";
 import { LifeCycle } from "./utils/lifeCycle";
+import { SessionManager } from "./server/sessionmanager";
 
 const log = new Logger("Application");
 
@@ -60,6 +61,7 @@ export class Application {
     readonly taskmanager = new TaskManager();
     readonly featureFlags = new ServerFeatureFlags();
     readonly lifeCycle = new LifeCycle(() => this._shutdown());
+    readonly sessionManager = new SessionManager();
     
     get config() {
         return this._config;

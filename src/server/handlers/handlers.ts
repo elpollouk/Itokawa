@@ -9,11 +9,14 @@ import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
 import * as cvHandler from "./cv";
 import { COOKIE_SESSION_ID } from "../../common/constants";
+import { application } from "../../application";
+import { Permissions } from "../sessionmanager";
 
 const log = new Logger("ControlMessageHandler");
 
 export interface ConnectionContext {
-    sessionId?: string
+    sessionId?: string;
+    hasPermission: (permission: Permissions) => boolean;
 }
 
 export type Sender = (message: CommandResponse)=>Promise<boolean>;
@@ -66,8 +69,10 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
     cvHandler.registerHandlers(messageHandlers);
     
     return (ws, req) => {
+        const sessionId = req.cookies[COOKIE_SESSION_ID];
         const context: ConnectionContext = {
-            sessionId: req.cookies[COOKIE_SESSION_ID]
+            sessionId: sessionId,
+            hasPermission: (permission: Permissions) => application.sessionManager.hasPermission(permission, sessionId)
         };
 
         // We wrap WebSocket sending so that we can perform additional checks and augment the
@@ -98,6 +103,7 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
             log.debug(() => `WebSocket Message: ${msg}`);
             let send: Sender = null;
             try {
+                await application.sessionManager.ping(context.sessionId);
                 const request = JSON.parse(msg.toString()) as TransportMessage;
                 if (!messageHandlers.has(request.type)) throw new Error(`Unrecognised request type: ${request.type}`);
                 send = createResponder(request.tag);

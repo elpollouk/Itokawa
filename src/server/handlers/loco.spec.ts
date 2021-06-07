@@ -8,7 +8,9 @@ import { application } from "../../application";
 import { registerHandlers, resetSeenLocos } from "./loco";
 import * as commandStation from "../../devices/commandStations/commandStation";
 
-const MOCK_CONTEXT: handlers.ConnectionContext = {};
+const MOCK_CONTEXT: handlers.ConnectionContext = {
+    hasPermission: () => true
+};
 
 function createHandlerMap(): handlers.HandlerMap {
     return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();

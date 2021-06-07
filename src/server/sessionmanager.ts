@@ -160,16 +160,27 @@ export class SessionManager {
         }
     }
 
-    async getAndPingSession(id: string): Promise<Session> {
-        if (!id) throw new Error(NULL_SESSION_ID_ERROR);
-
-        let session = this._sessions.get(id);
+    private getSession(id: string): Session {
+        const session = this._sessions.get(id);
         if (!session || !session.isValid) {
-            session = new GuestSession();
+            return new GuestSession();
+        }
+        return session;
+    }
+
+    async getAndPingSession(id: string): Promise<Session> {
+        const session = this.getSession(id);
+        await session.ping();
+        return session;
+    }
+
+    async ping(sessionId: string): Promise<boolean> {
+        const session = this._sessions.get(sessionId);
+        if (!session || !session.isValid) {
+            return false;
         }
         await session.ping();
-
-        return session;
+        return true;
     }
 
     getSessions(): IterableIterator<Session> {
@@ -191,5 +202,10 @@ export class SessionManager {
         }
 
         return Promise.resolve();
+    }
+
+    hasPermission(permission: Permissions, sessionId: string): boolean {
+        const session = this.getSession(sessionId);
+        return session.permissions.has(permission);
     }
 }
