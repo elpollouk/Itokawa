@@ -1,5 +1,5 @@
 import { Logger } from "../../utils/logger";
-import { HandlerMap, Sender, ok, clientBroadcast } from "./handlers"
+import { HandlerMap, Sender, ok, clientBroadcast, ConnectionContext } from "./handlers"
 import { application } from "../../application";
 import { RequestType, LocoSpeedRequest, LocoFunctionRequest, FunctionAction, LocoFunctionRefreshRequest, LocoSpeedRefreshRequest } from "../../common/messages";
 import * as CommandStation from "../../devices/commandStations/commandStation";
@@ -75,7 +75,7 @@ async function broadcastFunctionChange(locoId: number, func: number, action: Fun
     });
 }
 
-async function onLocoSpeed(request: LocoSpeedRequest, send: Sender): Promise<void> {
+async function onLocoSpeed(_context: ConnectionContext, request: LocoSpeedRequest, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
 
     const batch = await application.commandStation.beginCommandBatch();
@@ -95,7 +95,7 @@ function ActionApiToCommandStation(action: FunctionAction) {
     }
 };
 
-async function onLocoFunction(request: LocoFunctionRequest, send: Sender): Promise<void> {
+async function onLocoFunction(_context: ConnectionContext, request: LocoFunctionRequest, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
 
     log.info(() => `onLocoFunction: locoId=${request.locoId}, function=${request.function}, action=${request.action}`);
@@ -111,7 +111,7 @@ async function onLocoFunction(request: LocoFunctionRequest, send: Sender): Promi
     }
 };
 
-async function onEmergencyStop(data: any, send: Sender): Promise<void> {
+async function onEmergencyStop(_context: ConnectionContext, _data: any, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
     log.info("Issuing emergency stop");
 
@@ -130,7 +130,7 @@ async function onEmergencyStop(data: any, send: Sender): Promise<void> {
         await broadcastSpeedChange(locoId, 0, loco.reverse);
 }
 
-async function onLocoSpeedRefresh(request: LocoSpeedRefreshRequest, send: Sender): Promise<void> {
+async function onLocoSpeedRefresh(_context: ConnectionContext, request: LocoSpeedRefreshRequest, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
 
     if (request && !!request.locoId) {
@@ -160,7 +160,7 @@ async function onLocoSpeedRefresh(request: LocoSpeedRefreshRequest, send: Sender
     await ok(send);
 }
 
-async function onLocoFunctionRefresh(request: LocoFunctionRefreshRequest, send: Sender): Promise<void> {
+async function onLocoFunctionRefresh(_context: ConnectionContext, request: LocoFunctionRefreshRequest, send: Sender): Promise<void> {
     if (!application.commandStation) throw new Error("No command station connected");
 
     log.info(() => `onLocoFunctionRefresh: locoId=${request.locoId}`);

@@ -6,7 +6,7 @@ import * as ws from "ws";
 import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
 import * as cvHandler from "./cv";
-import { ok, resetHandler, getControlWebSocketRoute, HandlerMap, clientBroadcast } from "./handlers";
+import { ok, resetHandler, getControlWebSocketRoute, HandlerMap, clientBroadcast, ConnectionContext } from "./handlers";
 import { RequestType, CommandResponse } from "../../common/messages";
 
 class MockWebSocket extends ws {
@@ -28,7 +28,13 @@ class MockWebSocket extends ws {
 
 function connectSocket(route: Function, readyState: number = 1): MockWebSocket {
     const socket = new MockWebSocket(readyState);
-    route(socket, null, stub());
+    route(socket, {cookies:{}}, stub());
+    return socket;
+}
+
+function connectSocketWithSessionId(route: Function, sessionId: string): MockWebSocket {
+    const socket = new MockWebSocket(1);
+    route(socket, {cookies:{sessionId:sessionId}}, stub());
     return socket;
 }
 
@@ -85,17 +91,28 @@ describe("WebSocket Handlers", () => {
 
             await ws.eventHandlers["message"]('{"type":2,"data":"foo"}');
             expect(locoHandlerStub.callCount).to.equal(1);
-            expect(locoHandlerStub.lastCall.args[0]).to.equal("foo");
+            expect(locoHandlerStub.lastCall.args[1]).to.equal("foo");
 
             await ws.eventHandlers["message"]('{"type":1,"data":"bar"}');
             expect(lifeCycleHanderStub.callCount).to.equal(1);
-            expect(lifeCycleHanderStub.lastCall.args[0]).to.equal("bar");
+            expect(lifeCycleHanderStub.lastCall.args[1]).to.equal("bar");
+        })
+
+        it("should pass session id in connection context", async () => {
+            const route = getControlWebSocketRoute();            
+            const ws = connectSocketWithSessionId(route, "test_session");
+
+            await ws.eventHandlers["message"]('{"type":2}');
+            expect(locoHandlerStub.callCount).to.equal(1);
+            expect(locoHandlerStub.lastCall.args[0]).to.eql({
+                sessionId: "test_session"
+            });
         })
 
         it("should ignore unregistered handler types", async () => {
             const route = getControlWebSocketRoute();            
             const ws = new MockWebSocket();
-            route(ws as any, null, () => {});
+            route(ws as any, {cookies:{}} as any, () => {});
 
             await ws.eventHandlers["message"]('{"type":0,"data":"foo"}');
         })
@@ -124,7 +141,7 @@ describe("WebSocket Handlers", () => {
     describe("per socket command responder function", () => {
         it("should wrap handler message in transport message", async () => {
             let sent:boolean;
-            locoHandlerStub.callsFake(async (msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
+            locoHandlerStub.callsFake(async (ctx: ConnectionContext, msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
                 sent = await send("Test Data" as any);
             });
             const route = getControlWebSocketRoute();            
@@ -143,7 +160,7 @@ describe("WebSocket Handlers", () => {
 
         it("should not send to unopen sockets", async () => {
             let sent:boolean;
-            locoHandlerStub.callsFake(async (msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
+            locoHandlerStub.callsFake(async (ctx: ConnectionContext, msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
                 sent = await send("Test Data" as any);
             });
             const route = getControlWebSocketRoute();            

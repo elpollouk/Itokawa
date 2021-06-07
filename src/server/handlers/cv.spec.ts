@@ -11,6 +11,8 @@ function createHandlerMap(): handlers.HandlerMap {
     return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();
 }
 
+const MOCK_CONTEXT: handlers.ConnectionContext = {};
+
 describe("CV Handler", () => {
 
     let applicationCommandStationStub: SinonStub;
@@ -41,7 +43,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvRead)({
+            await handlers.get(RequestType.LocoCvRead)(MOCK_CONTEXT, {
                 cvs: [8, 7, 1]
             } as LocoCvReadRequest, sendStub);
 
@@ -85,7 +87,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvRead)({
+            await handlers.get(RequestType.LocoCvRead)(MOCK_CONTEXT, {
                 cvs: [8, 7, 29, 1, 17, 18]
             } as LocoCvReadRequest, sendStub);
 
@@ -103,7 +105,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvRead)({
+            await handlers.get(RequestType.LocoCvRead)(MOCK_CONTEXT, {
                 cvs: [29]
             } as LocoCvReadRequest, sendStub);
 
@@ -132,7 +134,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvRead)({
+            await expect(handlers.get(RequestType.LocoCvRead)(MOCK_CONTEXT, {
                 cvs: [29]
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("Error reading CV");
         })
@@ -141,7 +143,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvRead)({
+            await expect(handlers.get(RequestType.LocoCvRead)(MOCK_CONTEXT, {
                 cvs: [1, 3, 256]
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("CV 256 outside of valid range");
         })
@@ -150,7 +152,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvRead)({
+            await expect(handlers.get(RequestType.LocoCvRead)(MOCK_CONTEXT, {
                 cvs: []
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
         })
@@ -159,7 +161,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvRead)({
+            await expect(handlers.get(RequestType.LocoCvRead)(MOCK_CONTEXT, {
                 cvs: null
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
         })
@@ -170,7 +172,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvWrite)({
+            await handlers.get(RequestType.LocoCvWrite)(MOCK_CONTEXT, {
                 cvs: [{
                     cv: 17,
                     value: 196
@@ -218,7 +220,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvWrite)({
+            await handlers.get(RequestType.LocoCvWrite)(MOCK_CONTEXT, {
                 cvs: [{
                     cv: 29,
                     value: 255
@@ -251,7 +253,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvWrite)({
+            await handlers.get(RequestType.LocoCvWrite)(MOCK_CONTEXT, {
                 cvs: [{
                     cv: 29,
                     value: 6
@@ -280,7 +282,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(MOCK_CONTEXT, {
                 cvs: [{
                     cv: 29,
                     value: 6
@@ -292,7 +294,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(MOCK_CONTEXT, {
                 cvs: [{
                     cv: 1,
                     value: 10,
@@ -308,7 +310,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(MOCK_CONTEXT, {
                 cvs: [{
                     cv: 1,
                     value: 10,
@@ -325,7 +327,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(MOCK_CONTEXT, {
                 cvs: []
             } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
         })
@@ -334,7 +336,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(MOCK_CONTEXT, {
                 cvs: null
             } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
         })

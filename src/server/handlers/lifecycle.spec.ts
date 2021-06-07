@@ -13,6 +13,8 @@ function createHandlerMap(): handlers.HandlerMap {
     return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();
 }
 
+const MOCK_CONTEXT: handlers.ConnectionContext = {};
+
 describe("Life Cycle Handler", () => {
 
     let sendStub: SinonSpy<any[], Promise<boolean>>;
@@ -34,7 +36,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LifeCycle)({
+            await expect(handlers.get(RequestType.LifeCycle)(MOCK_CONTEXT, {
                 action: -1
             } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Unrecognised life cycle action: -1");
         })
@@ -55,7 +57,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)({
+            await handlers.get(RequestType.LifeCycle)(MOCK_CONTEXT, {
                 action: LifeCycleAction.shutdown
             } as LifeCycleRequest, sendStub);
 
@@ -83,7 +85,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)({
+            await handlers.get(RequestType.LifeCycle)(MOCK_CONTEXT, {
                 action: LifeCycleAction.restart
             } as LifeCycleRequest, sendStub);
 
@@ -118,7 +120,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)({
+            await handlers.get(RequestType.LifeCycle)(MOCK_CONTEXT, {
                 action: LifeCycleAction.update
             } as LifeCycleRequest, sendStub);
 
@@ -153,7 +155,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)({
+            await handlers.get(RequestType.LifeCycle)(MOCK_CONTEXT, {
                 action: LifeCycleAction.updateOS
             } as LifeCycleRequest, sendStub);
 
@@ -185,7 +187,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)({
+            await handlers.get(RequestType.LifeCycle)(MOCK_CONTEXT, {
                 type: RequestType.LifeCycle,
                 action: LifeCycleAction.ping
             } as LifeCycleRequest, sendStub);
@@ -211,7 +213,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)({
+            await handlers.get(RequestType.LifeCycle)(MOCK_CONTEXT, {
                 type: RequestType.LifeCycle,
                 action: LifeCycleAction.ping
             } as LifeCycleRequest, sendStub);

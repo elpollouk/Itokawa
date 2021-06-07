@@ -8,18 +8,20 @@ import { application } from "../../application";
 import { registerHandlers, resetSeenLocos } from "./loco";
 import * as commandStation from "../../devices/commandStations/commandStation";
 
+const MOCK_CONTEXT: handlers.ConnectionContext = {};
+
 function createHandlerMap(): handlers.HandlerMap {
     return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();
 }
 
-function getHandler(type: RequestType): (msg: any, send: handlers.Sender)=>Promise<void> {
+function getHandler(type: RequestType): (context: handlers.ConnectionContext, msg: any, send: handlers.Sender)=>Promise<void> {
     const handlers = createHandlerMap();
     registerHandlers(handlers);
     return handlers.get(type);
 }
 
 async function setLocoSpeed(locoId: number, speed: number, reverse?: boolean) {
-    await getHandler(RequestType.LocoSpeed)({
+    await getHandler(RequestType.LocoSpeed)(MOCK_CONTEXT, {
         locoId: locoId,
         speed: speed,
         reverse: reverse
@@ -27,7 +29,7 @@ async function setLocoSpeed(locoId: number, speed: number, reverse?: boolean) {
 }
 
 async function setLocoFunction(locoId: number, func: number, active: boolean) {
-    await getHandler(RequestType.LocoFunction)({
+    await getHandler(RequestType.LocoFunction)(MOCK_CONTEXT, {
         locoId: locoId,
         function: func,
         action: active ? FunctionAction.LatchOn : FunctionAction.LatchOff
@@ -74,7 +76,7 @@ describe("Loco Handler", () => {
     describe("onLocoSpeedRequest", () => {
         it("should respond correctly to a valid speed request", async () => {
             const handler = getHandler(RequestType.LocoSpeed);
-            await handler({
+            await handler(MOCK_CONTEXT, {
                 locoId: 3,
                 speed: 127,
                 reverse: true
@@ -112,7 +114,7 @@ describe("Loco Handler", () => {
         it("should reject the request if no command station is connected", async () => {
             application.commandStation = null;
             const handler = getHandler(RequestType.LocoSpeed);
-            await expect(handler({
+            await expect(handler(MOCK_CONTEXT, {
                 locoId: 3,
                 speed: 127,
                 reverse: true
@@ -123,7 +125,7 @@ describe("Loco Handler", () => {
     describe("onLocoFunctionRequest", () => {
         it("should respond correctly to a valid trigger function request", async () => {
             const handler = getHandler(RequestType.LocoFunction);
-            await handler({
+            await handler(MOCK_CONTEXT, {
                 locoId: 3,
                 function: 28,
                 action: FunctionAction.Trigger
@@ -152,7 +154,7 @@ describe("Loco Handler", () => {
 
         it("should respond correctly to a valid latch-on function request", async () => {
             const handler = getHandler(RequestType.LocoFunction);
-            await handler({
+            await handler(MOCK_CONTEXT, {
                 locoId: 100,
                 function: 10,
                 action: FunctionAction.LatchOn
@@ -180,7 +182,7 @@ describe("Loco Handler", () => {
 
         it("should respond correctly to a valid latch-off function request", async () => {
             const handler = getHandler(RequestType.LocoFunction);
-            await handler({
+            await handler(MOCK_CONTEXT, {
                 locoId: 9999,
                 function: 0,
                 action: FunctionAction.LatchOff
@@ -208,7 +210,7 @@ describe("Loco Handler", () => {
 
         it("should reject the request if the action is invalid", async () => {
             const handler = getHandler(RequestType.LocoFunction);
-            await expect(handler({
+            await expect(handler(MOCK_CONTEXT, {
                 locoId: 3,
                 function: 1,
                 action: -1
@@ -218,7 +220,7 @@ describe("Loco Handler", () => {
         it("should reject the request if no command station is connected", async () => {
             application.commandStation = null;
             const handler = getHandler(RequestType.LocoFunction);
-            await expect(handler({
+            await expect(handler(MOCK_CONTEXT, {
                 locoId: 3,
                 function: 28,
                 action: FunctionAction.Trigger
@@ -234,7 +236,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.EmergencyStop);
-            await handler({}, senderStub);
+            await handler(MOCK_CONTEXT, {}, senderStub);
 
             expect(senderStub.lastCall.args).to.eql([{
                 lastMessage: true,
@@ -284,7 +286,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.EmergencyStop);
-            await handler({}, senderStub);
+            await handler(MOCK_CONTEXT, {}, senderStub);
 
             expect(senderStub.lastCall.args).to.eql([{
                 lastMessage: true,
@@ -320,7 +322,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.EmergencyStop);
-            await handler({}, senderStub);
+            await handler(MOCK_CONTEXT, {}, senderStub);
 
             expect(senderStub.lastCall.args).to.eql([{
                 lastMessage: true,
@@ -352,7 +354,7 @@ describe("Loco Handler", () => {
 
         it("should be safe to call even if there have been no loco speed requests", async () => {
             const handler = getHandler(RequestType.EmergencyStop);
-            await handler({}, senderStub);
+            await handler(MOCK_CONTEXT, {}, senderStub);
 
             expect(senderStub.lastCall.args).to.eql([{
                 lastMessage: true,
@@ -369,7 +371,7 @@ describe("Loco Handler", () => {
         it("should reject the request if no command station is connected", async () => {
             application.commandStation = null;
             const handler = getHandler(RequestType.EmergencyStop);
-            await expect(handler({
+            await expect(handler(MOCK_CONTEXT, {
                 locoId: 3,
                 speed: 127,
                 reverse: true
@@ -385,7 +387,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.LocoSpeedRefresh);
-            await handler({}, senderStub);
+            await handler(MOCK_CONTEXT, {}, senderStub);
 
             // Verify no commands were sent to the command station
             expect(commandStationStub.beginCommandBatch.callCount).to.equal(0);
@@ -425,7 +427,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.LocoSpeedRefresh);
-            await handler(null, senderStub);
+            await handler(MOCK_CONTEXT, null, senderStub);
 
             // Verify no commands were sent to the command station
             expect(commandStationStub.beginCommandBatch.callCount).to.equal(0);
@@ -465,7 +467,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.LocoSpeedRefresh);
-            await handler({ locoId: 8 }, senderStub);
+            await handler(MOCK_CONTEXT, { locoId: 8 }, senderStub);
 
             // Verify client is notified of current speed
             expect(senderStub.callCount).to.equal(2);
@@ -487,7 +489,7 @@ describe("Loco Handler", () => {
 
         it("should report 0 forwards speed if the loco hasn't been seen", async () => {
             const handler = getHandler(RequestType.LocoSpeedRefresh);
-            await handler({ locoId: 8 }, senderStub);
+            await handler(MOCK_CONTEXT, { locoId: 8 }, senderStub);
 
             // Verify client is notified of current speed
             expect(senderStub.callCount).to.equal(2);
@@ -514,7 +516,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.LocoSpeedRefresh);
-            await handler({}, senderStub);
+            await handler(MOCK_CONTEXT, {}, senderStub);
 
             expect(senderStub.callCount).to.equal(2);
             expect(senderStub.getCall(0).args).to.eql([
@@ -539,7 +541,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.LocoSpeedRefresh);
-            await handler({}, senderStub);
+            await handler(MOCK_CONTEXT, {}, senderStub);
 
             // Verify client is notified of current speed
             expect(senderStub.callCount).to.equal(2);
@@ -561,7 +563,7 @@ describe("Loco Handler", () => {
 
         it("should be safe to call even if there have been no loco speed requests", async () => {
             const handler = getHandler(RequestType.LocoSpeedRefresh);
-            await handler({}, senderStub);
+            await handler(MOCK_CONTEXT, {}, senderStub);
 
             expect(senderStub.callCount).to.equal(1);
             expect(senderStub.lastCall.args).to.eql([{
@@ -573,7 +575,7 @@ describe("Loco Handler", () => {
         it("should reject the request if no command station is connected", async () => {
             application.commandStation = null;
             const handler = getHandler(RequestType.LocoSpeedRefresh);
-            await expect(handler({}, senderStub)).to.be.eventually.rejectedWith("No command station connected");
+            await expect(handler(MOCK_CONTEXT, {}, senderStub)).to.be.eventually.rejectedWith("No command station connected");
         })
     })
 
@@ -588,7 +590,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.LocoFunctionRefresh);
-            await handler({ locoId: 3 }, senderStub);
+            await handler(MOCK_CONTEXT, { locoId: 3 }, senderStub);
 
             // Verify client is notified of current speed
             expect(senderStub.callCount).to.equal(3);
@@ -624,7 +626,7 @@ describe("Loco Handler", () => {
             clientBroadcastStub.resetHistory();
 
             const handler = getHandler(RequestType.LocoFunctionRefresh);
-            await handler({ locoId: 3 }, senderStub);
+            await handler(MOCK_CONTEXT, { locoId: 3 }, senderStub);
 
             expect(senderStub.callCount).to.equal(1);
             expect(senderStub.lastCall.args).to.eql([{
@@ -635,7 +637,7 @@ describe("Loco Handler", () => {
 
         it("should be safe to call if the loco has never been seen", async () => {
             const handler = getHandler(RequestType.LocoFunctionRefresh);
-            await handler({ locoId: 3 }, senderStub);
+            await handler(MOCK_CONTEXT, { locoId: 3 }, senderStub);
 
             expect(senderStub.callCount).to.equal(1);
             expect(senderStub.lastCall.args).to.eql([{
@@ -647,7 +649,7 @@ describe("Loco Handler", () => {
         it("should reject the request if no command station is connected", async () => {
             application.commandStation = null;
             const handler = getHandler(RequestType.LocoFunctionRefresh);
-            await expect(handler({
+            await expect(handler(MOCK_CONTEXT, {
                 locoId: 3
             }, senderStub)).to.be.eventually.rejectedWith("No command station connected");
         })
