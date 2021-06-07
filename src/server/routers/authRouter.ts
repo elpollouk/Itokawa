@@ -15,7 +15,9 @@ _authRouter.route("/")
         username = req.body["username"];
         const password = req.body["password"];
         const session = await application.sessionManager.signIn(username, password);
-        res.cookie(COOKIE_SESSION_ID, session.id).redirect("/");
+        res.cookie(COOKIE_SESSION_ID, session.id, {
+            expires: session.expires
+        }).redirect("/");
     }
     catch (err) {
         res.render("auth/index", {
