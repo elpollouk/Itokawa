@@ -146,7 +146,7 @@ export class SessionManager {
     }
 
     async signOut(sessionId: string): Promise<void> {
-        log.info(() => `Attempting to sign out seddion ${sessionId}`);
+        log.info(() => `Attempting to sign out session ${sessionId}`);
         if (!sessionId) throw new Error(NULL_SESSION_ID_ERROR);
 
         const session = this._sessions.get(sessionId);
