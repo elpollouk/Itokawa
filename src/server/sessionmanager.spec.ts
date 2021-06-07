@@ -187,14 +187,46 @@ describe("Session Manager", () => {
                 expect(session.roles).to.have.keys(["TRAIN_ADMIN"]);
                 expect(session.permissions).to.have.keys(sessionManager.ROLES["TRAIN_ADMIN"]);
             })
+        })
+    })
 
-            it("should add no permissions for guests", () => {
-                const session = new Session();
+    describe("Guest Session", () => {
+        describe("construct", () => {
+            it("should create a valid session", async () => {
+                const session = await sm.getAndPingSession("dsfsdfa");
 
-                session.addRole("GUEST");
-
+                expect(session.isValid).to.be.true;
+                expect(session.expires).to.be.greaterThan(new Date());
+                expect(session.id).to.not.be.null.and.to.not.be.undefined;
                 expect(session.roles).to.have.keys(["GUEST"]);
                 expect(session.permissions).to.be.empty;
+            })
+        })
+
+        describe("ping", () => {
+            it("should not alter the expiry date", async () => {
+                const session = await sm.getAndPingSession("dsfsdfa");
+                const intialExpiryDate = session.expires;
+
+                await session.ping();
+
+                expect(session.expires).to.eql(intialExpiryDate);
+            })
+        })
+
+        describe("expire", () => {
+            it("should be rejected", async () => {
+                const session = await sm.getAndPingSession("dsfsdfa");
+
+                await expect(session.expire()).to.be.eventually.rejectedWith("Attempt to expire guest session");
+            })
+        })
+
+        describe("addRole", () => {
+            it("should be rejected", async () => {
+                const session = await sm.getAndPingSession("safgsfg");
+
+                expect(() => session.addRole("SERVER_ADMIN")).to.throw("Attempt to modify guest permissions");
             })
         })
     })

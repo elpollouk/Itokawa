@@ -10,6 +10,14 @@ export const ADMIN_PASSWORD_KEY = "server.admin.password";
 export const SESSION_LENGTH_KEY = "server.admin.sessionLength";
 const SESSION_LENGTH_DEFAULT = 90; // Days
 const SESSION_ID_LENGTH = 16;
+const MAX_DATE = new Date(8640000000000000);
+
+// Error messages
+const INVALID_CREDENTIALS_ERROR = "Invalid username or password"
+const NULL_SESSION_ID_ERROR = "Null session id"
+const GUEST_EXPIRE_ERROR = "Attempt to expire guest session";
+const GUEST_ADDROLE_ERROR = "Attempt to modify guest permissions";
+
 
 export enum Permissions {
     SERVER_CONTROL = "SERVER_CONTROL",
@@ -21,8 +29,7 @@ export enum Permissions {
 
 export const ROLES: { [key: string]: string[] } = {
     "SERVER_ADMIN": [ Permissions.SERVER_CONTROL, Permissions.SERVER_UPDATE, Permissions.SERVER_CONFIG ],
-    "TRAIN_ADMIN": [ Permissions.TRAIN_EDIT, Permissions.TRAIN_SELECT ],
-    "GUEST": []
+    "TRAIN_ADMIN": [ Permissions.TRAIN_EDIT, Permissions.TRAIN_SELECT ]
 };
 
 function getExpireDate(): Date {
@@ -38,12 +45,12 @@ export class Session {
     readonly roles = new Set<string>();
     readonly permissions = new Set<string>();
 
-    private _expires: Date;
-    public get expires() {
+    protected _expires: Date;
+    get expires() {
         return this._expires;
     }
 
-    public get isValid(): boolean {
+    get isValid(): boolean {
         return new Date() < this._expires;
     }
 
@@ -72,10 +79,27 @@ export class Session {
     }
 }
 
-const INVALID_CREDENTIALS_ERROR = "Invalid username or password"
-const NULL_SESSION_ID_ERROR = "Null session id"
-const GUEST_SESSION = new Session();
-GUEST_SESSION.addRole("GUEST");
+class GuestSession extends Session {
+    constructor() {
+        super();
+        this._expires = MAX_DATE;
+        this.roles.add("GUEST");
+    }
+
+    ping(): Promise<void> {
+        return Promise.resolve();
+    }
+
+    addRole(roleName: string) {
+        throw new Error(GUEST_ADDROLE_ERROR);
+    }
+
+    expire(): Promise<void> {
+        return Promise.reject(new Error(GUEST_EXPIRE_ERROR));
+    }
+}
+
+const GUEST_SESSION = new GuestSession();
 
 export class SessionManager {
     private readonly _sessions: Map<string, Session> = new Map();
