@@ -2,8 +2,9 @@ import { HandlerMap, Sender, ok, ConnectionContext } from "./handlers"
 import { application } from "../../application";
 import { LifeCycleRequest, LifeCycleAction, LifeCyclePingResponse, RequestType } from "../../common/messages";
 import { updateApplication, updateOS } from "../updater";
+import { Permissions } from "../sessionmanager";
 
-async function onLifeCycleMessage(_context: ConnectionContext, request: LifeCycleRequest, send: Sender): Promise<void> {
+async function onLifeCycleMessage(context: ConnectionContext, request: LifeCycleRequest, send: Sender): Promise<void> {
     switch(request.action) {
         case LifeCycleAction.ping:
             const response: LifeCyclePingResponse = {
@@ -19,20 +20,24 @@ async function onLifeCycleMessage(_context: ConnectionContext, request: LifeCycl
             break;
 
         case LifeCycleAction.shutdown:
+            context.requirePermission(Permissions.SERVER_CONTROL);
             await application.lifeCycle.shutdown();
             await ok(send);
             break;
 
         case LifeCycleAction.restart:
+            context.requirePermission(Permissions.SERVER_CONTROL);
             await application.lifeCycle.restart();
             await ok(send);
             break;
 
         case LifeCycleAction.update:
+            context.requirePermission(Permissions.APP_UPDATE);
             await updateApplication(send);
             break;
 
         case LifeCycleAction.updateOS:
+            context.requirePermission(Permissions.SERVER_UPDATE);
             await updateOS(send);
             break;
 

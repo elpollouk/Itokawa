@@ -3,20 +3,21 @@ import { WebsocketRequestHandler } from "express-ws";
 import * as ws from "ws";
 import { CommandResponse, RequestType, TransportMessage, generateMessageTag } from "../../common/messages";
 import { timestamp } from "../../common/time";
+import { COOKIE_SESSION_ID } from "../../common/constants";
+import { application } from "../../application";
+import { Permissions } from "../sessionmanager";
 
 // Specific message handlers
 import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
 import * as cvHandler from "./cv";
-import { COOKIE_SESSION_ID } from "../../common/constants";
-import { application } from "../../application";
-import { Permissions } from "../sessionmanager";
 
 const log = new Logger("ControlMessageHandler");
 
 export interface ConnectionContext {
     sessionId?: string;
     hasPermission: (permission: Permissions) => boolean;
+    requirePermission: (permission: Permissions) => void;
 }
 
 export type Sender = (message: CommandResponse)=>Promise<boolean>;
@@ -69,10 +70,16 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
     cvHandler.registerHandlers(messageHandlers);
     
     return (ws, req) => {
+        // Configure the connection context that can be used by message handlers for additional checks
         const sessionId = req.cookies[COOKIE_SESSION_ID];
         const context: ConnectionContext = {
             sessionId: sessionId,
-            hasPermission: (permission: Permissions) => application.sessionManager.hasPermission(permission, sessionId)
+            hasPermission: (permission: Permissions) => application.sessionManager.hasPermission(permission, sessionId),
+            requirePermission: (permission: Permissions) => {
+                if (!context.hasPermission(permission)) {
+                    throw new Error("Access denied");
+                }
+            }
         };
 
         // We wrap WebSocket sending so that we can perform additional checks and augment the

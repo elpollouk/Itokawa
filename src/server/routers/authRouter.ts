@@ -47,6 +47,8 @@ _authRouter.route("/logout")
     res.clearCookie(COOKIE_SESSION_ID).redirect("/");
 });
 
+_authRouter.use(requirePermission(Permissions.SESSION_MANAGE));
+
 export async function getRouter(): Promise<express.Router> {
     return _authRouter;
 }

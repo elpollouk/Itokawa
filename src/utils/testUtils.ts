@@ -1,5 +1,6 @@
 import { createStubInstance, SinonStubbedInstance, StubbableType, SinonStubbedMember, stub } from "sinon"
-import { ICommandBatch, ICommandStation } from "../devices/commandStations/commandStation";
+import { ICommandBatch } from "../devices/commandStations/commandStation";
+import { ConnectionContext } from "../server/handlers/handlers";
 
 export type StubbedClass<T> = SinonStubbedInstance<T> & T;
 
@@ -23,4 +24,11 @@ export function createStubCommandStation() {
         lastCommandBatch: commandBatch,
         beginCommandBatch: stub().returns(Promise.resolve(commandBatch))
     };
+}
+
+export function createMockConnectionContext(): ConnectionContext {
+    return {
+        hasPermission: stub().returns(true),
+        requirePermission: stub()
+    }
 }
