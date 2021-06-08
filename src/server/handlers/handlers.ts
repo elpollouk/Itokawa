@@ -16,6 +16,7 @@ const log = new Logger("ControlMessageHandler");
 
 export interface ConnectionContext {
     sessionId?: string;
+    isSignedIn: boolean;
     hasPermission: (permission: Permissions) => boolean;
     requirePermission: (permission: Permissions) => void;
 }
@@ -74,6 +75,7 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
         const sessionId = req.cookies[COOKIE_SESSION_ID];
         const context: ConnectionContext = {
             sessionId: sessionId,
+            isSignedIn:false,
             hasPermission: (permission: Permissions) => application.sessionManager.hasPermission(permission, sessionId),
             requirePermission: (permission: Permissions) => {
                 if (!context.hasPermission(permission)) {
@@ -110,7 +112,7 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
             log.debug(() => `WebSocket Message: ${msg}`);
             let send: Sender = null;
             try {
-                await application.sessionManager.ping(context.sessionId);
+                context.isSignedIn = await application.sessionManager.ping(context.sessionId);
                 const request = JSON.parse(msg.toString()) as TransportMessage;
                 if (!messageHandlers.has(request.type)) throw new Error(`Unrecognised request type: ${request.type}`);
                 send = createResponder(request.tag);

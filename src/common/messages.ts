@@ -79,7 +79,8 @@ export interface LifeCyclePingResponse extends CommandResponse {
     gitrev: string,
     commandStation: string,
     commandStationState: number,
-    publicUrl: string
+    publicUrl: string,
+    isSignedIn: boolean
 }
 
 let _nextTagNumber: number = 1;

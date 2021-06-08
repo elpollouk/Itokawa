@@ -28,6 +28,8 @@ export function createStubCommandStation() {
 
 export function createMockConnectionContext(): ConnectionContext {
     return {
+        sessionId: "mock_session_id",
+        isSignedIn: true,
         hasPermission: stub().returns(true),
         requirePermission: stub()
     }

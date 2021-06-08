@@ -144,8 +144,27 @@ describe("WebSocket Handlers", () => {
 
             await ws.eventHandlers["message"]('{"type":2}');
 
-            expect(locoHandlerStub.callCount).to.equal(1);
             expect(locoHandlerStub.lastCall.args[0].sessionId).to.eql("test_session");
+        })
+
+        it("should report isSignedIn true if the session is valid", async () => {
+            const pingStub = stub(application.sessionManager, "ping").resolves(true);
+            const route = getControlWebSocketRoute();
+            const ws = connectSocketWithSessionId(route, "test_session");
+
+            await ws.eventHandlers["message"]('{"type":2}');
+
+            expect(locoHandlerStub.lastCall.args[0].isSignedIn).to.be.true;
+        })
+
+        it("should report isSignedIn false if the session isn't valid", async () => {
+            const pingStub = stub(application.sessionManager, "ping").resolves(false);
+            const route = getControlWebSocketRoute();
+            const ws = connectSocketWithSessionId(route, "test_session");
+
+            await ws.eventHandlers["message"]('{"type":2}');
+
+            expect(locoHandlerStub.lastCall.args[0].isSignedIn).to.be.false;
         })
 
         describe("hasPermission", () => {

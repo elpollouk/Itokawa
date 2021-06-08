@@ -13,6 +13,7 @@ async function onLifeCycleMessage(context: ConnectionContext, request: LifeCycle
                 commandStationState: application.commandStation ? application.commandStation.state : -1,
                 gitrev: application.gitrev,
                 publicUrl: application.publicUrl,
+                isSignedIn: context.isSignedIn,
                 lastMessage: true,
                 data: "OK"
             };
