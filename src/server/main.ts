@@ -46,9 +46,10 @@ async function main()
 
     app.use(cookieParser());
     app.ws("/control/v1", getControlWebSocketRoute());
-    app.use("/api/v1", (await apiRouter.getRouter()));
-    app.use("/auth", (await authRouter.getRouter()));
     app.use(express.static("static"));
+    app.use("/auth", (await authRouter.getRouter()));
+    app.use(authRouter.pingSession);
+    app.use("/api/v1", (await apiRouter.getRouter()));
 
     let port = program.port || application.config.get("server.port", 8080);
     if (typeof(port) === "string") port = parseIntStrict(port);
