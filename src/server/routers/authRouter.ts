@@ -48,6 +48,33 @@ _authRouter.route("/logout")
 });
 
 _authRouter.use(requirePermission(Permissions.SESSION_MANAGE));
+_authRouter.route("/clearAllSessions")
+.get(async(_req, res) => {
+    const result = {};
+    try {
+        for (const session of application.sessionManager.getSessions()) {
+            await session.expire();
+        }
+        await application.sessionManager.removeExpired();
+        result["message"] = "All sessions cleared.";
+    }
+    catch (err) {
+        result["errorMessage"] = err;
+    }
+    res.render("auth/result", result);
+});
+_authRouter.route("/clearExpiredSessions")
+.get(async(_req, res) => {
+    const result = {};
+    try {
+        await application.sessionManager.removeExpired();
+        result["message"] = "Expired sessions cleared.";
+    }
+    catch (err) {
+        result["errorMessage"] = err;
+    }
+    res.render("auth/result", result);
+});
 
 export async function getRouter(): Promise<express.Router> {
     return _authRouter;

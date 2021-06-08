@@ -176,6 +176,9 @@ export class SessionManager {
     }
 
     async ping(sessionId: string): Promise<boolean> {
+        // If no admin has been configured, every one is an admin
+        if (!application.config.get(ADMIN_PASSWORD_KEY)) return true;
+
         const session = this._sessions.get(sessionId);
         if (!session || !session.isValid) {
             return false;

@@ -170,6 +170,11 @@ describe("Session Manager", () => {
 
             await expect(sm.ping(session.id)).to.be.eventually.false;
         })
+
+        it("should return true if no admin has been configured", async () => {
+            application.config.set(ADMIN_PASSWORD_KEY, null);
+            expect(await sm.ping("test")).to.be.true;
+        })
     })
 
     describe("getSessions", () => {
