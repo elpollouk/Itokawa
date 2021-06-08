@@ -4,6 +4,8 @@ import * as api from "../../common/api";
 import * as config from "./configRoutes";
 import { application } from "../../application";
 import { LocoRepository } from "../../model/locoRepository";
+import { requirePermission } from "./authRouter";
+import { Permissions } from "../sessionmanager";
 
 const log = new Logger("API");
 
@@ -23,7 +25,9 @@ _apiRouter.route("/locos")
 
         next(err);
     }
-}).post(async (req, res, next) => {
+})
+.all(requirePermission(Permissions.TRAIN_EDIT))
+.post(async (req, res, next) => {
     try {
         const loco: api.Loco = req.body;
         await _locoRepo.insert(loco);
@@ -59,6 +63,7 @@ _apiRouter.route("/locos/:id")
         next(err);
     }   
 })
+.all(requirePermission(Permissions.TRAIN_EDIT))
 .post(async (req, res, next) => {
     try {
         const data: api.Loco = req.body;
