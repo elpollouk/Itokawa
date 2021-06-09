@@ -7,7 +7,7 @@ import { Statement } from "./statement";
 const log = new Logger("Database");
 
 const SCHEMA_VERSION_KEY = "schemaVersion";
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 interface RepositoryConstructable<ItemType, RepositoryType extends Repository<ItemType>> {
     new(db: Database): RepositoryType;
@@ -62,26 +62,14 @@ export class Database {
                 CREATE TABLE IF NOT EXISTS _kv_store (key VARCHAR PRIMARY KEY, value ANY);
             `);
 
-            const schemaVersion = await this.getValue(SCHEMA_VERSION_KEY);
-            if (!schemaVersion) {
-                // A fresh database, run the schema setup scripts
-                await this._runSchemaScripts();
-                this.setValue(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
-                log.debug(() => `Setting schema version to ${SCHEMA_VERSION} for new database`);
-                this._schemaVersion = SCHEMA_VERSION;
+            const schemaVersion = await this.getValue(SCHEMA_VERSION_KEY) as number ?? 0;
+            log.debug(() => `Opening DB with schema ${schemaVersion}`);
+            if (schemaVersion < SCHEMA_VERSION) {
+                // The database needs the latest schema scripts applied
+                await this._runSchemaScripts(schemaVersion);
             }
             else {
-                log.debug(() => `Reopening DB with schema ${schemaVersion}`);
-                if (schemaVersion != SCHEMA_VERSION) {
-                    // Reset DB, in the future this will perform a chema upgrade if possible
-                    log.warning("Rebuilding database due to schema change")
-                    await this.close();
-                    fs.unlinkSync(filename);
-                    await this._init(filename);
-                }
-                else {
-                    this._schemaVersion = schemaVersion as number;
-                }
+                this._schemaVersion = schemaVersion;
             }
         }
         catch (ex)
@@ -91,20 +79,31 @@ export class Database {
         }
     }
 
-    private async _runSchemaScripts() {
+    private async _runSchemaScripts(currentSchemaVersion: number) {
         let scripts = fs.readdirSync("./schema");
         scripts = scripts.filter((entry) => entry.endsWith(".sql"));
-        scripts = scripts.sort();
+        scripts = scripts.sort((a, b) => a.localeCompare(b, "en-GB"));
 
         if (scripts.length === 0) throw new Error("No schema scripts found");
 
         for (const script of scripts) {
+            // Skip over any schema scripts that should have already been applied
+            const schemaNum = Number(script.match(/^\d+/)[0]);
+            if (schemaNum <= currentSchemaVersion) continue;
+
             log.info(() => `Running schema script ${script}...`);
             const content = fs.readFileSync(`./schema/${script}`, {
                 encoding: "utf8"
             });
             await this.exec(content);
         }
+
+        // Clean up the database while we're here
+        await this.exec("VACUUM;");
+
+        this.setValue(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
+        log.info(() => `Upgraded from schema version ${currentSchemaVersion} to ${SCHEMA_VERSION}`);
+        this._schemaVersion = SCHEMA_VERSION;
     }
 
     async close(): Promise<void> {

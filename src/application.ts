@@ -133,6 +133,9 @@ export class Application {
         const dbPath = this.getDataPath(DATABASE_FILE);
         this._db = await Database.open(dbPath);
 
+        // Expire and stale sessions from previous runs
+        await this.sessionManager.removeExpired();
+
         // Technically, we don't need this await, but it improves the experience if a
         // device is already opened before starting the server
         registerCommandStations();
