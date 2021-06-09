@@ -2,6 +2,7 @@ import { Logger } from "../utils/logger";
 import * as sqlite3 from "sqlite3";
 import * as fs from "fs";
 import { Repository } from "./repository";
+import { Statement } from "./statement";
 
 const log = new Logger("Database");
 
@@ -188,6 +189,21 @@ export class Database {
                 }
                 else {
                     resolve(row);
+                }
+            });
+        });
+    }
+
+    prepare(sql: string): Promise<Statement> {
+        return new Promise<Statement>((resolve, reject) => {
+            this._db.prepare(sql, function (err) {
+                if (err) {
+                    log.error(`Failed to prepare statement: ${err.message}`);
+                    log.error(`Statement: ${sql}`);
+                    reject(err);
+                }
+                else {
+                    resolve(new Statement(this));
                 }
             });
         });
