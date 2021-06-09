@@ -15,7 +15,7 @@ _authRouter.use(express.urlencoded({extended: true}));
 _authRouter.route("/")
 .get(async (req, res) => {
     const sessionId = req.cookies[COOKIE_SESSION_ID];
-    const session = application.sessionManager.getSession(sessionId);
+    const session = await application.sessionManager.getSession(sessionId);
     if (session && session.isValid) {
         await session.ping();
         res.cookie(COOKIE_SESSION_ID, session.id, {
@@ -61,14 +61,11 @@ _authRouter.route("/logout")
 //-----------------------------------------------------------------------------------------------//
 _authRouter.use(requirePermission(Permissions.SESSION_MANAGE));
 _authRouter.route("/clearAllSessions")
-.get(async(_req, res) => {
+.get(async (_req, res) => {
     log.display("Request to clear all sessions");
     const result = {};
     try {
-        for (const session of application.sessionManager.getSessions()) {
-            await session.expire();
-        }
-        await application.sessionManager.removeExpired();
+        await application.sessionManager.clearAll();
         result["message"] = "All sessions cleared.";
         log.display("All sessions cleared successfully");
     }
@@ -79,11 +76,11 @@ _authRouter.route("/clearAllSessions")
     res.render("auth/result", result);
 });
 _authRouter.route("/clearExpiredSessions")
-.get(async(_req, res) => {
+.get(async (_req, res) => {
     log.info("Request to clear expired sessions");
     const result = {};
     try {
-        await application.sessionManager.removeExpired();
+        await application.sessionManager.clearExpired();
         result["message"] = "Expired sessions cleared.";
         log.info("Expired sessions cleared successfully");
     }
@@ -102,7 +99,7 @@ export async function getRouter(): Promise<express.Router> {
 export function pingSession(): express.Handler {
     return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const sessionId = req.cookies[COOKIE_SESSION_ID];
-        const session = application.sessionManager.getSession(sessionId);
+        const session = await application.sessionManager.getSession(sessionId);
         if (session && session.isValid) {
             await session.ping();
             log.verbose(() => `Successfully pinged session ${sessionId} for path ${req.path}`);
@@ -119,9 +116,9 @@ export function pingSession(): express.Handler {
 
 // Enforces permission granted to current request session
 export function requirePermission(permission: Permissions): express.Handler {
-    return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const sessionId = req.cookies[COOKIE_SESSION_ID];
-        if (application.sessionManager.hasPermission(permission, sessionId)) {
+        if (await application.sessionManager.hasPermission(permission, sessionId)) {
             log.verbose(() => `Passed permission '${permission} check for path ${req.path} by session ${sessionId}`);
             next();
         }

@@ -135,7 +135,8 @@ export class Application {
         this._db = await Database.open(dbPath);
 
         // Expire and stale sessions from previous runs
-        await this.sessionManager.removeExpired();
+        await this.sessionManager.init(this._db);
+        await this.sessionManager.clearExpired();
 
         // Technically, we don't need this await, but it improves the experience if a
         // device is already opened before starting the server
@@ -153,6 +154,7 @@ export class Application {
     }
 
     private async _shutdown() {
+        await this.sessionManager.shutdown();
         await this._db.close();
         await this.commandStation?.close();
     }

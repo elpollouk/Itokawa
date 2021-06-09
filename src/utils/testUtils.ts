@@ -30,7 +30,7 @@ export function createMockConnectionContext(): ConnectionContext {
     return {
         sessionId: "mock_session_id",
         isSignedIn: true,
-        hasPermission: stub().returns(true),
-        requirePermission: stub()
+        hasPermission: stub().resolves(true),
+        requirePermission: stub().resolves()
     }
 }

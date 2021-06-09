@@ -7,48 +7,74 @@ import { SessionManager, Session } from "./sessionmanager";
 import * as sessionManager from "./sessionmanager";
 import { application } from "../application";
 import { ConfigNode } from "../utils/config";
+import { Database } from "../model/database";
 
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "abc123";
 
 describe("Session Manager", () => {
     let sm: SessionManager;
+    let db: Database;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         // Set admin password to "abc123"
         const config = new ConfigNode();
         config.set(sessionManager.ADMIN_PASSWORD_KEY, "$scrypt512$16384$ctYA6wtQEVXMiEMQm3oeXu775kFGLRI+zRE7Ww3+coGlFPPpgfMkeH18NGPgMoOXl7qtCqVSi+CEDw6lCFsHaAuYho3SLQBWxibEZRyf47ra3g");
         stub(application, "config").value(config);
+
+        db = await Database.open(":memory:");
         sm = new SessionManager();
+        await sm.init(db);
     })
 
     afterEach(async () => {
         restore();
+        await sm.shutdown();
+        await db.close();
+    })
+
+    // This is specifically to support testing, not an expected real world scenario
+    it("should be possible to put an expired session into the database", async () => {
+        application.config.set(sessionManager.SESSION_LENGTH_KEY, -1);
+        const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+        const initialSessionId = session1.id;
+        expect(session1.isValid).to.be.false;
+        expect(session1.userId).to.equal(sessionManager.USERID_ADMIN);
+        expect(session1.expires).to.be.lessThan(new Date());
+
+        await sm.shutdown();
+        sm = new SessionManager();
+        await sm.init(db);
+
+        const session2 = await sm.getSession(initialSessionId);
+        expect(session2.id).to.equal(initialSessionId);
+        expect(session2.userId).to.equal(sessionManager.USERID_ADMIN);
+        expect(session2.expires).to.be.lessThan(new Date());
     })
 
     describe("signIn", () => {
-        it ("should reject for invalid credentaials", async () => {
+        it("should reject for invalid credentaials", async () => {
             await expect(sm.signIn("bob", "XXX")).to.be.eventually.rejectedWith("Invalid username or password");
         })
 
-        it ("should reject for valid username, incorrect password", async () => {
+        it("should reject for valid username, incorrect password", async () => {
             await expect(sm.signIn(ADMIN_USERNAME, "XXX")).to.be.eventually.rejectedWith("Invalid username or password");
         })
 
-        it ("should reject a null username", async () => {
+        it("should reject a null username", async () => {
             await expect(sm.signIn(null, ADMIN_PASSWORD)).to.be.eventually.rejectedWith("Invalid username or password");
         })
 
-        it ("should reject a null password", async () => {
+        it("should reject a null password", async () => {
             await expect(sm.signIn(ADMIN_USERNAME, null)).to.be.eventually.rejectedWith("Invalid username or password");
         })
 
-        it ("should reject if password not set", async () => {
+        it("should reject if password not set", async () => {
             application.config.set(sessionManager.ADMIN_PASSWORD_KEY, null);
             await expect(sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD)).to.be.eventually.rejectedWith("Invalid username or password");
         })
 
-        it ("should return a valid session for valid default admin user name", async () => {
+        it("should return a valid session for valid default admin user name", async () => {
             const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
 
             expect(session).to.not.be.null.and.not.be.undefined;
@@ -56,7 +82,7 @@ describe("Session Manager", () => {
             expect(session.userId).to.equal(sessionManager.USERID_ADMIN);
         })
 
-        it ("should return a valid session for valid overridden admin user name", async () => {
+        it("should return a valid session for valid overridden admin user name", async () => {
             application.config.set(sessionManager.ADMIN_USERNAME_KEY, "bob");
             const session = await sm.signIn("bob", ADMIN_PASSWORD);
 
@@ -65,13 +91,33 @@ describe("Session Manager", () => {
             expect(session.userId).to.equal(sessionManager.USERID_ADMIN);
         })
 
-        it ("should add all permissions and roles for admin user", async () => {
+        it("should add all permissions and roles for admin user", async () => {
             const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
 
             for (const role in sessionManager.ROLES) {
                 expect(session.roles).to.contain(role);
                 for (const permission of sessionManager.ROLES[role]) {
                     expect(session.permissions).to.contain(permission);
+                }
+            }
+        })
+
+        it("should restore existing sessions from the database", async () => {
+            const initialSession = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+            await sm.shutdown();
+            sm = new SessionManager();
+            await sm.init(db);
+
+            const dbSession = await sm.getAndPingSession(initialSession.id);
+            expect(dbSession.id).to.eql(initialSession.id);
+            expect(dbSession.userId).to.eql(initialSession.userId);
+            expect(dbSession.expires).to.be.greaterThanOrEqual(initialSession.expires);
+
+            for (const role in sessionManager.ROLES) {
+                expect(dbSession.roles).to.contain(role);
+                for (const permission of sessionManager.ROLES[role]) {
+                    expect(dbSession.permissions).to.contain(permission);
                 }
             }
         })
@@ -98,6 +144,17 @@ describe("Session Manager", () => {
 
         it("should reject null session ids", async () => {
             await expect(sm.signOut(null)).to.be.eventually.rejectedWith("Null session id");
+        })
+
+        it("should delete recorve from database", async () => {
+            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const initialSessionId = session.id;
+            await sm.signOut(initialSessionId);
+            await sm.shutdown();
+            sm = new SessionManager();
+            await sm.init(db);
+
+            expect(await sm.getSession(initialSessionId)).to.be.null;
         })
     })
 
@@ -190,6 +247,17 @@ describe("Session Manager", () => {
             application.config.set(sessionManager.ADMIN_PASSWORD_KEY, null);
             expect(await sm.ping("test")).to.be.true;
         })
+
+        it("should ping sessions in the database", async () => {
+            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const sessionId = session.id;
+
+            await sm.shutdown();
+            sm = new SessionManager();
+            await sm.init(db);
+
+            expect(await sm.ping(sessionId)).to.be.true;
+        })
     })
 
     describe("getSessions", () => {
@@ -218,12 +286,12 @@ describe("Session Manager", () => {
         })
     })
 
-    describe("removeExpired", () => {
+    describe("clearExpired", () => {
         it("should not remove valid sessions", async () => {
             const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
             const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
 
-            await sm.removeExpired();
+            await sm.clearExpired();
 
             const sessions = new Set<Session>(sm.getSessions());
             expect(sessions.size).to.eql(2);
@@ -236,11 +304,55 @@ describe("Session Manager", () => {
             const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
             await session1.expire();
 
-            await sm.removeExpired();
+            await sm.clearExpired();
 
             const sessions = new Set<Session>(sm.getSessions());
             expect(sessions.size).to.eql(1);
             expect(sessions).to.contain(session2);
+        })
+
+        it("should remove expired items from the database", async () => {
+            application.config.set(sessionManager.SESSION_LENGTH_KEY, -1);
+            const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const initialSessionId = session1.id;
+
+            await sm.shutdown();
+            sm = new SessionManager();
+            await sm.init(db);
+            await sm.clearExpired();
+
+            expect(await sm.getSession(initialSessionId)).to.be.null;
+        })
+    })
+
+    describe("clearAll", () => {
+        it("should remove all sessions from the cache", async () => {
+            const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const initialSessionId1 = session1.id;
+            const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const initialSessionId2 = session2.id;
+            await session1.expire();
+
+            await sm.clearAll();
+
+            expect(await sm.getSession(initialSessionId1)).to.be.null;
+            expect(await sm.getSession(initialSessionId2)).to.be.null;
+        })
+
+        it("should remove all sessions from the database", async () => {
+            const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const initialSessionId1 = session1.id;
+            const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const initialSessionId2 = session2.id;
+            await session1.expire();
+
+            await sm.clearAll();
+            await sm.shutdown();
+            sm = new SessionManager();
+            await sm.init(db);
+
+            expect(await sm.getSession(initialSessionId1)).to.be.null;
+            expect(await sm.getSession(initialSessionId2)).to.be.null;
         })
     })
 
@@ -248,18 +360,18 @@ describe("Session Manager", () => {
         it("should return true for signed in admin", async () => {
             const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
 
-            expect(sm.hasPermission(sessionManager.Permissions.APP_UPDATE, session.id)).to.be.true;
+            expect(await sm.hasPermission(sessionManager.Permissions.APP_UPDATE, session.id)).to.be.true;
         })
 
         it("should return false for expired sessions", async () => {
             const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
             await session.expire();
 
-            expect(sm.hasPermission(sessionManager.Permissions.APP_UPDATE, session.id)).to.be.false;
+            expect(await sm.hasPermission(sessionManager.Permissions.APP_UPDATE, session.id)).to.be.false;
         })
 
-        it("should return false for invalid/guest essions", () => {
-            expect(sm.hasPermission(sessionManager.Permissions.APP_UPDATE, "dsfdsf")).to.be.false;
+        it("should return false for invalid/guest essions", async () => {
+            expect(await sm.hasPermission(sessionManager.Permissions.APP_UPDATE, "dsfdsf")).to.be.false;
         })
     })
 
@@ -322,6 +434,18 @@ describe("Session Manager", () => {
 
                 expect(session.isValid).to.be.false;
                 expect(session.expires).to.eql(new Date(0));
+            })
+
+            it("should remove record from database", async () => {
+                const session1 = new Session(123);
+                const sessionId = session1.id;
+
+                await session1.expire();
+                await sm.shutdown();
+                sm = new SessionManager();
+                await sm.init(db);
+
+                expect(await sm.getSession(sessionId)).to.be.null;
             })
         })
 
@@ -387,7 +511,7 @@ describe("Session Manager", () => {
                     expect(session.permissions).to.contain(permission);
                 }
 
-                expect(sm.hasPermission(sessionManager.Permissions.SERVER_UPDATE, "dgsdsf")).to.be.true;
+                expect(await sm.hasPermission(sessionManager.Permissions.SERVER_UPDATE, "dgsdsf")).to.be.true;
             })
         })
     })

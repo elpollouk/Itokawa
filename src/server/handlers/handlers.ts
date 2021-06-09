@@ -17,8 +17,8 @@ const log = new Logger("ControlMessageHandler");
 export interface ConnectionContext {
     sessionId?: string;
     isSignedIn: boolean;
-    hasPermission: (permission: Permissions) => boolean;
-    requirePermission: (permission: Permissions) => void;
+    hasPermission: (permission: Permissions) => Promise<boolean>;
+    requirePermission: (permission: Permissions) => Promise<void>;
 }
 
 export type Sender = (message: CommandResponse)=>Promise<boolean>;
@@ -75,10 +75,10 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
         const sessionId = req.cookies[COOKIE_SESSION_ID];
         const context: ConnectionContext = {
             sessionId: sessionId,
-            isSignedIn:false,
+            isSignedIn: false,
             hasPermission: (permission: Permissions) => application.sessionManager.hasPermission(permission, sessionId),
-            requirePermission: (permission: Permissions) => {
-                if (!context.hasPermission(permission)) {
+            requirePermission: async (permission: Permissions) => {
+                if (!await context.hasPermission(permission)) {
                     throw new Error("Access denied");
                 }
             }
@@ -134,6 +134,8 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
 
         clientSockets.add(ws);
         log.info("Web socket connected");
-        if (context.sessionId) log.info(() => `Session id: ${context.sessionId}`);
+        if (context.sessionId) {
+            log.info(() => `Session id: ${context.sessionId}`);
+        }
     };
 }

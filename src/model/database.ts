@@ -62,7 +62,7 @@ export class Database {
                 CREATE TABLE IF NOT EXISTS _kv_store (key VARCHAR PRIMARY KEY, value ANY);
             `);
 
-            const schemaVersion = await this.getValue(SCHEMA_VERSION_KEY) as number ?? 0;
+            const schemaVersion = await this.getValue(SCHEMA_VERSION_KEY, 0) as number;
             log.debug(() => `Opening DB with schema ${schemaVersion}`);
             if (schemaVersion < SCHEMA_VERSION) {
                 // The database needs the latest schema scripts applied
@@ -91,7 +91,7 @@ export class Database {
             const schemaNum = Number(script.match(/^\d+/)[0]);
             if (schemaNum <= currentSchemaVersion) continue;
 
-            log.info(() => `Running schema script ${script}...`);
+            log.info(() => `Running schema script '${script}'...`);
             const content = fs.readFileSync(`./schema/${script}`, {
                 encoding: "utf8"
             });
@@ -134,7 +134,7 @@ export class Database {
         });
     }
 
-    async getValue(key: string): Promise<string | number | boolean> {
+    async getValue(key: string, defaultValue?: string | number | boolean): Promise<string | number | boolean> {
         const pair = await this.get(`
             SELECT value from _kv_store
             WHERE key = $key
@@ -143,6 +143,8 @@ export class Database {
         });
         if (pair)
             return pair.value;
+        else
+            return defaultValue;
     }
 
     exec(sql: string): Promise<void> {
@@ -193,7 +195,7 @@ export class Database {
         });
     }
 
-    prepare(sql: string): Promise<Statement> {
+    prepare<T=any>(sql: string): Promise<Statement<T>> {
         return new Promise<Statement>((resolve, reject) => {
             this._db.prepare(sql, function (err) {
                 if (err) {

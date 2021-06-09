@@ -1,4 +1,6 @@
 import { application } from "../application";
+import { Database } from "../model/database";
+import { Statement } from "../model/statement";
 import { randomHex } from "../utils/hex";
 import { Logger } from "../utils/logger";
 import { verify } from "../utils/password";
@@ -22,6 +24,18 @@ const ERROR_INVALID_CREDENTIALS = "Invalid username or password"
 const ERROR_NULL_SESSION_ID = "Null session id"
 const ERROR_GUEST_EXPIRE = "Attempt to expire guest session";
 const ERROR_GUEST_ADDROLE = "Attempt to modify guest permissions";
+
+interface SessionRow {
+    id: string,
+    userId: number,
+    expires: number
+}
+
+let _dbPing: Statement<void> = null;
+let _dbFetch: Statement<SessionRow> = null;
+let _dbDelete: Statement<void> = null;
+let _dbDeleteExpired: Statement<void> = null;
+let _dbDeleteAll: Statement<void> = null;
 
 
 export enum Permissions {
@@ -50,6 +64,7 @@ function getExpireDate(): Date {
 
 export class Session {
     readonly id: string;
+    readonly userId: number
     readonly roles = new Set<string>();
     readonly permissions = new Set<string>();
 
@@ -62,15 +77,27 @@ export class Session {
         return new Date() < this._expires;
     }
 
-    constructor(readonly userId: number) {
-        this.id = randomHex(SESSION_ID_LENGTH);
-        this.ping();
+    constructor(userIdOrRow: number | SessionRow) {
+        if (typeof userIdOrRow == "number") {
+            this.id = randomHex(SESSION_ID_LENGTH);
+            this.userId = userIdOrRow;
+            this.ping();
+        }
+        else {
+            this.id = userIdOrRow.id;
+            this.userId = userIdOrRow.userId;
+            this._expires = new Date(userIdOrRow.expires);
+        }
     }
 
     ping(): Promise<void> {
         log.verbose(() => `Pinging session ${this.id}`);
         this._expires = getExpireDate();
-        return Promise.resolve();
+        return _dbPing.run({
+            $id: this.id,
+            $userId: this.userId,
+            $expires: this._expires.getTime()
+        });
     }
 
     addRole(roleName: string) {
@@ -83,7 +110,9 @@ export class Session {
     expire(): Promise<void> {
         log.info(() => `Expiring session ${this.id}`)
         this._expires = new Date(0);
-        return Promise.resolve();
+        return _dbDelete.run({
+            $id: this.id
+        })
     }
 }
 
@@ -116,8 +145,8 @@ class GuestSession extends Session {
 }
 
 class AdminSession extends Session {
-    constructor() {
-        super(USERID_ADMIN);
+    constructor(row?: SessionRow) {
+        super(row ?? USERID_ADMIN);
         for (let role in ROLES) {
             this.addRole(role);
         }
@@ -126,6 +155,46 @@ class AdminSession extends Session {
 
 export class SessionManager {
     private readonly _sessions: Map<string, Session> = new Map();
+
+    async init(db: Database): Promise<void> {
+        _dbPing = await db.prepare(`
+            INSERT INTO user_sessions ( id, userId, expires )
+            VALUES ( $id, $userId, $expires )
+            ON CONFLICT ( id )
+            DO UPDATE SET expires = $expires;
+        `);
+
+        _dbFetch = await db.prepare(`
+            SELECT * FROM user_sessions WHERE id = $id;
+        `);
+
+        _dbDelete = await db.prepare(`
+            DELETE FROM user_sessions WHERE id = $id;
+        `);
+
+        _dbDeleteExpired = await db.prepare(`
+            DELETE FROM user_sessions WHERE expires < $now;
+        `);
+
+        _dbDeleteAll = await db.prepare(`
+            DELETE FROM user_sessions;
+        `);
+    }
+
+    async shutdown(): Promise<void> {
+        if (_dbPing) {
+            await _dbPing.release();
+            _dbPing = null;
+            await _dbFetch.release();
+            _dbFetch = null;
+            await _dbDelete.release();
+            _dbDelete = null;
+            await _dbDeleteExpired.release();
+            _dbDeleteExpired = null;
+            await _dbDeleteAll.release();
+            _dbDeleteAll = null;
+        }
+    }
     
     async signIn(username: string, password: string): Promise<Session> {
         if (username != application.config.getAs<string>(ADMIN_USERNAME_KEY, DEFAULT_ADMIN_USERNAME)) {
@@ -171,12 +240,21 @@ export class SessionManager {
         }
     }
 
-    getSession(id: string): Session {
-        return this._sessions.get(id);
+    async getSession(id: string): Promise<Session> {
+        let session = this._sessions.get(id) ?? null;
+        if (!session) {
+            const row = await _dbFetch.get({
+                $id: id
+            });
+            if (row) {
+                return new AdminSession(row);
+            }
+        }
+        return session;
     }
 
     async getAndPingSession(id: string): Promise<Session> {
-        let session = this.getSession(id);
+        let session = await this.getSession(id);
         if (!session || !session.isValid) {
             return new GuestSession();
         }
@@ -188,7 +266,7 @@ export class SessionManager {
         // If no admin has been configured, every one is an admin
         if (!application.config.get(ADMIN_PASSWORD_KEY)) return true;
 
-        const session = this._sessions.get(sessionId);
+        const session = await this.getSession(sessionId);
         if (!session || !session.isValid) {
             return false;
         }
@@ -200,7 +278,7 @@ export class SessionManager {
         return this._sessions.values();
     }
 
-    removeExpired(): Promise<void> {
+    clearExpired(): Promise<void> {
         log.info("Checking for expired sessions...");
         const toRemove: string[] = [];
         for (const session of this._sessions.values()) {
@@ -214,11 +292,18 @@ export class SessionManager {
             this._sessions.delete(id);
         }
 
-        return Promise.resolve();
+        return _dbDeleteExpired.run({
+            $now: new Date().getTime()
+        })
     }
 
-    hasPermission(permission: Permissions, sessionId: string): boolean {
-        const session = this.getSession(sessionId) ?? new GuestSession();
+    clearAll(): Promise<void> {
+        this._sessions.clear();
+        return _dbDeleteAll.run();
+    }
+
+    async hasPermission(permission: Permissions, sessionId: string): Promise<boolean> {
+        const session = await this.getSession(sessionId) ?? new GuestSession();
         return session.isValid ? session.permissions.has(permission) : false;
     }
 }

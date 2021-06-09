@@ -3,8 +3,8 @@ CREATE TABLE
     user_sessions
 (
     id VARCHAR PRIMARY KEY,
-    userId INTEGER,
-    exires INTEGER
+    userId INTEGER NOT NULL,
+    expires INTEGER NOT NULL
 );
 
-CREATE INDEX user_sessions_expires_idx ON user_sessions(exires);
+CREATE INDEX user_sessions_expires_idx ON user_sessions(expires);

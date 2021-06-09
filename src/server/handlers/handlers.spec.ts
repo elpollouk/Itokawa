@@ -169,27 +169,27 @@ describe("WebSocket Handlers", () => {
 
         describe("hasPermission", () => {
             it("should return true if session manager has permission", async () => {
-                const hasPermissionStub = stub(application.sessionManager, "hasPermission").returns(true);
+                const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(true);
                 const route = getControlWebSocketRoute();
                 const ws = connectSocketWithSessionId(route, "test_session");
 
                 await ws.eventHandlers["message"]('{"type":2}');
 
                 const context: ConnectionContext = locoHandlerStub.lastCall.args[0];
-                expect(context.hasPermission(Permissions.SERVER_UPDATE)).to.be.true
+                expect(await context.hasPermission(Permissions.SERVER_UPDATE)).to.be.true
                 expect(hasPermissionStub.callCount).to.equal(1);
                 expect(hasPermissionStub.lastCall.args).to.eql([Permissions.SERVER_UPDATE, "test_session"]);
             })
 
             it("should return false if session manager doesn't have permission", async () => {
-                const hasPermissionStub = stub(application.sessionManager, "hasPermission").returns(false);
+                const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(false);
                 const route = getControlWebSocketRoute();
                 const ws = connectSocketWithSessionId(route, "test_session");
 
                 await ws.eventHandlers["message"]('{"type":2}');
 
                 const context: ConnectionContext = locoHandlerStub.lastCall.args[0];
-                expect(context.hasPermission(Permissions.TRAIN_EDIT)).to.be.false
+                expect(await context.hasPermission(Permissions.TRAIN_EDIT)).to.be.false
                 expect(hasPermissionStub.callCount).to.equal(1);
                 expect(hasPermissionStub.lastCall.args).to.eql([Permissions.TRAIN_EDIT, "test_session"]);
             })
@@ -197,7 +197,7 @@ describe("WebSocket Handlers", () => {
 
         describe("requirePermission", () => {
             it("should not raise exception is permission granted", async () => {
-                const hasPermissionStub = stub(application.sessionManager, "hasPermission").returns(true);
+                const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(true);
                 const route = getControlWebSocketRoute();
                 const ws = connectSocketWithSessionId(route, "test_session");
 
@@ -210,14 +210,14 @@ describe("WebSocket Handlers", () => {
             })
 
             it("should return false if session manager doesn't have permission", async () => {
-                const hasPermissionStub = stub(application.sessionManager, "hasPermission").returns(false);
+                const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(false);
                 const route = getControlWebSocketRoute();
                 const ws = connectSocketWithSessionId(route, "test_session");
 
                 await ws.eventHandlers["message"]('{"type":2}');
 
                 const context: ConnectionContext = locoHandlerStub.lastCall.args[0];
-                expect(() => context.requirePermission(Permissions.TRAIN_EDIT)).to.throw("Access denied");
+                await expect(context.requirePermission(Permissions.TRAIN_EDIT)).to.be.eventually.rejectedWith("Access denied");
                 expect(hasPermissionStub.callCount).to.equal(1);
                 expect(hasPermissionStub.lastCall.args).to.eql([Permissions.TRAIN_EDIT, "test_session"]);
             })

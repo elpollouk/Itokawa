@@ -1,6 +1,5 @@
 import { Logger } from "../utils/logger";
 import { Database } from "./database";
-import * as sqlite3 from "sqlite3";
 import { Statement } from "./statement";
 
 const log = new Logger("Repository");

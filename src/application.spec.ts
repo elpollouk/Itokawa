@@ -43,6 +43,10 @@ describe("Application", () => {
         args = {} as CommanderStatic;
         configXML = new config.ConfigNode();
         db = { close: () => Promise.resolve() } as Database;
+        db["prepare"] = stub().resolves({
+            run: () => Promise.resolve(),
+            release: () => Promise.resolve()
+        });
 
         applyLogLevelStub = stub(commandLineArgs, "applyLogLevel");
         stub(os, "homedir").returns(TEST_HOME_DIR);
@@ -60,7 +64,8 @@ describe("Application", () => {
         fs.mkdirSync(TEST_HOME_DIR);
     })
 
-    afterEach(() => {
+    afterEach(async () => {
+        await application.sessionManager.shutdown();
         restore();
     })
 

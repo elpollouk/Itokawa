@@ -21,24 +21,24 @@ async function onLifeCycleMessage(context: ConnectionContext, request: LifeCycle
             break;
 
         case LifeCycleAction.shutdown:
-            context.requirePermission(Permissions.SERVER_CONTROL);
+            await context.requirePermission(Permissions.SERVER_CONTROL);
             await application.lifeCycle.shutdown();
             await ok(send);
             break;
 
         case LifeCycleAction.restart:
-            context.requirePermission(Permissions.SERVER_CONTROL);
+            await context.requirePermission(Permissions.SERVER_CONTROL);
             await application.lifeCycle.restart();
             await ok(send);
             break;
 
         case LifeCycleAction.update:
-            context.requirePermission(Permissions.APP_UPDATE);
+            await context.requirePermission(Permissions.APP_UPDATE);
             await updateApplication(send);
             break;
 
         case LifeCycleAction.updateOS:
-            context.requirePermission(Permissions.SERVER_UPDATE);
+            await context.requirePermission(Permissions.SERVER_UPDATE);
             await updateOS(send);
             break;
 

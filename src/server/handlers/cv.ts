@@ -24,7 +24,7 @@ async function retryWrapper<T = void>(action: () => Promise<T>): Promise<T> {
 }
 
 async function onLocoCvReadMessage(context: ConnectionContext, request: LocoCvReadRequest, send: Sender): Promise<void> {
-    context.requirePermission(Permissions.TRAIN_EDIT);
+    await context.requirePermission(Permissions.TRAIN_EDIT);
     if (!request.cvs || request.cvs.length === 0) throw new Error("No CVs provided");
     for (const cv of request.cvs)
         ensureCvNumber(cv);
@@ -51,7 +51,7 @@ async function onLocoCvReadMessage(context: ConnectionContext, request: LocoCvRe
 }
 
 async function onLocoCvWriteMessage(context: ConnectionContext, request: LocoCvWriteRequest, send: Sender): Promise<void> {
-    context.requirePermission(Permissions.TRAIN_EDIT);
+    await context.requirePermission(Permissions.TRAIN_EDIT);
     if (!request.cvs || request.cvs.length === 0) throw new Error("No CVs provided");
     // We want to do this first so that we don't attempt to write if the batch is invalid
     for (const pair of request.cvs) {
