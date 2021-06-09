@@ -53,7 +53,7 @@ describe("Session Manager", () => {
 
             expect(session).to.not.be.null.and.not.be.undefined;
             expect(session.isValid).to.be.true;
-            expect(session.userId).to.equal(sessionManager.ADMIN_USERID);
+            expect(session.userId).to.equal(sessionManager.USERID_ADMIN);
         })
 
         it ("should return a valid session for valid overridden admin user name", async () => {
@@ -62,7 +62,7 @@ describe("Session Manager", () => {
 
             expect(session).to.not.be.null.and.not.be.undefined;
             expect(session.isValid).to.be.true;
-            expect(session.userId).to.equal(sessionManager.ADMIN_USERID);
+            expect(session.userId).to.equal(sessionManager.USERID_ADMIN);
         })
 
         it ("should add all permissions and roles for admin user", async () => {
@@ -124,7 +124,7 @@ describe("Session Manager", () => {
             const session = await sm.getAndPingSession("0000000000000000");
 
             expect(session.isValid).to.be.true;
-            expect(session.userId).to.equal(sessionManager.GUEST_USERID);
+            expect(session.userId).to.equal(sessionManager.USERID_GUEST);
             expect(session.roles).to.have.keys(["GUEST"]);
             expect(session.permissions).to.be.empty;
         })
@@ -133,7 +133,7 @@ describe("Session Manager", () => {
             const session = await sm.getAndPingSession("xxxx");
 
             expect(session.isValid).to.be.true;
-            expect(session.userId).to.equal(sessionManager.GUEST_USERID);
+            expect(session.userId).to.equal(sessionManager.USERID_GUEST);
             expect(session.roles).to.have.keys(["GUEST"]);
             expect(session.permissions).to.be.empty;
         })
@@ -142,7 +142,7 @@ describe("Session Manager", () => {
             const session = await sm.getAndPingSession(null);
 
             expect(session.isValid).to.be.true;
-            expect(session.userId).to.equal(sessionManager.GUEST_USERID);
+            expect(session.userId).to.equal(sessionManager.USERID_GUEST);
             expect(session.roles).to.have.keys(["GUEST"]);
             expect(session.permissions).to.be.empty;
         })
@@ -154,7 +154,7 @@ describe("Session Manager", () => {
             const session2 = await sm.getAndPingSession(session1.id);
 
             expect(session2.isValid).to.be.true;
-            expect(session2.userId).to.equal(sessionManager.GUEST_USERID);
+            expect(session2.userId).to.equal(sessionManager.USERID_GUEST);
             expect(session2.roles).to.have.keys(["GUEST"]);
             expect(session2.permissions).to.be.empty;
         })
@@ -343,7 +343,7 @@ describe("Session Manager", () => {
                 const session = await sm.getAndPingSession("dsfsdfa");
 
                 expect(session.isValid).to.be.true;
-                expect(session.userId).to.equal(sessionManager.GUEST_USERID);
+                expect(session.userId).to.equal(sessionManager.USERID_GUEST);
                 expect(session.expires).to.be.greaterThan(new Date());
                 expect(session.id).to.not.be.null.and.to.not.be.undefined;
                 expect(session.roles).to.have.keys(["GUEST"]);

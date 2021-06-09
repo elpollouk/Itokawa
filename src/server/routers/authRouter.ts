@@ -9,6 +9,9 @@ const log = new Logger("Auth");
 const _authRouter = express.Router();
 _authRouter.use(express.urlencoded({extended: true}));
 
+//-----------------------------------------------------------------------------------------------//
+// User pages
+//-----------------------------------------------------------------------------------------------//
 _authRouter.route("/")
 .get(async (req, res) => {
     const sessionId = req.cookies[COOKIE_SESSION_ID];
@@ -52,6 +55,10 @@ _authRouter.route("/logout")
     log.info(() => `Successfully logged out session ${sessionId}`);
 });
 
+
+//-----------------------------------------------------------------------------------------------//
+// Management pages
+//-----------------------------------------------------------------------------------------------//
 _authRouter.use(requirePermission(Permissions.SESSION_MANAGE));
 _authRouter.route("/clearAllSessions")
 .get(async(_req, res) => {
@@ -91,6 +98,7 @@ export async function getRouter(): Promise<express.Router> {
     return _authRouter;
 }
 
+// Updates the expiry date for the current request session if it is still valid
 export function pingSession(): express.Handler {
     return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const sessionId = req.cookies[COOKIE_SESSION_ID];
@@ -106,6 +114,7 @@ export function pingSession(): express.Handler {
     }
 }
 
+// Enforces permission granted to current request session
 export function requirePermission(permission: Permissions): express.Handler {
     return (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const sessionId = req.cookies[COOKIE_SESSION_ID];

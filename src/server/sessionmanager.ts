@@ -8,19 +8,20 @@ const log = new Logger("SessionManager");
 export const ADMIN_USERNAME_KEY = "server.admin.username";
 export const ADMIN_PASSWORD_KEY = "server.admin.password";
 export const SESSION_LENGTH_KEY = "server.admin.sessionLength";
-export const ADMIN_USERID = -101
-export const GUEST_USERID = -102
+// Custom user ids for built in accounts
+export const USERID_ADMIN = -101
+export const USERID_GUEST = -102
 
 const DEFAULT_ADMIN_USERNAME = "admin";
 const SESSION_LENGTH_DEFAULT = 90; // Days
-const SESSION_ID_LENGTH = 16;
+const SESSION_ID_LENGTH = 16; // Characters
 const MAX_DATE = new Date(8640000000000000);
 
 // Error messages
-const INVALID_CREDENTIALS_ERROR = "Invalid username or password"
-const NULL_SESSION_ID_ERROR = "Null session id"
-const GUEST_EXPIRE_ERROR = "Attempt to expire guest session";
-const GUEST_ADDROLE_ERROR = "Attempt to modify guest permissions";
+const ERROR_INVALID_CREDENTIALS = "Invalid username or password"
+const ERROR_NULL_SESSION_ID = "Null session id"
+const ERROR_GUEST_EXPIRE = "Attempt to expire guest session";
+const ERROR_GUEST_ADDROLE = "Attempt to modify guest permissions";
 
 
 export enum Permissions {
@@ -88,7 +89,7 @@ export class Session {
 
 class GuestSession extends Session {
     constructor() {
-        super(GUEST_USERID);
+        super(USERID_GUEST);
         this._expires = MAX_DATE;
         this.roles.add("GUEST");
 
@@ -106,11 +107,20 @@ class GuestSession extends Session {
     }
 
     addRole(_roleName: string) {
-        throw new Error(GUEST_ADDROLE_ERROR);
+        throw new Error(ERROR_GUEST_ADDROLE);
     }
 
     expire(): Promise<void> {
-        return Promise.reject(new Error(GUEST_EXPIRE_ERROR));
+        return Promise.reject(new Error(ERROR_GUEST_EXPIRE));
+    }
+}
+
+class AdminSession extends Session {
+    constructor() {
+        super(USERID_ADMIN);
+        for (let role in ROLES) {
+            this.addRole(role);
+        }
     }
 }
 
@@ -120,40 +130,35 @@ export class SessionManager {
     async signIn(username: string, password: string): Promise<Session> {
         if (username != application.config.getAs<string>(ADMIN_USERNAME_KEY, DEFAULT_ADMIN_USERNAME)) {
             log.warning(`Attempt to login with username '${username}'`);
-            throw new Error(INVALID_CREDENTIALS_ERROR);
+            throw new Error(ERROR_INVALID_CREDENTIALS);
         }
         if (!password) {
             log.error("Null password provided");
-            throw new Error(INVALID_CREDENTIALS_ERROR);
+            throw new Error(ERROR_INVALID_CREDENTIALS);
         }
 
         const phash = application.config.getAs<string>(ADMIN_PASSWORD_KEY);
         if (!phash) {
             log.error("No password has been configured");
-            throw new Error(INVALID_CREDENTIALS_ERROR);
+            throw new Error(ERROR_INVALID_CREDENTIALS);
         }
 
         log.info(() => `Attemping to login user '${username}'`);
         if (await verify(password, phash) == false) {
             log.warning(`Failed to authenticate '${username}'`);
-            throw new Error(INVALID_CREDENTIALS_ERROR);
+            throw new Error(ERROR_INVALID_CREDENTIALS);
         }
 
-        const session = new Session(ADMIN_USERID);
-        log.info(() => `User '${username}' authenticated with session ${session.id}`);
-
-        for (let role in ROLES) {
-            session.addRole(role);
-        }
-
+        const session = new AdminSession();
         this._sessions.set(session.id, session);
+        log.info(() => `User '${username}' authenticated with session ${session.id}`);
 
         return session;
     }
 
     async signOut(sessionId: string): Promise<void> {
         log.info(() => `Attempting to sign out session ${sessionId}`);
-        if (!sessionId) throw new Error(NULL_SESSION_ID_ERROR);
+        if (!sessionId) throw new Error(ERROR_NULL_SESSION_ID);
 
         const session = this._sessions.get(sessionId);
         if (session) {
