@@ -5,9 +5,13 @@ import { verify } from "../utils/password";
 
 const log = new Logger("SessionManager");
 
-export const ADMIN_USERNAME = "admin";
+export const ADMIN_USERNAME_KEY = "server.admin.username";
 export const ADMIN_PASSWORD_KEY = "server.admin.password";
 export const SESSION_LENGTH_KEY = "server.admin.sessionLength";
+export const ADMIN_USERID = -101
+export const GUEST_USERID = -102
+
+const DEFAULT_ADMIN_USERNAME = "admin";
 const SESSION_LENGTH_DEFAULT = 90; // Days
 const SESSION_ID_LENGTH = 16;
 const MAX_DATE = new Date(8640000000000000);
@@ -57,7 +61,7 @@ export class Session {
         return new Date() < this._expires;
     }
 
-    constructor() {
+    constructor(readonly userId: number) {
         this.id = randomHex(SESSION_ID_LENGTH);
         this.ping();
     }
@@ -84,7 +88,7 @@ export class Session {
 
 class GuestSession extends Session {
     constructor() {
-        super();
+        super(GUEST_USERID);
         this._expires = MAX_DATE;
         this.roles.add("GUEST");
 
@@ -114,7 +118,7 @@ export class SessionManager {
     private readonly _sessions: Map<string, Session> = new Map();
     
     async signIn(username: string, password: string): Promise<Session> {
-        if (username != ADMIN_USERNAME) {
+        if (username != application.config.getAs<string>(ADMIN_USERNAME_KEY, DEFAULT_ADMIN_USERNAME)) {
             log.warning(`Attempt to login with username '${username}'`);
             throw new Error(INVALID_CREDENTIALS_ERROR);
         }
@@ -135,7 +139,7 @@ export class SessionManager {
             throw new Error(INVALID_CREDENTIALS_ERROR);
         }
 
-        const session = new Session();
+        const session = new Session(ADMIN_USERID);
         log.info(() => `User '${username}' authenticated with session ${session.id}`);
 
         for (let role in ROLES) {

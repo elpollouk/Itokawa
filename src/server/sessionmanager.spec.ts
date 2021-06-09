@@ -3,11 +3,12 @@ use(require("chai-as-promised"));
 import "mocha";
 import { stub, restore } from "sinon";
 
-import { SessionManager, ADMIN_USERNAME, ADMIN_PASSWORD_KEY, Session, SESSION_LENGTH_KEY, } from "./sessionmanager";
+import { SessionManager, Session } from "./sessionmanager";
 import * as sessionManager from "./sessionmanager";
 import { application } from "../application";
 import { ConfigNode } from "../utils/config";
 
+const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "abc123";
 
 describe("Session Manager", () => {
@@ -16,7 +17,7 @@ describe("Session Manager", () => {
     beforeEach(() => {
         // Set admin password to "abc123"
         const config = new ConfigNode();
-        config.set(ADMIN_PASSWORD_KEY, "$scrypt512$16384$ctYA6wtQEVXMiEMQm3oeXu775kFGLRI+zRE7Ww3+coGlFPPpgfMkeH18NGPgMoOXl7qtCqVSi+CEDw6lCFsHaAuYho3SLQBWxibEZRyf47ra3g");
+        config.set(sessionManager.ADMIN_PASSWORD_KEY, "$scrypt512$16384$ctYA6wtQEVXMiEMQm3oeXu775kFGLRI+zRE7Ww3+coGlFPPpgfMkeH18NGPgMoOXl7qtCqVSi+CEDw6lCFsHaAuYho3SLQBWxibEZRyf47ra3g");
         stub(application, "config").value(config);
         sm = new SessionManager();
     })
@@ -27,7 +28,7 @@ describe("Session Manager", () => {
 
     describe("signIn", () => {
         it ("should reject for invalid credentaials", async () => {
-            await expect(sm.signIn("invalid", "XXX")).to.be.eventually.rejectedWith("Invalid username or password");
+            await expect(sm.signIn("bob", "XXX")).to.be.eventually.rejectedWith("Invalid username or password");
         })
 
         it ("should reject for valid username, incorrect password", async () => {
@@ -43,15 +44,25 @@ describe("Session Manager", () => {
         })
 
         it ("should reject if password not set", async () => {
-            application.config.set(ADMIN_PASSWORD_KEY, null);
+            application.config.set(sessionManager.ADMIN_PASSWORD_KEY, null);
             await expect(sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD)).to.be.eventually.rejectedWith("Invalid username or password");
         })
 
-        it ("should return a valid session for valid credentails", async () => {
+        it ("should return a valid session for valid default admin user name", async () => {
             const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
 
             expect(session).to.not.be.null.and.not.be.undefined;
             expect(session.isValid).to.be.true;
+            expect(session.userId).to.equal(sessionManager.ADMIN_USERID);
+        })
+
+        it ("should return a valid session for valid overridden admin user name", async () => {
+            application.config.set(sessionManager.ADMIN_USERNAME_KEY, "bob");
+            const session = await sm.signIn("bob", ADMIN_PASSWORD);
+
+            expect(session).to.not.be.null.and.not.be.undefined;
+            expect(session.isValid).to.be.true;
+            expect(session.userId).to.equal(sessionManager.ADMIN_USERID);
         })
 
         it ("should add all permissions and roles for admin user", async () => {
@@ -100,11 +111,11 @@ describe("Session Manager", () => {
         })
 
         it("should update session expiry", async () => {
-            application.config.set(SESSION_LENGTH_KEY, 1);
+            application.config.set(sessionManager.SESSION_LENGTH_KEY, 1);
             const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
             const initialExpiry = session.expires;
 
-            application.config.set(SESSION_LENGTH_KEY, 10);
+            application.config.set(sessionManager.SESSION_LENGTH_KEY, 10);
 
             expect((await sm.getAndPingSession(session.id)).expires).to.be.greaterThan(initialExpiry);
         })
@@ -113,6 +124,7 @@ describe("Session Manager", () => {
             const session = await sm.getAndPingSession("0000000000000000");
 
             expect(session.isValid).to.be.true;
+            expect(session.userId).to.equal(sessionManager.GUEST_USERID);
             expect(session.roles).to.have.keys(["GUEST"]);
             expect(session.permissions).to.be.empty;
         })
@@ -121,6 +133,7 @@ describe("Session Manager", () => {
             const session = await sm.getAndPingSession("xxxx");
 
             expect(session.isValid).to.be.true;
+            expect(session.userId).to.equal(sessionManager.GUEST_USERID);
             expect(session.roles).to.have.keys(["GUEST"]);
             expect(session.permissions).to.be.empty;
         })
@@ -129,6 +142,7 @@ describe("Session Manager", () => {
             const session = await sm.getAndPingSession(null);
 
             expect(session.isValid).to.be.true;
+            expect(session.userId).to.equal(sessionManager.GUEST_USERID);
             expect(session.roles).to.have.keys(["GUEST"]);
             expect(session.permissions).to.be.empty;
         })
@@ -140,6 +154,7 @@ describe("Session Manager", () => {
             const session2 = await sm.getAndPingSession(session1.id);
 
             expect(session2.isValid).to.be.true;
+            expect(session2.userId).to.equal(sessionManager.GUEST_USERID);
             expect(session2.roles).to.have.keys(["GUEST"]);
             expect(session2.permissions).to.be.empty;
         })
@@ -147,10 +162,10 @@ describe("Session Manager", () => {
 
     describe("ping", () => {
         it("should update valid session", async () => {
-            application.config.set(SESSION_LENGTH_KEY, 1);
+            application.config.set(sessionManager.SESSION_LENGTH_KEY, 1);
             const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
             const initialExpiry = session.expires;
-            application.config.set(SESSION_LENGTH_KEY, 10);
+            application.config.set(sessionManager.SESSION_LENGTH_KEY, 10);
 
             await expect(sm.ping(session.id)).to.be.eventually.true;
             expect(session.expires).to.be.greaterThan(initialExpiry);
@@ -172,7 +187,7 @@ describe("Session Manager", () => {
         })
 
         it("should return true if no admin has been configured", async () => {
-            application.config.set(ADMIN_PASSWORD_KEY, null);
+            application.config.set(sessionManager.ADMIN_PASSWORD_KEY, null);
             expect(await sm.ping("test")).to.be.true;
         })
     })
@@ -251,25 +266,26 @@ describe("Session Manager", () => {
     describe("Session", () => {
         describe("construct", () => {
             it("should create a valid session", () => {
-                const session = new Session();
+                const session = new Session(123);
 
                 expect(session.id).to.match(/^[a-f0-9]{16}$/);
                 expect(session.isValid).to.be.true;
+                expect(session.userId).to.equal(123);
                 expect(new Date()).to.be.lessThan(session.expires);
                 expect(session.roles).to.be.empty;
                 expect(session.permissions).to.be.empty;
             })
 
             it("should have a unique session id for each session", () => {
-                const session1 = new Session();
-                const session2 = new Session();
+                const session1 = new Session(0);
+                const session2 = new Session(0);
 
                 expect(session1.id).to.not.eql(session2.id);
             })
 
             it("should be possible to set expiry days from config", () => {
-                application.config.set(SESSION_LENGTH_KEY, -1); // This should force session to be expired
-                const session = new Session();
+                application.config.set(sessionManager.SESSION_LENGTH_KEY, -1); // This should force session to be expired
+                const session = new Session(0);
 
                 expect(session.isValid).to.be.false;
             })
@@ -277,11 +293,11 @@ describe("Session Manager", () => {
 
         describe("ping", () => {
             it ("should update expiry time", () => {
-                application.config.set(SESSION_LENGTH_KEY, 1);
-                const session = new Session();
+                application.config.set(sessionManager.SESSION_LENGTH_KEY, 1);
+                const session = new Session(0);
                 const initialExpiry = session.expires;
 
-                application.config.set(SESSION_LENGTH_KEY, 10);
+                application.config.set(sessionManager.SESSION_LENGTH_KEY, 10);
                 session.ping();
 
                 expect(session.expires).to.be.greaterThan(initialExpiry);
@@ -290,7 +306,7 @@ describe("Session Manager", () => {
 
         describe("expire", () => {
             it("should expire a valid session", async () => {
-                const session = new Session();
+                const session = new Session(0);
 
                 await session.expire();
 
@@ -299,7 +315,7 @@ describe("Session Manager", () => {
             })
 
             it("should be safe to expire a session multiple times", async () => {
-                const session = new Session();
+                const session = new Session(0);
 
                 await session.expire();
                 await session.expire();
@@ -311,7 +327,7 @@ describe("Session Manager", () => {
 
         describe("addRole", () => {
             it("should add the right permissions for a role", () => {
-                const session = new Session();
+                const session = new Session(0);
 
                 session.addRole("TRAIN_ADMIN");
 
@@ -327,6 +343,7 @@ describe("Session Manager", () => {
                 const session = await sm.getAndPingSession("dsfsdfa");
 
                 expect(session.isValid).to.be.true;
+                expect(session.userId).to.equal(sessionManager.GUEST_USERID);
                 expect(session.expires).to.be.greaterThan(new Date());
                 expect(session.id).to.not.be.null.and.to.not.be.undefined;
                 expect(session.roles).to.have.keys(["GUEST"]);
@@ -363,7 +380,7 @@ describe("Session Manager", () => {
 
         describe("No admin password configured", () => {
             it("should have all permissions", async () => {
-                application.config.set(ADMIN_PASSWORD_KEY, null);
+                application.config.set(sessionManager.ADMIN_PASSWORD_KEY, null);
                 const session = await sm.getAndPingSession("safgsfg");
 
                 for (const permission in sessionManager.Permissions) {

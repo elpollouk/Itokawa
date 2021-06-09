@@ -45,10 +45,10 @@ async function main()
     app.set('views','./views');
 
     app.use(cookieParser());
-    app.ws("/control/v1", getControlWebSocketRoute());
+    app.use(authRouter.pingSession());
     app.use(express.static("static"));
+    app.ws("/control/v1", getControlWebSocketRoute());
     app.use("/auth", (await authRouter.getRouter()));
-    app.use(authRouter.pingSession);
     app.use("/api/v1", (await apiRouter.getRouter()));
 
     let port = program.port || application.config.get("server.port", 8080);
