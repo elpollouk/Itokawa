@@ -18,6 +18,7 @@ const DEFAULT_ADMIN_USERNAME = "admin";
 const SESSION_LENGTH_DEFAULT = 90; // Days
 const SESSION_ID_LENGTH = 16; // Characters
 const MAX_DATE = new Date(8640000000000000);
+const MIN_QUERY_TIME = 10000; // Milliseconds
 
 // Error messages
 const ERROR_INVALID_CREDENTIALS = "Invalid username or password"
@@ -36,6 +37,21 @@ let _dbFetch: Statement<SessionRow> = null;
 let _dbDelete: Statement<void> = null;
 let _dbDeleteExpired: Statement<void> = null;
 let _dbDeleteAll: Statement<void> = null;
+
+type QueryFunc = (params?)=>Promise<void>;
+
+function debouceQuery(query: QueryFunc, minTime: number): QueryFunc {
+    let lastCall = 0;
+    return (_params) => {
+        const now = new Date().getTime();
+        const delta = now - lastCall;
+        if (delta >= minTime) {
+            lastCall = now;
+            return query(_params);
+        }
+        return Promise.resolve();
+    }
+}
 
 
 export enum Permissions {
@@ -67,6 +83,7 @@ export class Session {
     readonly userId: number
     readonly roles = new Set<string>();
     readonly permissions = new Set<string>();
+    private readonly _ping: QueryFunc;
 
     protected _expires: Date;
     get expires() {
@@ -78,6 +95,8 @@ export class Session {
     }
 
     constructor(userIdOrRow: number | SessionRow) {
+        this._ping = debouceQuery((params) => _dbPing.run(params), MIN_QUERY_TIME);
+    
         if (typeof userIdOrRow == "number") {
             this.id = randomHex(SESSION_ID_LENGTH);
             this.userId = userIdOrRow;
@@ -93,7 +112,7 @@ export class Session {
     ping(): Promise<void> {
         log.verbose(() => `Pinging session ${this.id}`);
         this._expires = getExpireDate();
-        return _dbPing.run({
+        return this._ping({
             $id: this.id,
             $userId: this.userId,
             $expires: this._expires.getTime()
@@ -108,6 +127,7 @@ export class Session {
     }
 
     expire(): Promise<void> {
+        if (!this.isValid) return;
         log.info(() => `Expiring session ${this.id}`)
         this._expires = new Date(0);
         return _dbDelete.run({

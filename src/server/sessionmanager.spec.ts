@@ -414,6 +414,21 @@ describe("Session Manager", () => {
 
                 expect(session.expires).to.be.greaterThan(initialExpiry);
             })
+
+            it("should debounce the request", async () => {
+                application.config.set(sessionManager.SESSION_LENGTH_KEY, -1);
+                const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+                const initialSessionId = session1.id;
+                application.config.set(sessionManager.SESSION_LENGTH_KEY, 10);
+
+                await session1.ping();
+                await sm.shutdown();
+                sm = new SessionManager();
+                await sm.init(db);
+
+                const session2 = await sm.getSession(initialSessionId);
+                expect(session2.expires).to.be.lessThan(new Date());
+            })
         })
 
         describe("expire", () => {
