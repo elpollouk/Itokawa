@@ -109,6 +109,9 @@ export function pingSession(): express.Handler {
             res.cookie(COOKIE_SESSION_ID, session.id, {
                 expires: session.expires
             });
+        } else if (sessionId) {
+            delete req.cookies[COOKIE_SESSION_ID];
+            res.clearCookie(COOKIE_SESSION_ID);
         }
         next();
     }

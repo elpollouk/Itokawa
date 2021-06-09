@@ -98,6 +98,7 @@ export class Application {
     //  * Fetch the current git revision
     //  * Write a pid file to the data directory
     //  * Open the local database
+    //  * Clear out expired user sessions
     //  * Start the command station mointoring process
     async start(args: CommanderStatic, savepid: boolean = false): Promise<void> {
         // We apply an initial log level based on the command line args so that we can debug

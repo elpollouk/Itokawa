@@ -23,7 +23,9 @@ function copyForTest(schema: number) {
 describe("Schema Upgrades", () => {
     let _db: Database = null;
 
-    async function verifyDb() {
+    async function verifyDb(fromSchema: number) {
+        copyForTest(fromSchema);
+
         _db = await Database.open(TEST_DB_FILE);
         expect(_db.schemaVersion).to.eql(SCHEMA_VERSION);
 
@@ -43,7 +45,6 @@ describe("Schema Upgrades", () => {
     })
 
     it("From 1", async () => {
-        copyForTest(1);
-        await verifyDb();
+        await verifyDb(1);
     })
 })
