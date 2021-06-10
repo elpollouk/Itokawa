@@ -87,8 +87,9 @@ export class Database {
         if (scripts.length === 0) throw new Error("No schema scripts found");
 
         for (const script of scripts) {
-            // Skip over any schema scripts that should have already been applied
+            // Scripts have names such as "0024 - Add Life.sql". We just want the leading digits
             const schemaNum = Number(script.match(/^\d+/)[0]);
+            // Skip over any schema scripts that should have already been applied
             if (schemaNum <= currentSchemaVersion) continue;
 
             log.info(() => `Running schema script '${script}'...`);

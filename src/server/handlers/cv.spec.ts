@@ -6,7 +6,8 @@ import { RequestType, LocoCvReadRequest, LocoCvWriteRequest } from "../../common
 import { application } from "../../application";
 import { NullCommandStation } from "../../devices/commandStations/null";
 import { registerHandlers } from "./cv";
-import { createMockConnectionContext } from "../../utils/testUtils";
+import { createMockConnectionContext, removePermission } from "../../utils/testUtils";
+import { Permissions } from "../sessionmanager";
 
 function createHandlerMap(): handlers.HandlerMap {
     return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();
@@ -16,9 +17,10 @@ describe("CV Handler", () => {
 
     let applicationCommandStationStub: SinonStub;
     let sendStub: SinonSpy<any[], Promise<boolean>>;
-    let mockContext = createMockConnectionContext();
+    let mockContext: handlers.ConnectionContext;
 
     beforeEach(() => {
+        mockContext = createMockConnectionContext();
         applicationCommandStationStub = stub(application, "commandStation").value(new NullCommandStation());
         sendStub = stub().returns(Promise.resolve(true));
     })
@@ -164,6 +166,16 @@ describe("CV Handler", () => {
             await expect(handlers.get(RequestType.LocoCvRead)(mockContext, {
                 cvs: null
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
+        })
+
+        it("should reject if session doesn't have permission", async () => {
+            removePermission(mockContext, Permissions.TRAIN_EDIT);
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LocoCvRead)(mockContext, {
+                cvs: [8, 7]
+            } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
     })
 
@@ -339,6 +351,16 @@ describe("CV Handler", () => {
             await expect(handlers.get(RequestType.LocoCvWrite)(mockContext, {
                 cvs: null
             } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
+        })
+
+        it("should reject if session doesn't have permission", async () => {
+            removePermission(mockContext, Permissions.TRAIN_EDIT);
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LocoCvWrite)(mockContext, {
+                cvs: [{ cv: 1, value: 3}]
+            } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
     })
 })

@@ -2,12 +2,13 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
 import { stub, SinonStub, SinonSpy, restore } from "sinon";
-import { createMockConnectionContext } from "../../utils/testUtils";
+import { createMockConnectionContext, removePermission } from "../../utils/testUtils";
 import { registerHandlers } from "./lifecycle";
 import { RequestType, LifeCycleRequest, LifeCycleAction } from "../../common/messages";
 import * as handlers from "./handlers";
 import { application } from "../../application";
 import * as applicationUpdate from "../updater";
+import { Permissions } from "../sessionmanager";
 let packageVersion = require("../../../package.json").version;
 
 function createHandlerMap(): handlers.HandlerMap {
@@ -69,6 +70,16 @@ describe("Life Cycle Handler", () => {
                 data: "OK"
             }]);
         })
+
+        it("should reject if session doesn't have permission", async () => {
+            removePermission(mockContext, Permissions.SERVER_CONTROL);
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
+                action: LifeCycleAction.shutdown
+            } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
+        })
     })
 
     describe("Restart Request", () => {
@@ -96,6 +107,16 @@ describe("Life Cycle Handler", () => {
                 lastMessage: true,
                 data: "OK"
             }]);
+        })
+
+        it("should reject if session doesn't have permission", async () => {
+            removePermission(mockContext, Permissions.SERVER_CONTROL);
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
+                action: LifeCycleAction.restart
+            } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
     })
 
@@ -132,6 +153,16 @@ describe("Life Cycle Handler", () => {
                 data: "Foo"
             }]);
         })
+
+        it("should reject if session doesn't have permission", async () => {
+            removePermission(mockContext, Permissions.APP_UPDATE);
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
+                action: LifeCycleAction.update
+            } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
+        })
     })
 
     describe("Update OS Request", () => {
@@ -166,6 +197,16 @@ describe("Life Cycle Handler", () => {
                 lastMessage: false,
                 data: "Bar"
             }]);
+        })
+
+        it("should reject if session doesn't have permission", async () => {
+            removePermission(mockContext, Permissions.SERVER_UPDATE);
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
+                action: LifeCycleAction.updateOS
+            } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
     })
 
@@ -231,7 +272,7 @@ describe("Life Cycle Handler", () => {
             }]);
         })
 
-        it("should return not signed in bsed on connection context", async () => {
+        it("should return not signed in based on connection context", async () => {
             mockContext.isSignedIn = false;
             const handlers = createHandlerMap();
             registerHandlers(handlers);

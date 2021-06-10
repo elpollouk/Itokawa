@@ -12,9 +12,33 @@ import { Database } from "../model/database";
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "abc123";
 
+interface SessionRow {
+    id: string,
+    userId: number,
+    expires: Date
+}
+
 describe("Session Manager", () => {
     let sm: SessionManager;
     let db: Database;
+
+    async function fetchRow(sessionId: string): Promise<SessionRow> {
+        const row = await db.get(`SELECT * FROM user_sessions WHERE id = "${sessionId}";`);
+        if (!row) return null;
+        return {
+            id: row.id,
+            userId: row.userId,
+            expires: new Date(row.expires)
+        }
+    }
+
+    async function addRow(sessionId: string, userId: number = sessionManager.USERID_ADMIN, expires?: Date): Promise<void> {
+        expires = expires ?? new Date(new Date().getTime() + 10000);
+        await db.run(`
+            INSERT INTO user_sessions ( id, userId, expires )
+            VALUES ( "${sessionId}", ${userId}, ${expires.getTime()} );
+        `);
+    }
 
     beforeEach(async () => {
         // Set admin password to "abc123"
@@ -31,25 +55,6 @@ describe("Session Manager", () => {
         restore();
         await sm.shutdown();
         await db.close();
-    })
-
-    // This is specifically to support testing, not an expected real world scenario
-    it("should be possible to put an expired session into the database", async () => {
-        application.config.set(sessionManager.SESSION_LENGTH_KEY, -1);
-        const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
-        const initialSessionId = session1.id;
-        expect(session1.isValid).to.be.false;
-        expect(session1.userId).to.equal(sessionManager.USERID_ADMIN);
-        expect(session1.expires).to.be.lessThan(new Date());
-
-        await sm.shutdown();
-        sm = new SessionManager();
-        await sm.init(db);
-
-        const session2 = await sm.getSession(initialSessionId);
-        expect(session2.id).to.equal(initialSessionId);
-        expect(session2.userId).to.equal(sessionManager.USERID_ADMIN);
-        expect(session2.expires).to.be.lessThan(new Date());
     })
 
     describe("signIn", () => {
@@ -103,16 +108,13 @@ describe("Session Manager", () => {
         })
 
         it("should restore existing sessions from the database", async () => {
-            const initialSession = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
+            const expireDate = new Date(12345);
+            await addRow("abcdef", 123, expireDate);
 
-            await sm.shutdown();
-            sm = new SessionManager();
-            await sm.init(db);
-
-            const dbSession = await sm.getAndPingSession(initialSession.id);
-            expect(dbSession.id).to.eql(initialSession.id);
-            expect(dbSession.userId).to.eql(initialSession.userId);
-            expect(dbSession.expires).to.be.greaterThanOrEqual(initialSession.expires);
+            const dbSession = await sm.getAndPingSession("abcdef");
+            expect(dbSession.id).to.eql("abcdef");
+            expect(dbSession.userId).to.eql(123);
+            expect(dbSession.expires).to.be.greaterThanOrEqual(expireDate);
 
             for (const role in sessionManager.ROLES) {
                 expect(dbSession.roles).to.contain(role);
@@ -146,15 +148,12 @@ describe("Session Manager", () => {
             await expect(sm.signOut(null)).to.be.eventually.rejectedWith("Null session id");
         })
 
-        it("should delete recorve from database", async () => {
+        it("should delete record from database", async () => {
             const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
-            const initialSessionId = session.id;
-            await sm.signOut(initialSessionId);
-            await sm.shutdown();
-            sm = new SessionManager();
-            await sm.init(db);
+            const sessionId = session.id;
+            await sm.signOut(sessionId);
 
-            expect(await sm.getSession(initialSessionId)).to.be.null;
+            expect(await fetchRow(sessionId)).to.be.null;
         })
     })
 
@@ -249,14 +248,9 @@ describe("Session Manager", () => {
         })
 
         it("should ping sessions in the database", async () => {
-            const session = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
-            const sessionId = session.id;
+            await addRow("foo");
 
-            await sm.shutdown();
-            sm = new SessionManager();
-            await sm.init(db);
-
-            expect(await sm.ping(sessionId)).to.be.true;
+            expect(await sm.ping("foo")).to.be.true;
         })
     })
 
@@ -312,16 +306,12 @@ describe("Session Manager", () => {
         })
 
         it("should remove expired items from the database", async () => {
-            application.config.set(sessionManager.SESSION_LENGTH_KEY, -1);
-            const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
-            const initialSessionId = session1.id;
-
-            await sm.shutdown();
-            sm = new SessionManager();
-            await sm.init(db);
+            await addRow("qwerty", sessionManager.USERID_ADMIN, new Date(1234));
+            await addRow("asdfgh", sessionManager.USERID_ADMIN);
             await sm.clearExpired();
 
-            expect(await sm.getSession(initialSessionId)).to.be.null;
+            expect(await sm.getSession("qwerty")).to.be.null;
+            expect(await sm.getSession("asdfgh")).to.be.not.null;
         })
     })
 
@@ -340,19 +330,15 @@ describe("Session Manager", () => {
         })
 
         it("should remove all sessions from the database", async () => {
-            const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
-            const initialSessionId1 = session1.id;
-            const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
-            const initialSessionId2 = session2.id;
-            await session1.expire();
+            await addRow("abc");
+            await addRow("def");
+            await addRow("ghi");
 
             await sm.clearAll();
-            await sm.shutdown();
-            sm = new SessionManager();
-            await sm.init(db);
 
-            expect(await sm.getSession(initialSessionId1)).to.be.null;
-            expect(await sm.getSession(initialSessionId2)).to.be.null;
+            expect(await sm.getSession("abc")).to.be.null;
+            expect(await sm.getSession("def")).to.be.null;
+            expect(await sm.getSession("ghi")).to.be.null;
         })
     })
 
@@ -450,15 +436,12 @@ describe("Session Manager", () => {
             })
 
             it("should remove record from database", async () => {
-                const session1 = new Session(123);
-                const sessionId = session1.id;
+                const session = new Session(123);
+                const sessionId = session.id;
 
-                await session1.expire();
-                await sm.shutdown();
-                sm = new SessionManager();
-                await sm.init(db);
+                await session.expire();
 
-                expect(await sm.getSession(sessionId)).to.be.null;
+                expect(await fetchRow(sessionId)).to.be.null;
             })
         })
 

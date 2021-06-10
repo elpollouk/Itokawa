@@ -168,7 +168,7 @@ describe("WebSocket Handlers", () => {
         })
 
         describe("hasPermission", () => {
-            it("should return true if session manager has permission", async () => {
+            it("should return true if session has permission", async () => {
                 const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(true);
                 const route = getControlWebSocketRoute();
                 const ws = connectSocketWithSessionId(route, "test_session");
@@ -181,7 +181,7 @@ describe("WebSocket Handlers", () => {
                 expect(hasPermissionStub.lastCall.args).to.eql([Permissions.SERVER_UPDATE, "test_session"]);
             })
 
-            it("should return false if session manager doesn't have permission", async () => {
+            it("should return false if session doesn't have permission", async () => {
                 const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(false);
                 const route = getControlWebSocketRoute();
                 const ws = connectSocketWithSessionId(route, "test_session");
@@ -209,7 +209,7 @@ describe("WebSocket Handlers", () => {
                 expect(hasPermissionStub.lastCall.args).to.eql([Permissions.SERVER_UPDATE, "test_session"]);
             })
 
-            it("should return false if session manager doesn't have permission", async () => {
+            it("should return false if session doesn't have permission", async () => {
                 const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(false);
                 const route = getControlWebSocketRoute();
                 const ws = connectSocketWithSessionId(route, "test_session");

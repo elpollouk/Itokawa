@@ -261,7 +261,7 @@ export class SessionManager {
 
     async getAndPingSession(id: string): Promise<Session> {
         let session = await this.getSession(id);
-        if (!session || !session.isValid) {
+        if (!session?.isValid) {
             return new GuestSession();
         }
         await session.ping();
@@ -273,7 +273,7 @@ export class SessionManager {
         if (!application.config.get(ADMIN_PASSWORD_KEY)) return true;
 
         const session = await this.getSession(sessionId);
-        if (!session || !session.isValid) {
+        if (!session?.isValid) {
             return false;
         }
         await session.ping();
