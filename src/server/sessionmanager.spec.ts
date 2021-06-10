@@ -19,7 +19,7 @@ describe("Session Manager", () => {
     beforeEach(async () => {
         // Set admin password to "abc123"
         const config = new ConfigNode();
-        config.set(sessionManager.ADMIN_PASSWORD_KEY, "$scrypt512$16384$ctYA6wtQEVXMiEMQm3oeXu775kFGLRI+zRE7Ww3+coGlFPPpgfMkeH18NGPgMoOXl7qtCqVSi+CEDw6lCFsHaAuYho3SLQBWxibEZRyf47ra3g");
+        config.set(sessionManager.ADMIN_PASSWORD_KEY, "$scrypt512$4$cB9UO4EnY6tNfbfgC3fR2WT9hSrul5PDYaeLVksG01lfYe7JJJyzO/Bph+6FnhsVZ/FZCQuE5KTUf4h6QOeb3t+CBMwGj9H+jRfvnK+x0mPSww");
         stub(application, "config").value(config);
 
         db = await Database.open(":memory:");
