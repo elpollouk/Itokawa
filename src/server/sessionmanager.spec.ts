@@ -132,7 +132,7 @@ describe("Session Manager", () => {
             await sm.signOut(session.id);
 
             expect(session.isValid).to.be.false;
-            expect(new Set<Session>(sm.getSessions())).to.be.empty;
+            expect([...sm.getCachedSessions()]).to.be.empty;
         })
 
         it("should ignore invalid sessions", async () => {
@@ -141,7 +141,7 @@ describe("Session Manager", () => {
             await sm.signOut("ffgds");
 
             expect(session.isValid).to.be.true;
-            expect(new Set<Session>(sm.getSessions())).to.not.be.empty;
+            expect([...sm.getCachedSessions()]).to.not.be.empty;
         })
 
         it("should reject null session ids", async () => {
@@ -154,6 +154,26 @@ describe("Session Manager", () => {
             await sm.signOut(sessionId);
 
             expect(await fetchRow(sessionId)).to.be.null;
+        })
+
+        it("should sign out non-cached sessions", async () => {
+            await addRow("foo");
+
+            await sm.signOut("foo");
+
+            expect(await fetchRow("foo")).to.be.null;
+        })
+    })
+
+    describe("getSession", () => {
+        it("should fetch user from DB into cache", async () => {
+            await addRow("1234");
+
+            expect(await sm.getSession("1234")).to.be.not.null;
+
+            const sessions = [...sm.getCachedSessions()];
+            expect(sessions.length).to.equal(1);
+            expect(sessions[0].id).to.equal("1234");
         })
     })
 
@@ -254,12 +274,12 @@ describe("Session Manager", () => {
         })
     })
 
-    describe("getSessions", () => {
+    describe("getCachedSessions", () => {
         it("should return valid sessions", async () => {
             const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
             const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
 
-            const sessions = new Set<Session>(sm.getSessions());
+            const sessions = new Set<Session>(sm.getCachedSessions());
 
             expect(sessions.size).to.eql(2);
             expect(sessions).to.contain(session1);
@@ -271,8 +291,7 @@ describe("Session Manager", () => {
             const session2 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
             await session1.expire();
 
-
-            const sessions = new Set<Session>(sm.getSessions());
+            const sessions = new Set<Session>(sm.getCachedSessions());
 
             expect(sessions.size).to.eql(2);
             expect(sessions).to.contain(session1);
@@ -287,7 +306,7 @@ describe("Session Manager", () => {
 
             await sm.clearExpired();
 
-            const sessions = new Set<Session>(sm.getSessions());
+            const sessions = new Set<Session>(sm.getCachedSessions());
             expect(sessions.size).to.eql(2);
             expect(sessions).to.contain(session1);
             expect(sessions).to.contain(session2);
@@ -300,7 +319,7 @@ describe("Session Manager", () => {
 
             await sm.clearExpired();
 
-            const sessions = new Set<Session>(sm.getSessions());
+            const sessions = new Set<Session>(sm.getCachedSessions());
             expect(sessions.size).to.eql(1);
             expect(sessions).to.contain(session2);
         })
