@@ -239,11 +239,14 @@ export class SessionManager {
         if (session) {
             this._sessions.delete(session.id);
             await session.expire();
-            log.info("Session signed out");
         }
         else {
-            log.info("Session not signed in");
+            log.info("Session not cached");
+            await _dbDelete.run({
+                $id: sessionId
+            });
         }
+        log.info("Session signed out");
     }
 
     getSession(id: string): Promise<Session> {
@@ -253,7 +256,9 @@ export class SessionManager {
                 $id: id
             }, (row) => {
                 if (!row) return null;
-                return new AdminSession(row.userId, row.id);
+                session = new AdminSession(row.userId, row.id);
+                this._sessions.set(session.id, session);
+                return session;
             });
         }
         return Promise.resolve(session);
@@ -280,7 +285,7 @@ export class SessionManager {
         return true;
     }
 
-    getSessions(): IterableIterator<Session> {
+    getCachedSessions(): IterableIterator<Session> {
         return this._sessions.values();
     }
 
