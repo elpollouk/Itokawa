@@ -20,7 +20,7 @@ _authRouter.route("/")
         await session.ping();
         res.cookie(COOKIE_SESSION_ID, session.id, {
             expires: session.expires
-        }).redirect("/");
+        }).redirect(PATH_MAIN);
     }
     else {
         res.clearCookie(COOKIE_SESSION_ID).render('auth/index');

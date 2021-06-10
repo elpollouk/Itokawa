@@ -418,16 +418,14 @@ describe("Session Manager", () => {
             it("should debounce the request", async () => {
                 application.config.set(sessionManager.SESSION_LENGTH_KEY, -1);
                 const session1 = await sm.signIn(ADMIN_USERNAME, ADMIN_PASSWORD);
-                const initialSessionId = session1.id;
+                const initialExpiry = session1.expires.getTime();
                 application.config.set(sessionManager.SESSION_LENGTH_KEY, 10);
 
                 await session1.ping();
-                await sm.shutdown();
-                sm = new SessionManager();
-                await sm.init(db);
 
-                const session2 = await sm.getSession(initialSessionId);
-                expect(session2.expires).to.be.lessThan(new Date());
+                expect(session1.expires.getTime()).to.be.greaterThan(initialExpiry);
+                const row = await db.get(`SELECT * FROM user_sessions WHERE id = "${session1.id}";`);
+                expect(row.expires).to.equal(initialExpiry);
             })
         })
 

@@ -26,34 +26,6 @@ const ERROR_NULL_SESSION_ID = "Null session id"
 const ERROR_GUEST_EXPIRE = "Attempt to expire guest session";
 const ERROR_GUEST_ADDROLE = "Attempt to modify guest permissions";
 
-interface SessionRow {
-    id: string,
-    userId: number,
-    expires: number
-}
-
-let _dbPing: Statement<void> = null;
-let _dbFetch: Statement<SessionRow> = null;
-let _dbDelete: Statement<void> = null;
-let _dbDeleteExpired: Statement<void> = null;
-let _dbDeleteAll: Statement<void> = null;
-
-type QueryFunc = (params?)=>Promise<void>;
-
-function debouceQuery(query: QueryFunc, minTime: number): QueryFunc {
-    let lastCall = 0;
-    return (_params) => {
-        const now = new Date().getTime();
-        const delta = now - lastCall;
-        if (delta >= minTime) {
-            lastCall = now;
-            return query(_params);
-        }
-        return Promise.resolve();
-    }
-}
-
-
 export enum Permissions {
     SERVER_CONTROL = "SERVER_CONTROL",
     SERVER_UPDATE = "SERVER_UPDATE",
@@ -69,6 +41,27 @@ export const ROLES: { [key: string]: string[] } = {
     "USER_ADMIN": [ Permissions.SESSION_MANAGE ],
     "TRAIN_ADMIN": [ Permissions.TRAIN_EDIT, Permissions.TRAIN_SELECT ]
 };
+
+let _dbPing: Statement<void> = null;
+let _dbFetch: Statement<Session> = null;
+let _dbDelete: Statement<void> = null;
+let _dbDeleteExpired: Statement<void> = null;
+let _dbDeleteAll: Statement<void> = null;
+
+type QueryFunc = (params?:any)=>Promise<void>;
+
+function debouceQuery(query: QueryFunc, minTime: number): QueryFunc {
+    let lastCall = 0;
+    return (_params) => {
+        const now = new Date().getTime();
+        const delta = now - lastCall;
+        if (delta >= minTime) {
+            lastCall = now;
+            return query(_params);
+        }
+        return Promise.resolve();
+    }
+}
 
 function getExpireDate(): Date {
     const expire = new Date();
@@ -94,19 +87,12 @@ export class Session {
         return new Date() < this._expires;
     }
 
-    constructor(userIdOrRow: number | SessionRow) {
+    constructor(userId: number, sessionId?: string) {
         this._ping = debouceQuery((params) => _dbPing.run(params), MIN_QUERY_TIME);
-    
-        if (typeof userIdOrRow == "number") {
-            this.id = randomHex(SESSION_ID_LENGTH);
-            this.userId = userIdOrRow;
-            this.ping();
-        }
-        else {
-            this.id = userIdOrRow.id;
-            this.userId = userIdOrRow.userId;
-            this._expires = new Date(userIdOrRow.expires);
-        }
+
+        this.id = sessionId ?? randomHex(SESSION_ID_LENGTH);
+        this.userId = userId;
+        this.ping();
     }
 
     ping(): Promise<void> {
@@ -165,8 +151,8 @@ class GuestSession extends Session {
 }
 
 class AdminSession extends Session {
-    constructor(row?: SessionRow) {
-        super(row ?? USERID_ADMIN);
+    constructor(userId: number, sessionId?: string) {
+        super(userId, sessionId);
         for (let role in ROLES) {
             this.addRole(role);
         }
@@ -238,7 +224,7 @@ export class SessionManager {
             throw new Error(ERROR_INVALID_CREDENTIALS);
         }
 
-        const session = new AdminSession();
+        const session = new AdminSession(USERID_ADMIN);
         this._sessions.set(session.id, session);
         log.info(() => `User '${username}' authenticated with session ${session.id}`);
 
@@ -260,17 +246,17 @@ export class SessionManager {
         }
     }
 
-    async getSession(id: string): Promise<Session> {
+    getSession(id: string): Promise<Session> {
         let session = this._sessions.get(id) ?? null;
         if (!session) {
-            const row = await _dbFetch.get({
+            return _dbFetch.get({
                 $id: id
+            }, (row) => {
+                if (!row) return null;
+                return new AdminSession(row.userId, row.id);
             });
-            if (row) {
-                return new AdminSession(row);
-            }
         }
-        return session;
+        return Promise.resolve(session);
     }
 
     async getAndPingSession(id: string): Promise<Session> {

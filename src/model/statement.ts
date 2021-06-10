@@ -20,7 +20,7 @@ export class Statement<ResultType=any> {
         });
     }
 
-    each(params?: any, transform?:(row:any)=>ResultType): Promise<ResultType[]> {
+    all(params?: any, transform?:(row:any)=>ResultType): Promise<ResultType[]> {
         if (!transform) transform = (row) => row;
         return new Promise<ResultType[]>((resolve, reject) => {
             const results: ResultType[] = [];

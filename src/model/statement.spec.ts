@@ -46,13 +46,13 @@ describe("Statement", () => {
         })
     })
 
-    describe("each", () => {
+    describe("all", () => {
         it("should return full rows if no transform is provided", async () => {
             await insertTestData("foo", "bar");
             await insertTestData("baz", "gaz");
             _statement = await _db.prepare('SELECT * FROM test_table;');
 
-            const rows = await _statement.each();
+            const rows = await _statement.all();
 
             expect(rows).to.eql([{
                 key: "foo",

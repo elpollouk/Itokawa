@@ -27,7 +27,7 @@ export abstract class Repository<T> {
 
     list(query?: string): Promise<T[]> {
         const statement = query ? this._search : this._list;
-        return statement.each({
+        return statement.all({
             $query: query
         }, (row) => {
             const item = JSON.parse(row.item);
