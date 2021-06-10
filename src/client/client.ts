@@ -7,6 +7,7 @@ import * as messages from "../common/messages";
 import { IBindable } from "./utils/bindable";
 import { CommandStationState } from "../devices/commandStations/commandStation";
 import { FeatureFlags } from "../common/featureFlags";
+import { PATH_API, PATH_AUTH, PATH_LOGOUT, PATH_WEBSOCKET } from "../common/constants";
 
 export interface IApiClient {
     getConfig(): Promise<api.Config>;
@@ -43,15 +44,17 @@ export class Client {
     readonly connection: ICommandConnection;
     readonly api: IApiClient;
     readonly featureFlags: FeatureFlags = new FeatureFlags();
+    isSignedIn: boolean = false;
 
     constructor() {
         if (window.location.search === "?demo") {
             this.connection = new DemoCommandConnection();
             this.api = new DemoApiClient();
+            this.isSignedIn = true;
         }
         else {
-            this.connection = new CommandConnection("/control/v1");
-            this.api = new ApiClient("/api/v1");
+            this.connection = new CommandConnection(PATH_WEBSOCKET);
+            this.api = new ApiClient(PATH_API);
         }
 
         this.api.getConfig().then((config) => {
@@ -60,6 +63,22 @@ export class Client {
             console.error("Failed to retrieve client config");
             console.error(err);
         })
+    }
+
+    signIn() {
+        window.location.assign(PATH_AUTH);
+    }
+
+    signOut() {
+        window.location.assign(PATH_LOGOUT);
+    }
+
+    requireSignIn(): boolean {
+        if (!this.isSignedIn) {
+            this.signIn();
+            return true;
+        }
+        return false;
     }
 }
 

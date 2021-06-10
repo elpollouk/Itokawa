@@ -26,7 +26,7 @@ export class SystemDrawControl extends ControlBase {
         const container = parseHtml(html);
 
         new PublicUrlQrCode(getById(container, "qrContainer"));
-        getById(container, "trains").onclick = () => nav.open("trains");
+        getById(container, "trains").onclick = () => this._openTrainsScreen();
         getById(container, "server").onclick = () => this._openServerPopup();
         getById(container, "about").onclick = () => this._openAbout();
         getById(container, "estop").onclick = (ev) => {
@@ -63,7 +63,14 @@ export class SystemDrawControl extends ControlBase {
         protection.disableProtection();
     }
 
+    private _openTrainsScreen() {
+        if (client.requireSignIn()) return;
+        nav.open("trains");
+    }
+
     private _openServerPopup() {
+        if (client.requireSignIn()) return;
+
         function action(caption: string, message: string, onyes:()=>void): PromptButton {
             return {
                 caption: caption,

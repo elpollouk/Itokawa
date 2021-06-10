@@ -4,7 +4,8 @@ import * as api from "../../common/api";
 import * as config from "./configRoutes";
 import { application } from "../../application";
 import { LocoRepository } from "../../model/locoRepository";
-import expressWs = require("express-ws");
+import { requirePermission } from "./authRouter";
+import { Permissions } from "../sessionmanager";
 
 const log = new Logger("API");
 
@@ -24,7 +25,9 @@ _apiRouter.route("/locos")
 
         next(err);
     }
-}).post(async (req, res, next) => {
+})
+.all(requirePermission(Permissions.TRAIN_EDIT))
+.post(async (req, res, next) => {
     try {
         const loco: api.Loco = req.body;
         await _locoRepo.insert(loco);
@@ -60,6 +63,7 @@ _apiRouter.route("/locos/:id")
         next(err);
     }   
 })
+.all(requirePermission(Permissions.TRAIN_EDIT))
 .post(async (req, res, next) => {
     try {
         const data: api.Loco = req.body;
@@ -94,7 +98,7 @@ _apiRouter.route("/locos/:id")
 
 config.registerRoutes(_apiRouter, log);
 
-export async function getRouter(): Promise<expressWs.Router> {
+export async function getRouter(): Promise<express.Router> {
     _locoRepo = await application.database.openRepository(LocoRepository);
     return _apiRouter;
 }

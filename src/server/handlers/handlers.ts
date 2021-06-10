@@ -3,6 +3,9 @@ import { WebsocketRequestHandler } from "express-ws";
 import * as ws from "ws";
 import { CommandResponse, RequestType, TransportMessage, generateMessageTag } from "../../common/messages";
 import { timestamp } from "../../common/time";
+import { COOKIE_SESSION_ID } from "../../common/constants";
+import { application } from "../../application";
+import { Permissions } from "../sessionmanager";
 
 // Specific message handlers
 import * as lifecycleHandler from "./lifecycle";
@@ -11,8 +14,15 @@ import * as cvHandler from "./cv";
 
 const log = new Logger("ControlMessageHandler");
 
+export interface ConnectionContext {
+    sessionId?: string;
+    isSignedIn: boolean;
+    hasPermission: (permission: Permissions) => Promise<boolean>;
+    requirePermission: (permission: Permissions) => Promise<void>;
+}
+
 export type Sender = (message: CommandResponse)=>Promise<boolean>;
-export type HandlerMap = Map<RequestType, (msg: any, send: Sender)=>Promise<void>>;
+export type HandlerMap = Map<RequestType, (context: ConnectionContext, msg: any, send: Sender)=>Promise<void>>;
 
 export async function ok(send: Sender) {
     await send({
@@ -21,7 +31,7 @@ export async function ok(send: Sender) {
     });
 }
 
-const messageHandlers = new Map<RequestType, (msg: any, send: Sender)=>Promise<void>>();
+const messageHandlers = new Map<RequestType, (context: ConnectionContext, msg: any, send: Sender)=>Promise<void>>();
 const clientSockets = new Set<ws>();
 
 export function resetHandler() {
@@ -61,6 +71,19 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
     cvHandler.registerHandlers(messageHandlers);
     
     return (ws, req) => {
+        // Configure the connection context that can be used by message handlers for additional checks
+        const sessionId = req.cookies[COOKIE_SESSION_ID];
+        const context: ConnectionContext = {
+            sessionId: sessionId,
+            isSignedIn: false,
+            hasPermission: (permission: Permissions) => application.sessionManager.hasPermission(permission, sessionId),
+            requirePermission: async (permission: Permissions) => {
+                if (!await context.hasPermission(permission)) {
+                    throw new Error("Access denied");
+                }
+            }
+        };
+
         // We wrap WebSocket sending so that we can perform additional checks and augment the
         // message with diagnostics data.
         // It also protects us againsts accidental WebSocket misuse as we never provide handlers
@@ -89,10 +112,11 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
             log.debug(() => `WebSocket Message: ${msg}`);
             let send: Sender = null;
             try {
+                context.isSignedIn = await application.sessionManager.ping(context.sessionId);
                 const request = JSON.parse(msg.toString()) as TransportMessage;
                 if (!messageHandlers.has(request.type)) throw new Error(`Unrecognised request type: ${request.type}`);
                 send = createResponder(request.tag);
-                await messageHandlers.get(request.type)(request.data, send);
+                await messageHandlers.get(request.type)(context, request.data, send);
             }
             catch (ex) {
                 log.warning(() => `WebSocket request failed: ${ex.stack}`);
@@ -110,5 +134,8 @@ export function getControlWebSocketRoute(): WebsocketRequestHandler {
 
         clientSockets.add(ws);
         log.info("Web socket connected");
+        if (context.sessionId) {
+            log.info(() => `Session id: ${context.sessionId}`);
+        }
     };
 }

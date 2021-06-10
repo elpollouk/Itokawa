@@ -1,13 +1,15 @@
 import { expect } from "chai";
 import "mocha";
-import { stub, SinonStub } from "sinon";
+import { stub, SinonStub, restore } from "sinon";
 
 import * as ws from "ws";
 import * as lifecycleHandler from "./lifecycle";
 import * as locoHandler from "./loco";
 import * as cvHandler from "./cv";
-import { ok, resetHandler, getControlWebSocketRoute, HandlerMap, clientBroadcast } from "./handlers";
+import { ok, resetHandler, getControlWebSocketRoute, HandlerMap, clientBroadcast, ConnectionContext } from "./handlers";
 import { RequestType, CommandResponse } from "../../common/messages";
+import { Permissions } from "../sessionmanager";
+import { application } from "../../application";
 
 class MockWebSocket extends ws {
     send = stub();
@@ -28,7 +30,13 @@ class MockWebSocket extends ws {
 
 function connectSocket(route: Function, readyState: number = 1): MockWebSocket {
     const socket = new MockWebSocket(readyState);
-    route(socket, null, stub());
+    route(socket, {cookies:{}}, stub());
+    return socket;
+}
+
+function connectSocketWithSessionId(route: Function, sessionId: string): MockWebSocket {
+    const socket = new MockWebSocket(1);
+    route(socket, {cookies:{sessionId:sessionId}}, stub());
     return socket;
 }
 
@@ -53,9 +61,7 @@ describe("WebSocket Handlers", () => {
     })
 
     afterEach(() => {
-        lifeCycleRegisterStub.restore();
-        locoRegisterStub.restore();
-        cvRegisterStub.restore();
+        restore();
     })
 
     describe("ok", () => {
@@ -80,28 +86,38 @@ describe("WebSocket Handlers", () => {
         })
 
         it("should route messages through to the correct handler", async () => {
-            const route = getControlWebSocketRoute();            
+            const route = getControlWebSocketRoute();
             const ws = connectSocket(route);
 
             await ws.eventHandlers["message"]('{"type":2,"data":"foo"}');
             expect(locoHandlerStub.callCount).to.equal(1);
-            expect(locoHandlerStub.lastCall.args[0]).to.equal("foo");
+            expect(locoHandlerStub.lastCall.args[1]).to.equal("foo");
 
             await ws.eventHandlers["message"]('{"type":1,"data":"bar"}');
             expect(lifeCycleHanderStub.callCount).to.equal(1);
-            expect(lifeCycleHanderStub.lastCall.args[0]).to.equal("bar");
+            expect(lifeCycleHanderStub.lastCall.args[1]).to.equal("bar");
+        })
+
+        it("should ping session", async () => {
+            const pingStub = stub(application.sessionManager, "ping").resolves(true);
+            const route = getControlWebSocketRoute();
+            const ws = connectSocketWithSessionId(route, "test_session");
+
+            await ws.eventHandlers["message"]('{"type":2}');
+            expect(pingStub.callCount).to.equal(1);
+            expect(pingStub.lastCall.args).to.eql(["test_session"]);
         })
 
         it("should ignore unregistered handler types", async () => {
-            const route = getControlWebSocketRoute();            
+            const route = getControlWebSocketRoute();
             const ws = new MockWebSocket();
-            route(ws as any, null, () => {});
+            route(ws as any, {cookies:{}} as any, () => {});
 
             await ws.eventHandlers["message"]('{"type":0,"data":"foo"}');
         })
 
         it("should ignore malformed requests", async () => {
-            const route = getControlWebSocketRoute();            
+            const route = getControlWebSocketRoute();
             const ws = connectSocket(route);
 
             await ws.eventHandlers["message"]('INVALID');
@@ -109,7 +125,7 @@ describe("WebSocket Handlers", () => {
 
         it("should handle errors from handlers", async () => {
             locoHandlerStub.throws(new Error("Test Error"));
-            const route = getControlWebSocketRoute();            
+            const route = getControlWebSocketRoute();
             const socket = connectSocket(route);
 
             await socket.eventHandlers["message"]('{"type":2,"data":"foo"}');
@@ -121,10 +137,97 @@ describe("WebSocket Handlers", () => {
         })
     })
 
+    describe("ConnectionContext", () => {
+        it("should pass session id in connection context", async () => {
+            const route = getControlWebSocketRoute();
+            const ws = connectSocketWithSessionId(route, "test_session");
+
+            await ws.eventHandlers["message"]('{"type":2}');
+
+            expect(locoHandlerStub.lastCall.args[0].sessionId).to.eql("test_session");
+        })
+
+        it("should report isSignedIn true if the session is valid", async () => {
+            const pingStub = stub(application.sessionManager, "ping").resolves(true);
+            const route = getControlWebSocketRoute();
+            const ws = connectSocketWithSessionId(route, "test_session");
+
+            await ws.eventHandlers["message"]('{"type":2}');
+
+            expect(locoHandlerStub.lastCall.args[0].isSignedIn).to.be.true;
+        })
+
+        it("should report isSignedIn false if the session isn't valid", async () => {
+            const pingStub = stub(application.sessionManager, "ping").resolves(false);
+            const route = getControlWebSocketRoute();
+            const ws = connectSocketWithSessionId(route, "test_session");
+
+            await ws.eventHandlers["message"]('{"type":2}');
+
+            expect(locoHandlerStub.lastCall.args[0].isSignedIn).to.be.false;
+        })
+
+        describe("hasPermission", () => {
+            it("should return true if session has permission", async () => {
+                const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(true);
+                const route = getControlWebSocketRoute();
+                const ws = connectSocketWithSessionId(route, "test_session");
+
+                await ws.eventHandlers["message"]('{"type":2}');
+
+                const context: ConnectionContext = locoHandlerStub.lastCall.args[0];
+                expect(await context.hasPermission(Permissions.SERVER_UPDATE)).to.be.true
+                expect(hasPermissionStub.callCount).to.equal(1);
+                expect(hasPermissionStub.lastCall.args).to.eql([Permissions.SERVER_UPDATE, "test_session"]);
+            })
+
+            it("should return false if session doesn't have permission", async () => {
+                const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(false);
+                const route = getControlWebSocketRoute();
+                const ws = connectSocketWithSessionId(route, "test_session");
+
+                await ws.eventHandlers["message"]('{"type":2}');
+
+                const context: ConnectionContext = locoHandlerStub.lastCall.args[0];
+                expect(await context.hasPermission(Permissions.TRAIN_EDIT)).to.be.false
+                expect(hasPermissionStub.callCount).to.equal(1);
+                expect(hasPermissionStub.lastCall.args).to.eql([Permissions.TRAIN_EDIT, "test_session"]);
+            })
+        })
+
+        describe("requirePermission", () => {
+            it("should not raise exception is permission granted", async () => {
+                const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(true);
+                const route = getControlWebSocketRoute();
+                const ws = connectSocketWithSessionId(route, "test_session");
+
+                await ws.eventHandlers["message"]('{"type":2}');
+
+                const context: ConnectionContext = locoHandlerStub.lastCall.args[0];
+                context.requirePermission(Permissions.SERVER_UPDATE);
+                expect(hasPermissionStub.callCount).to.equal(1);
+                expect(hasPermissionStub.lastCall.args).to.eql([Permissions.SERVER_UPDATE, "test_session"]);
+            })
+
+            it("should return false if session doesn't have permission", async () => {
+                const hasPermissionStub = stub(application.sessionManager, "hasPermission").resolves(false);
+                const route = getControlWebSocketRoute();
+                const ws = connectSocketWithSessionId(route, "test_session");
+
+                await ws.eventHandlers["message"]('{"type":2}');
+
+                const context: ConnectionContext = locoHandlerStub.lastCall.args[0];
+                await expect(context.requirePermission(Permissions.TRAIN_EDIT)).to.be.eventually.rejectedWith("Access denied");
+                expect(hasPermissionStub.callCount).to.equal(1);
+                expect(hasPermissionStub.lastCall.args).to.eql([Permissions.TRAIN_EDIT, "test_session"]);
+            })
+        })
+    })
+
     describe("per socket command responder function", () => {
         it("should wrap handler message in transport message", async () => {
             let sent:boolean;
-            locoHandlerStub.callsFake(async (msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
+            locoHandlerStub.callsFake(async (ctx: ConnectionContext, msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
                 sent = await send("Test Data" as any);
             });
             const route = getControlWebSocketRoute();            
@@ -143,7 +246,7 @@ describe("WebSocket Handlers", () => {
 
         it("should not send to unopen sockets", async () => {
             let sent:boolean;
-            locoHandlerStub.callsFake(async (msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
+            locoHandlerStub.callsFake(async (ctx: ConnectionContext, msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
                 sent = await send("Test Data" as any);
             });
             const route = getControlWebSocketRoute();            

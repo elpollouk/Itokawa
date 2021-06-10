@@ -1,5 +1,7 @@
 import { createStubInstance, SinonStubbedInstance, StubbableType, SinonStubbedMember, stub } from "sinon"
-import { ICommandBatch, ICommandStation } from "../devices/commandStations/commandStation";
+import { ICommandBatch } from "../devices/commandStations/commandStation";
+import { ConnectionContext } from "../server/handlers/handlers";
+import { Permissions } from "../server/sessionmanager";
 
 export type StubbedClass<T> = SinonStubbedInstance<T> & T;
 
@@ -23,4 +25,21 @@ export function createStubCommandStation() {
         lastCommandBatch: commandBatch,
         beginCommandBatch: stub().returns(Promise.resolve(commandBatch))
     };
+}
+
+export function createMockConnectionContext(): ConnectionContext {
+    return {
+        sessionId: "mock_session_id",
+        isSignedIn: true,
+        hasPermission: stub().resolves(true),
+        requirePermission: stub().resolves()
+    }
+}
+
+export function removePermission(context: ConnectionContext, permission: string) {
+    context.hasPermission = async (p: Permissions) => p != permission;
+    context.requirePermission = async (p: Permissions) => { if (! await context.hasPermission(p)) throw new Error("Access Denied"); };
+
+    // This is is just to satify code coverage
+    context.requirePermission(null);
 }

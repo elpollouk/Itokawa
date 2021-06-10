@@ -6,6 +6,8 @@ import { RequestType, LocoCvReadRequest, LocoCvWriteRequest } from "../../common
 import { application } from "../../application";
 import { NullCommandStation } from "../../devices/commandStations/null";
 import { registerHandlers } from "./cv";
+import { createMockConnectionContext, removePermission } from "../../utils/testUtils";
+import { Permissions } from "../sessionmanager";
 
 function createHandlerMap(): handlers.HandlerMap {
     return new Map<RequestType, (msg: any, send: handlers.Sender)=>Promise<void>>();
@@ -15,8 +17,10 @@ describe("CV Handler", () => {
 
     let applicationCommandStationStub: SinonStub;
     let sendStub: SinonSpy<any[], Promise<boolean>>;
+    let mockContext: handlers.ConnectionContext;
 
     beforeEach(() => {
+        mockContext = createMockConnectionContext();
         applicationCommandStationStub = stub(application, "commandStation").value(new NullCommandStation());
         sendStub = stub().returns(Promise.resolve(true));
     })
@@ -41,7 +45,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvRead)({
+            await handlers.get(RequestType.LocoCvRead)(mockContext, {
                 cvs: [8, 7, 1]
             } as LocoCvReadRequest, sendStub);
 
@@ -85,7 +89,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvRead)({
+            await handlers.get(RequestType.LocoCvRead)(mockContext, {
                 cvs: [8, 7, 29, 1, 17, 18]
             } as LocoCvReadRequest, sendStub);
 
@@ -103,7 +107,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvRead)({
+            await handlers.get(RequestType.LocoCvRead)(mockContext, {
                 cvs: [29]
             } as LocoCvReadRequest, sendStub);
 
@@ -132,7 +136,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvRead)({
+            await expect(handlers.get(RequestType.LocoCvRead)(mockContext, {
                 cvs: [29]
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("Error reading CV");
         })
@@ -141,7 +145,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvRead)({
+            await expect(handlers.get(RequestType.LocoCvRead)(mockContext, {
                 cvs: [1, 3, 256]
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("CV 256 outside of valid range");
         })
@@ -150,7 +154,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvRead)({
+            await expect(handlers.get(RequestType.LocoCvRead)(mockContext, {
                 cvs: []
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
         })
@@ -159,9 +163,19 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvRead)({
+            await expect(handlers.get(RequestType.LocoCvRead)(mockContext, {
                 cvs: null
             } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
+        })
+
+        it("should reject if session doesn't have permission", async () => {
+            removePermission(mockContext, Permissions.TRAIN_EDIT);
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LocoCvRead)(mockContext, {
+                cvs: [8, 7]
+            } as LocoCvReadRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
     })
 
@@ -170,7 +184,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvWrite)({
+            await handlers.get(RequestType.LocoCvWrite)(mockContext, {
                 cvs: [{
                     cv: 17,
                     value: 196
@@ -218,7 +232,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvWrite)({
+            await handlers.get(RequestType.LocoCvWrite)(mockContext, {
                 cvs: [{
                     cv: 29,
                     value: 255
@@ -251,7 +265,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LocoCvWrite)({
+            await handlers.get(RequestType.LocoCvWrite)(mockContext, {
                 cvs: [{
                     cv: 29,
                     value: 6
@@ -280,7 +294,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(mockContext, {
                 cvs: [{
                     cv: 29,
                     value: 6
@@ -292,7 +306,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(mockContext, {
                 cvs: [{
                     cv: 1,
                     value: 10,
@@ -308,7 +322,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(mockContext, {
                 cvs: [{
                     cv: 1,
                     value: 10,
@@ -325,7 +339,7 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(mockContext, {
                 cvs: []
             } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
         })
@@ -334,9 +348,19 @@ describe("CV Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LocoCvWrite)({
+            await expect(handlers.get(RequestType.LocoCvWrite)(mockContext, {
                 cvs: null
             } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("No CVs provided");
+        })
+
+        it("should reject if session doesn't have permission", async () => {
+            removePermission(mockContext, Permissions.TRAIN_EDIT);
+            const handlers = createHandlerMap();
+            registerHandlers(handlers);
+
+            await expect(handlers.get(RequestType.LocoCvWrite)(mockContext, {
+                cvs: [{ cv: 1, value: 3}]
+            } as LocoCvWriteRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
     })
 })

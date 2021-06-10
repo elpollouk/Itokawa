@@ -5,6 +5,7 @@ import { AddressInfo } from "net";
 import * as os from "os";
 import * as express from "express";
 import * as expressWs from "express-ws";
+import * as cookieParser from "cookie-parser";
 import * as program from "commander";
 import * as ngrok from "../publishers/ngrok";
 import { application } from "../application";
@@ -12,7 +13,8 @@ import { addCommonOptions } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
 import { execShutdown, execRestart, shutdownCheck, restartCheck } from "./shutdown";
 import { ConfigNode } from "../utils/config";
-import { getRouter } from "./routers/apiRouter";
+import * as apiRouter from "./routers/apiRouter";
+import * as authRouter from "./routers/authRouter";
 
 // WebSocket Message handlers
 import { getControlWebSocketRoute } from "./handlers/handlers";
@@ -39,9 +41,15 @@ async function main()
     const ews = expressWs(express());
     const app = ews.app;
 
-    app.ws("/control/v1", getControlWebSocketRoute());
-    app.use("/api/v1", (await getRouter()));
+    app.set('view engine', 'pug');
+    app.set('views','./views');
+
+    app.use(cookieParser());
+    app.use(authRouter.pingSession());
     app.use(express.static("static"));
+    app.ws("/control/v1", getControlWebSocketRoute());
+    app.use("/auth", (await authRouter.getRouter()));
+    app.use("/api/v1", (await apiRouter.getRouter()));
 
     let port = program.port || application.config.get("server.port", 8080);
     if (typeof(port) === "string") port = parseIntStrict(port);

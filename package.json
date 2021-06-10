@@ -48,9 +48,11 @@
   "dependencies": {
     "adm-zip": "^0.5.1",
     "commander": "^4.1.1",
+    "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
     "express-ws": "^4.0.0",
     "ngrok": "^3.2.7",
+    "pug": "^3.0.2",
     "qrcode": "^1.4.4",
     "read": "^1.0.7",
     "serialport": "^8.0.7",

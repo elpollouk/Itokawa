@@ -6,6 +6,7 @@ import { Database } from "./database";
 import * as sqlite3 from "sqlite3";
 import * as fs from "fs";
 
+const SCHEMA_VERSION = 2;
 const TEST_DB_FILE = ".test.sqlite3";
 
 function cleanupTestDb() {
@@ -48,7 +49,7 @@ describe("Database", () => {
         it("should open if path is valid", async () => {
             expect(_db).to.not.be.null;
             expect(_db.sqlite3).to.be.instanceOf(sqlite3.Database);
-            expect(_db.schemaVersion).to.equal(1);
+            expect(_db.schemaVersion).to.equal(SCHEMA_VERSION);
         })
 
         it("should reopen existing databases", async () => {
@@ -58,7 +59,7 @@ describe("Database", () => {
 
             const db2 = await Database.open(TEST_DB_FILE);
             try {
-                expect(db2.schemaVersion).to.equal(1);
+                expect(db2.schemaVersion).to.equal(SCHEMA_VERSION);
                 const value = await db2.getValue("Test");
                 expect(value).to.equal("Foo Bar Baz");
             }
@@ -67,14 +68,12 @@ describe("Database", () => {
             }
         })
 
-        it("should recreate schema if neccessary", async () => {
-            // The old schema is set to 99999, so this should force a delete of the old DB file
-            // and rerun of all the schema scripts as we have no idea what this file is.
-            // In the future, we'll backup the file first and let the user know what we did.
+        it("should not update schema if number version is higher than application", async () => {
+
             copyForTest("./testdata/schema_99999.sqlite3");
             const db2 = await Database.open(TEST_DB_FILE);
             try {
-                expect(db2.schemaVersion).to.equal(1);
+                expect(db2.schemaVersion).to.equal(99999);
             }
             finally {
                 await db2.close();

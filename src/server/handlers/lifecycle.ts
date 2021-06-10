@@ -1,9 +1,10 @@
-import { HandlerMap, Sender, ok } from "./handlers"
+import { HandlerMap, Sender, ok, ConnectionContext } from "./handlers"
 import { application } from "../../application";
 import { LifeCycleRequest, LifeCycleAction, LifeCyclePingResponse, RequestType } from "../../common/messages";
 import { updateApplication, updateOS } from "../updater";
+import { Permissions } from "../sessionmanager";
 
-async function onLifeCycleMessage(request: LifeCycleRequest, send: Sender): Promise<void> {
+async function onLifeCycleMessage(context: ConnectionContext, request: LifeCycleRequest, send: Sender): Promise<void> {
     switch(request.action) {
         case LifeCycleAction.ping:
             const response: LifeCyclePingResponse = {
@@ -12,6 +13,7 @@ async function onLifeCycleMessage(request: LifeCycleRequest, send: Sender): Prom
                 commandStationState: application.commandStation ? application.commandStation.state : -1,
                 gitrev: application.gitrev,
                 publicUrl: application.publicUrl,
+                isSignedIn: context.isSignedIn,
                 lastMessage: true,
                 data: "OK"
             };
@@ -19,20 +21,24 @@ async function onLifeCycleMessage(request: LifeCycleRequest, send: Sender): Prom
             break;
 
         case LifeCycleAction.shutdown:
+            await context.requirePermission(Permissions.SERVER_CONTROL);
             await application.lifeCycle.shutdown();
             await ok(send);
             break;
 
         case LifeCycleAction.restart:
+            await context.requirePermission(Permissions.SERVER_CONTROL);
             await application.lifeCycle.restart();
             await ok(send);
             break;
 
         case LifeCycleAction.update:
+            await context.requirePermission(Permissions.APP_UPDATE);
             await updateApplication(send);
             break;
 
         case LifeCycleAction.updateOS:
+            await context.requirePermission(Permissions.SERVER_UPDATE);
             await updateOS(send);
             break;
 

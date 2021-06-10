@@ -64,4 +64,16 @@ describe("Hexadecimal Utilities", () => {
             expect(() => hex.fromHex("234")).to.throw("Incomplete hex string");
         })
     })
+
+    describe("reandomHex", () => {
+        it("should generate a valid string of the right length", () => {
+            expect(hex.randomHex(2)).to.match(/^[0-9a-z]{2}$/);
+            expect(hex.randomHex(3)).to.match(/^[0-9a-z]{3}$/);
+            expect(hex.randomHex(7)).to.match(/^[0-9a-z]{7}$/);
+        })
+
+        it("should generate a unique value", () => {
+            expect(hex.randomHex(8)).to.not.eql(hex.randomHex(8));
+        })
+    })
 });

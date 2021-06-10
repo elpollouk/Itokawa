@@ -2,7 +2,7 @@ import { Bindable } from "./utils/bindable";
 import * as messages from "../common/messages"
 import { timestamp } from "../common/time";
 import { CommandStationState } from "../devices/commandStations/commandStation";
-import { RequestCallback, ConnectionState, ICommandConnection } from "./client";
+import { RequestCallback, ConnectionState, ICommandConnection, client } from "./client";
 
 const HEARTBEAT_TIME = 15; // In seconds
 
@@ -222,6 +222,7 @@ export class CommandConnection extends Bindable implements ICommandConnection {
                 this._lastHeatbeatResponse = response as messages.LifeCyclePingResponse;
                 this.publicUrl = this._lastHeatbeatResponse.publicUrl;
                 this.deviceState = this._lastHeatbeatResponse.commandStationState;
+                client.isSignedIn = this._lastHeatbeatResponse.isSignedIn;
             }
         });
     }

@@ -1,0 +1,21 @@
+doctype html
+html
+    head
+        meta(name="viewport", content="width=device-width, initial-scale=1")
+        title Itokawa Sign In
+        link(rel="stylesheet", href="/auth/auth.css")
+    body
+        div
+            div.formContainer
+                div.errorMessage #{errorMessage}
+                form(action="/auth", method="post")
+                    div.formRow
+                        label
+                            span Username:
+                            input(type="text", name="username", value=username)
+                    div.formRow
+                        label
+                            span Password:
+                            input(type="password", name="password")
+                    div.formRow
+                        input(type="submit", value="Sign In")

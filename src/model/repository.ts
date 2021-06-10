@@ -1,30 +1,16 @@
 import { Logger } from "../utils/logger";
 import { Database } from "./database";
-import * as sqlite3 from "sqlite3";
+import { Statement } from "./statement";
 
 const log = new Logger("Repository");
 
-function _finalize(statement: sqlite3.Statement): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        statement.finalize((err) => {
-            if (err) {
-                log.error(`Failed to finalize statement: ${err.message}`);
-                reject(err);
-            }
-            else {
-                resolve();
-            }
-        });
-    });
-}
-
 export abstract class Repository<T> {
-    protected _list: sqlite3.Statement;
-    protected _search: sqlite3.Statement;
-    protected _get: sqlite3.Statement;
-    protected _insert: sqlite3.Statement;
-    protected _update: sqlite3.Statement;
-    protected _delete: sqlite3.Statement;
+    protected _list: Statement<T>;
+    protected _search: Statement<T>;
+    protected _get: Statement<T>;
+    protected _insert: Statement<number>;
+    protected _update: Statement<number>;
+    protected _delete: Statement<void>;
 
     constructor(protected readonly _db: Database) {
 
@@ -40,113 +26,49 @@ export abstract class Repository<T> {
     abstract _indexItemForSearch(item: T): string;
 
     list(query?: string): Promise<T[]> {
-        return new Promise<T[]>((resolve, reject) => {
-            const results: T[] = [];
-            const statement = query ? this._search : this._list;
-            statement.each({
-                $query: query
-            }, (err, row) => {
-                if (err) {
-                    log.error(`List failed: ${err.message}`);
-                    reject(err);
-                }
-                else {
-                    const item = JSON.parse(row.item);
-                    item.id = row.id;
-                    results.push(item);
-                }
-            }, (err) => {
-                if (err) {
-                    log.error(`List failed: ${err.message}`);
-                    reject(err);
-                }
-                else {
-                    resolve(results);
-                }
-            });
+        const statement = query ? this._search : this._list;
+        return statement.all({
+            $query: query
+        }, (row) => {
+            const item = JSON.parse(row.item);
+            item.id = row.id;
+            return item;
         });
     }
 
-    insert(item: T): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const data = JSON.stringify(item);
-            this._insert.run({
-                $index: this._indexItemForSearch(item),
-                $item: data
-            }, function (err) {
-                if (err) {
-                    log.error(`Failed to insert item: ${err.message}`);
-                    log.error(`Item: ${data}`);
-                    reject(err);
-                }
-                else {
-                    item["id"] = this.lastID;
-                    resolve();
-                }
-            });
-        });
+    async insert(item: T): Promise<void> {
+        const data = JSON.stringify(item);
+        const lastId = await this._insert.run({
+            $index: this._indexItemForSearch(item),
+            $item: data
+        }, (result) => result.lastID);
+        item["id"] = lastId;
     }
 
     get(id: number): Promise<T> {
-        return new Promise<T>((resolve, reject) => {
-            this._get.get({
-                $id: id
-            }, (err, row) => {
-                if (err) {
-                    log.error(`Failed to get item ${id}: ${err.message}`);
-                    reject(err);
-                }
-                else {
-                    if (!row) {
-                        resolve(null);
-                    }
-                    else {
-                        const data = row.item;
-                        const item = JSON.parse(data);
-                        item["id"] = id;
-                        resolve(item);
-                    }
-                }
-            });
+        return this._get.get({$id: id}, (row) => {
+            if (!row) return null;
+            const data = row.item;
+            const item = JSON.parse(data);
+            item["id"] = id;
+            return item;
         });
     }
 
-    update(item: T): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const id = item["id"];
-            const data = JSON.stringify(item);
-            this._update.run({
-                $id: id,
-                $index: this._indexItemForSearch(item),
-                $item: data
-            }, function (err: Error) {
-                if (err) {
-                    log.error(`Failed to update item ${id}: ${err.message}`);
-                    reject(err);
-                }
-                else if (this.changes != 1) {
-                    reject(new Error(`Unexpected number of updates: ${this.changes}`));
-                }
-                else {
-                    resolve();
-                }
-            });
-        });
+    async update(item: T): Promise<void> {
+        const id = item["id"];
+        const data = JSON.stringify(item);
+        const changes = await this._update.run({
+            $id: id,
+            $index: this._indexItemForSearch(item),
+            $item: data
+        }, (result) => result.changes);
+        if (changes != 1) throw new Error(`Unexpected number of updates: ${changes}`);
     }
 
     delete(id: number): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            this._delete.run({
-                $id: id
-            }, (err) => {
-                if (err) {
-                    log.error(`Failed to delete item ${id}: ${err.message}`);
-                    reject(err);
-                }
-                else {
-                    resolve();
-                }
-            });
+        return this._delete.run({
+            $id: id
         });
     }
 }
@@ -157,8 +79,8 @@ export abstract class SqliteRepository<T> extends Repository<T> {
     }
 
     async _finalizeAndNull(statement: string) {
-        const s = this[statement];
-        await _finalize(s);
+        const s = this[statement] as Statement;
+        await s.release();
         this[statement] = null;
     }
 
@@ -174,14 +96,14 @@ export abstract class SqliteRepository<T> extends Repository<T> {
     }
 
     async _prepareStatements(): Promise<void> {
-        this._list = await this._prepare(`
+        this._list = await this._db.prepare(`
             SELECT
                 id,
                 ${this._dataColumn} AS item
             FROM
                 ${this._table};`);
 
-        this._search = await this._prepare(`
+        this._search = await this._db.prepare(`
             SELECT
                 ${this._table}.id AS id,
                 ${this._dataColumn} AS item
@@ -196,7 +118,7 @@ export abstract class SqliteRepository<T> extends Repository<T> {
             ORDER BY
                 rank;`);
 
-        this._get = await this._prepare(`
+        this._get = await this._db.prepare(`
             SELECT
                 id,
                 ${this._dataColumn} AS item
@@ -205,7 +127,7 @@ export abstract class SqliteRepository<T> extends Repository<T> {
             WHERE
                 id = $id;`);
 
-        this._insert = await this._prepare(`
+        this._insert = await this._db.prepare(`
             INSERT INTO ${this._table} (
                 search_text,
                 ${this._dataColumn}
@@ -215,7 +137,7 @@ export abstract class SqliteRepository<T> extends Repository<T> {
                 json($item)
             );`);
 
-        this._update = await this._prepare(`
+        this._update = await this._db.prepare(`
             UPDATE
                 ${this._table}
             SET
@@ -224,26 +146,10 @@ export abstract class SqliteRepository<T> extends Repository<T> {
             WHERE
                 id = $id;`);
 
-        this._delete = await this._prepare(`
+        this._delete = await this._db.prepare(`
             DELETE FROM
                 ${this._table}
             WHERE
                 id = $id;`);
-    }
-
-    protected _prepare(sql: string): Promise<sqlite3.Statement> {
-        return new Promise<sqlite3.Statement>((resolve, reject) => {
-            log.debug(() => `Preparing: ${sql}`);
-            this._db.sqlite3.prepare(sql, function (err: Error) {
-                if (err) {
-                    log.error(`Failed to prepare statement: ${err.message}`);
-                    log.error(`Statement: ${sql}`);
-                    reject(err);
-                }
-                else {
-                    resolve(this);
-                }
-            });
-        });
     }
 };

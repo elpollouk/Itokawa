@@ -16,6 +16,7 @@ import { RunInTask } from "./taskmanager/tasks/runin";
 import { registerCommandStations } from "./devices/commandStations/commandStationDirectory";
 import * as backup from "./utils/backup";
 import { LifeCycle } from "./utils/lifeCycle";
+import { SessionManager } from "./server/sessionmanager";
 
 const log = new Logger("Application");
 
@@ -60,6 +61,7 @@ export class Application {
     readonly taskmanager = new TaskManager();
     readonly featureFlags = new ServerFeatureFlags();
     readonly lifeCycle = new LifeCycle(() => this._shutdown());
+    readonly sessionManager = new SessionManager();
     
     get config() {
         return this._config;
@@ -96,6 +98,7 @@ export class Application {
     //  * Fetch the current git revision
     //  * Write a pid file to the data directory
     //  * Open the local database
+    //  * Clear out expired user sessions
     //  * Start the command station mointoring process
     async start(args: CommanderStatic, savepid: boolean = false): Promise<void> {
         // We apply an initial log level based on the command line args so that we can debug
@@ -131,6 +134,10 @@ export class Application {
         const dbPath = this.getDataPath(DATABASE_FILE);
         this._db = await Database.open(dbPath);
 
+        // Expire and stale sessions from previous runs
+        await this.sessionManager.init(this._db);
+        await this.sessionManager.clearExpired();
+
         // Technically, we don't need this await, but it improves the experience if a
         // device is already opened before starting the server
         registerCommandStations();
@@ -147,6 +154,7 @@ export class Application {
     }
 
     private async _shutdown() {
+        await this.sessionManager.shutdown();
         await this._db.close();
         await this.commandStation?.close();
     }

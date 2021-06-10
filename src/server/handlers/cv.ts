@@ -1,8 +1,9 @@
 import { Logger } from "../../utils/logger";
-import { HandlerMap, Sender, ok } from "./handlers"
+import { HandlerMap, Sender, ok, ConnectionContext } from "./handlers"
 import { RequestType, LocoCvReadRequest, LocoCvWriteRequest, CvValuePair } from "../../common/messages";
 import { application } from "../../application";
 import { ensureCvNumber, ensureByte } from "../../devices/commandStations/nmraUtils";
+import { Permissions } from "../sessionmanager";
 
 const log = new Logger("CV");
 
@@ -22,7 +23,8 @@ async function retryWrapper<T = void>(action: () => Promise<T>): Promise<T> {
     }
 }
 
-async function onLocoCvReadMessage(request: LocoCvReadRequest, send: Sender): Promise<void> {
+async function onLocoCvReadMessage(context: ConnectionContext, request: LocoCvReadRequest, send: Sender): Promise<void> {
+    await context.requirePermission(Permissions.TRAIN_EDIT);
     if (!request.cvs || request.cvs.length === 0) throw new Error("No CVs provided");
     for (const cv of request.cvs)
         ensureCvNumber(cv);
@@ -48,7 +50,8 @@ async function onLocoCvReadMessage(request: LocoCvReadRequest, send: Sender): Pr
     await ok(send);
 }
 
-async function onLocoCvWriteMessage(request: LocoCvWriteRequest, send: Sender): Promise<void> {
+async function onLocoCvWriteMessage(context: ConnectionContext, request: LocoCvWriteRequest, send: Sender): Promise<void> {
+    await context.requirePermission(Permissions.TRAIN_EDIT);
     if (!request.cvs || request.cvs.length === 0) throw new Error("No CVs provided");
     // We want to do this first so that we don't attempt to write if the batch is invalid
     for (const pair of request.cvs) {

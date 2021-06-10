@@ -5,7 +5,6 @@ import { TrainControl } from "../controls/trainControl";
 import { RequestType, TransportMessage, LocoSpeedRequest } from "../../common/messages";
 import { Loco } from "../../common/api";
 import { parseHtml, getById } from "../utils/dom";
-import { ConnectionState } from "../client";
 import { TrainRosterConstructor } from "./trainRoster";
 const html = require("./index.html");
 
@@ -29,7 +28,7 @@ class IndexPage extends Page {
         const page = parseHtml(html);
 
         this._trainControlsContainer = getById(page, "trains");
-        getById(page, "add").onclick = () => nav.open(TrainRosterConstructor.path);
+        getById(page, "add").onclick = () => this._openTrainsScreen();
         
         return page;
     }
@@ -78,6 +77,11 @@ class IndexPage extends Page {
         if (message.type !== RequestType.LocoSpeed) return;
         const request = message.data as LocoSpeedRequest;
         this._updateSpeed(request);
+    }
+
+    private _openTrainsScreen() {
+        if (client.requireSignIn()) return;
+        nav.open(TrainRosterConstructor.path);
     }
 
     destroy() {
