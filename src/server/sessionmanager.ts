@@ -128,7 +128,7 @@ class GuestSession extends Session {
         this._expires = MAX_DATE;
         this.roles.add("GUEST");
 
-        // If no admin passwrd has been configured, then guests need all permissions, an admin party!
+        // If no admin password has been configured, then guests need all permissions, an admin party!
         const phash = application.config.getAs<string>(ADMIN_PASSWORD_KEY);
         if (!phash) {
             for (const permission in Permissions) {
