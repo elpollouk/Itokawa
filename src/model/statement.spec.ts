@@ -1,6 +1,7 @@
 import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
+import * as sqlite3 from "sqlite3";
 import { Database } from "./database";
 import { Statement } from "./statement";
 
@@ -44,6 +45,18 @@ describe("Statement", () => {
                 value: "bar"
             });
         })
+
+        it("should reject with error if execution of get fails", async () => {
+            const mockSqlite3Statement = {
+                get: (_params, cb) => {
+                   cb(new Error("Get Error"));
+                }
+            } as sqlite3.Statement;
+
+            const statement = new Statement(mockSqlite3Statement);
+
+            await expect(statement.get()).to.eventually.be.rejectedWith("Get Error");
+        })
     })
 
     describe("all", () => {
@@ -61,6 +74,57 @@ describe("Statement", () => {
                 key: "baz",
                 value: "gaz"
             }]);
+        })
+
+        it("should reject with error if execution fails for a row", async () => {
+            const mockSqlite3Statement = {
+                each: (_params, cbRow, _cbDone) => {
+                    cbRow(new Error("Row Error"));
+                }
+            } as sqlite3.Statement;
+
+            const statement = new Statement(mockSqlite3Statement);
+
+            await expect(statement.all()).to.eventually.be.rejectedWith("Row Error");
+        })
+
+        it("should reject with error if execution fails for the statement", async () => {
+            const mockSqlite3Statement = {
+                each: (_params, _cbRow, cbDone) => {
+                    cbDone(new Error("Statement Error"));
+                }
+            } as sqlite3.Statement;
+
+            const statement = new Statement(mockSqlite3Statement);
+
+            await expect(statement.all()).to.eventually.be.rejectedWith("Statement Error");
+        })
+    })
+
+    describe("run", () => {
+        it("should reject with error if execution of run fails", async () => {
+            const mockSqlite3Statement = {
+                run: (_params, cb) => {
+                    cb(new Error("Run Error"));
+                }
+            } as sqlite3.Statement;
+
+            const statement = new Statement(mockSqlite3Statement);
+
+            await expect(statement.run()).to.eventually.be.rejectedWith("Run Error");
+        })
+    })
+
+    describe("release", () => {
+        it("should reject with error if low level finalize fails", async () => {
+            const mockSqlite3Statement = {
+                finalize: (cb) => {
+                    cb(new Error("Test Error"));
+                }
+            } as sqlite3.Statement;
+
+            const statement = new Statement(mockSqlite3Statement);
+            await expect(statement.release()).to.eventually.be.rejectedWith("Test Error");
         })
     })
 })
