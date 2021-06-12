@@ -117,7 +117,7 @@ export class Application {
             if (!profile.match(/^[A-Za-z0-9_-]+$/)) throw new Error(`Invalid profile name '${profile}'`);
             profile = this.getDataPath(`config.${profile}.xml`);
             if (fs.existsSync(profile)) {
-                log.info(`Loafing profile '${args.profile}' config...`);
+                log.info(`Loading profile '${args.profile}' config...`);
                 this._config = await loadConfig(profile, this._config);
             }
             else {
