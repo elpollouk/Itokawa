@@ -104,8 +104,8 @@ interface TypeDetector {
 };
 
 const _TYPE_DETECTORS: TypeDetector[] = [
-    { regex: /^\d+\.\d*$/, typeName: "float" },
-    { regex: /^\d+$/, typeName: "int" },
+    { regex: /^-?\d+\.\d*$/, typeName: "float" },
+    { regex: /^-?\d+$/, typeName: "int" },
     { regex: /^[tT][rR][uU][eE]$|^[fF][aA][lL][sS][eE]$/, typeName: "bool" }
 ];
 

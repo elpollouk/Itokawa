@@ -10,6 +10,9 @@ import { ConfigNode, loadConfig, saveConfig } from "./config";
 const TEST_CONFIG = '<config><endpoint><publish><ngrok/></publish></endpoint>'
                   + '<test1 type="bool">true</test1><test2 type="number">123</test2><test3>foo bar</test3>'
                   + '<nested><A>a</A><B>b</B><C>c</C></nested>'
+                  + '<negative_int>-42</negative_int>'
+                  + '<positive_float>43.21</positive_float>'
+                  + '<negative_float>-13.37</negative_float>'
                   + '</config>';
 
 describe("Config", () => {
@@ -299,6 +302,9 @@ describe("Config", () => {
             expect(config.get("test1")).to.be.true;
             expect(config.get("test2")).to.equal(123);
             expect(config.get("test3")).to.equal("foo bar");
+            expect(config.get("negative_int")).to.equal(-42);
+            expect(config.get("positive_float")).to.equal(43.21);
+            expect(config.get("negative_float")).to.equal(-13.37);
             expect(config.get("nested.A")).to.equal("a");
             expect(config.get("nested.B")).to.equal("b");
             expect(config.get("nested.C")).to.equal("c");
