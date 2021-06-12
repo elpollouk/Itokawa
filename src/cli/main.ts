@@ -1,5 +1,5 @@
 import * as readline from "readline";
-import * as program from "commander";
+import { Command, OptionValues } from "commander";
 import { Logger, LogLevel } from "../utils/logger";
 Logger.logLevel = LogLevel.DISPLAY;
 
@@ -12,6 +12,8 @@ import * as executor from "./executor";
 // All commands are implemented as module level function exports and we discover then via "reflection"
 import * as Commands from "./commands";
 
+const program = new Command();
+let args: OptionValues = null;
 addCommonOptions(program);
 program
     .option("--exit-estop", "Issue eStop on exit")
@@ -32,7 +34,7 @@ function _error(message: string) {
 // Handler for clean up when exit command is issued
 async function _onExit() {
     try {
-        if (program.exitEstop) await Commands.estop({
+        if (args.exitEstop) await Commands.estop({
             out: _out,
             error: _error,
             vars: {}
@@ -47,10 +49,11 @@ async function _onExit() {
 
 async function main() {
     program.parse(process.argv);
+    args = program.opts();
     executor.registerCommands(Commands);
 
     application.lifeCycle.onshutdown = _onExit;
-    await application.start(program);
+    await application.start(args);
     if (!application.commandStation) {
         console.error("No command station connected");
         process.exit(1);
@@ -70,13 +73,13 @@ async function main() {
     };
 
     // A command or script has been explicitly specified on the command line, so execute it and then exit
-    if (program.cmd) {
-        await executor.execCommandSafe(commandContext, program.cmd, true);
-        if (!program.continue) await Commands.exit(commandContext);
+    if (args.cmd) {
+        await executor.execCommandSafe(commandContext, args.cmd, true);
+        if (!args.continue) await Commands.exit(commandContext);
     }
-    else if (program.exec) {
-        await executor.execCommandSafe(commandContext, `exec ${program.exec}`, true);
-        if (!program.continue) await Commands.exit(commandContext);
+    else if (args.exec) {
+        await executor.execCommandSafe(commandContext, `exec ${args.exec}`, true);
+        if (!args.continue) await Commands.exit(commandContext);
     }
 
     const rl = readline.createInterface({

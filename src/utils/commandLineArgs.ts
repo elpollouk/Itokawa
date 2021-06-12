@@ -1,9 +1,9 @@
-import { CommanderStatic } from "commander";
+import * as commander from "commander";
 import { Logger, LogLevel } from "./logger";
 let pjson = require('../../package.json');
 
-export function addCommonOptions(commander: CommanderStatic) {
-    commander
+export function addCommonOptions(program: commander.Command) {
+    program
         .version(pjson.version)
         .option("-d --device <device>", "Device type to open")
         .option("-c --connection-string <connectionString>", "Connection configuration string")
@@ -12,8 +12,8 @@ export function addCommonOptions(commander: CommanderStatic) {
         .option("--profile <profile>", "Config override profile");
 }
 
-export function applyLogLevel(commander: CommanderStatic) {
-    const ll = (commander.logLevel || "").toUpperCase();
+export function applyLogLevel(options: commander.OptionValues) {
+    const ll = (options.logLevel || "").toUpperCase();
     if (ll in LogLevel) {
         Logger.logLevel = LogLevel[ll as string];
     }
