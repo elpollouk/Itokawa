@@ -2,7 +2,7 @@ let packagejson = require('../package.json');
 import * as fs from "fs";
 import * as os from "os";
 import * as pathMod from "path";
-import { CommanderStatic } from "commander";
+import { OptionValues } from "commander";
 import { Logger, LogLevel } from "./utils/logger";
 import { ConfigNode, loadConfig, saveConfig } from "./utils/config";
 import { applyLogLevel } from "./utils/commandLineArgs";
@@ -100,7 +100,7 @@ export class Application {
     //  * Open the local database
     //  * Clear out expired user sessions
     //  * Start the command station mointoring process
-    async start(args: CommanderStatic, savepid: boolean = false): Promise<void> {
+    async start(args: OptionValues, savepid: boolean = false): Promise<void> {
         // We apply an initial log level based on the command line args so that we can debug
         // directory initialisation and config loading if needed
         applyLogLevel(args);

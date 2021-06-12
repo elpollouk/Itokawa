@@ -7,7 +7,6 @@ import { registerCommandStations } from "./commandStations/commandStationDirecto
 import * as SerialPort from "serialport";
 import { NullCommandStation } from "./commandStations/null";
 import { ICommandStationConstructable } from "./commandStations/commandStation";
-import { CommanderStatic } from "commander";
 import { application } from "../application";
 import { ConfigNode } from "../utils/config";
 import { nextTick } from "../utils/promiseUtils";
@@ -20,7 +19,7 @@ describe("Device Enumerator", () => {
 
     let stubSerialPort_list: SinonStub;
     let mockPorts: SerialPort.PortInfo[];
-    let args: CommanderStatic;
+    let args: any;
 
     function addPort(path: string, manufacturer: string, pnpId?: string) {
         mockPorts.push({
@@ -32,7 +31,7 @@ describe("Device Enumerator", () => {
 
     beforeEach(() => {
         mockPorts = [];
-        args = {} as CommanderStatic;
+        args = {};
 
         stubSerialPort_list = stub(SerialPort, 'list').returns(Promise.resolve(mockPorts));
         application.commandStation = null;

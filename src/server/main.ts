@@ -6,7 +6,7 @@ import * as os from "os";
 import * as express from "express";
 import * as expressWs from "express-ws";
 import * as cookieParser from "cookie-parser";
-import * as program from "commander";
+import { Command } from "commander";
 import * as ngrok from "../publishers/ngrok";
 import { application } from "../application";
 import { addCommonOptions } from "../utils/commandLineArgs";
@@ -19,6 +19,7 @@ import * as authRouter from "./routers/authRouter";
 // WebSocket Message handlers
 import { getControlWebSocketRoute } from "./handlers/handlers";
 
+const program = new Command();
 addCommonOptions(program);
 program
     .option("-p --port <port>", "Port to listen on")
@@ -31,8 +32,9 @@ let log = new Logger("Main");
 async function main()
 {
     program.parse(process.argv);
+    const args = program.opts();
 
-    await application.start(program, true);
+    await application.start(args, true);
     application.lifeCycle.onshutdownbegin = shutdownCheck;
     application.lifeCycle.onshutdown = execShutdown;
     application.lifeCycle.onrestartbegin = restartCheck;
@@ -51,7 +53,7 @@ async function main()
     app.use("/auth", (await authRouter.getRouter()));
     app.use("/api/v1", (await apiRouter.getRouter()));
 
-    let port = program.port || application.config.get("server.port", 8080);
+    let port = args.port || application.config.get("server.port", 8080);
     if (typeof(port) === "string") port = parseIntStrict(port);
 
     const server = app.listen(port, () => {
@@ -60,7 +62,7 @@ async function main()
         log.display(`Listening on ${application.publicUrl}`);
 
         const ngrokConfig = application.config.getAs<ConfigNode>("server.publish.ngrok");
-        if (program.ngrok || ngrokConfig) {
+        if (args.ngrok || ngrokConfig) {
             ngrok.publish(port, ngrokConfig).then((url) => {
                 log.display(`ngrok url: ${url}`);
                 application.publicUrl = url;

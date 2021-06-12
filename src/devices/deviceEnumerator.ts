@@ -1,7 +1,7 @@
 import { Logger } from "../utils/logger";
 import * as SerialPort from "serialport";
 import { ICommandStation, ICommandStationConstructable } from "./commandStations/commandStation";
-import { CommanderStatic } from "commander";
+import { OptionValues } from "commander";
 import { application } from "../application";
 
 let log = new Logger("Device");
@@ -76,7 +76,7 @@ export class DeviceEnumerator {
         return device.open(connectionString);
     }
 
-    static async monitorForDevice(args: CommanderStatic) {
+    static async monitorForDevice(args: OptionValues) {
         // This will start monitoring for device errors and attempt recovery
         const errorHandler = (err: Error) => {
             if (application.commandStation) {
@@ -105,7 +105,7 @@ export class DeviceEnumerator {
         }
     }
 
-    private static async _detectDevice(args: CommanderStatic): Promise<ICommandStation> {
+    private static async _detectDevice(args: OptionValues): Promise<ICommandStation> {
         // Allow command line args to override everything
         if (args.device) {
             return await DeviceEnumerator.openDevice(args.device, args.connectionString);

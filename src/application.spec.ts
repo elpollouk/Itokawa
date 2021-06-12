@@ -5,7 +5,6 @@ import { Application, application } from "./application";
 let packagejson = require('../package.json');
 import * as path from "path"
 // Things to mock (in rough order of use)
-import { CommanderStatic } from "commander";
 import * as commandLineArgs from "./utils/commandLineArgs";
 import * as fs from "fs";
 import * as os from "os";
@@ -16,7 +15,6 @@ import * as exec from "./utils/exec";
 import { Database } from "./model/database";
 import * as commandStationDirectory from "./devices/commandStations/commandStationDirectory";
 import { DeviceEnumerator } from "./devices/deviceEnumerator";
-import { isRegExp } from "util";
 import { ICommandStation } from "./devices/commandStations/commandStation";
 
 const TEST_HOME_DIR = ".test.home";
@@ -27,7 +25,7 @@ function dataPath(file: string) {
 }
 
 describe("Application", () => {
-    let args: CommanderStatic;
+    let args: any;
     let configXML: config.ConfigNode;
     let db: Database;
     let applyLogLevelStub: SinonStub;
@@ -40,7 +38,7 @@ describe("Application", () => {
     let monitorForDeviceStub: SinonStub;
 
     beforeEach(() => {
-        args = {} as CommanderStatic;
+        args = {};
         configXML = new config.ConfigNode();
         db = { close: () => Promise.resolve() } as Database;
         db["prepare"] = stub().resolves({
