@@ -81,7 +81,7 @@ describe("Database", () => {
         })
 
         it("should fail if path is invalid", async () => {
-            await expect(Database.open("/dev/null")).to.be.eventually.rejected;
+            await expect(Database.open("/")).to.be.eventually.rejected;
         })
 
         it("should raise an error if we've messed up the schema scripts path", async () => {

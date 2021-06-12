@@ -1,7 +1,7 @@
 import * as sqlite3 from "sqlite3";
 
 export class Statement<ResultType=any> {
-    constructor(private _statement:sqlite3.Statement) {
+    constructor(private _statement: sqlite3.Statement) {
 
     }
 

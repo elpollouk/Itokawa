@@ -2,7 +2,7 @@ import * as ngrok from "ngrok";
 import { ConfigNode } from "../utils/config";
 
 export async function publish(port: number, config?: ConfigNode): Promise<string> {
-    let options: ngrok.INgrokOptions = {
+    let options: ngrok.Ngrok.Options = {
         addr: port
     };
 

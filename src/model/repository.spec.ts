@@ -66,22 +66,6 @@ describe("Repository", () => {
             await repo.release();
             await repo.release();
         })
-
-        it("should reject with error if low level finalize fails", async () => {
-            const repo = await _db.openRepository(LocoRepository);
-
-            const functionStub = stub(sqlite3.Statement.prototype, "finalize").callsFake((cb) => {
-                cb(new Error("Test Error"));
-                return _db.sqlite3;
-            });
-
-            try {
-                await expect(repo.release()).to.eventually.be.rejectedWith("Test Error");
-            }
-            finally {
-                functionStub.restore();
-            }
-        })
     })
 
     describe("list", () => {
@@ -174,38 +158,6 @@ describe("Repository", () => {
             let items = await repo.list("Missing");
             expect(items).to.eql([]);
         })
-
-        it("should reject with error if execution fails for a row", async () => {
-            const repo = await _db.openRepository(LocoRepository);
-
-            const functionStub = stub(sqlite3.Statement.prototype, "each").callsFake((...args: any[]) => {
-                args[1](new Error("Row Error"));
-                return {} as sqlite3.Statement;
-            });
-
-            try {
-                await expect(repo.list()).to.eventually.be.rejectedWith("Row Error");
-            }
-            finally {
-                functionStub.restore();
-            }
-        })
-
-        it("should reject with error if execution fails for the statement", async () => {
-            const repo = await _db.openRepository(LocoRepository);
-
-            const functionStub = stub(sqlite3.Statement.prototype, "each").callsFake((...args: any[]) => {
-                args[2](new Error("Statement Error"));
-                return {} as sqlite3.Statement;
-            });
-
-            try {
-                await expect(repo.list()).to.eventually.be.rejectedWith("Statement Error");
-            }
-            finally {
-                functionStub.restore();
-            }
-        })
     })
 
     describe("insert", () => {
@@ -244,22 +196,6 @@ describe("Repository", () => {
                 indexStub.restore();
             }
         });
-
-        it("should reject with error if execution of insert fails", async () => {
-            const repo = await _db.openRepository(LocoRepository);
-
-            const functionStub = stub(sqlite3.Statement.prototype, "run").callsFake((params, cb) => {
-                cb(new Error("Insert Error"));
-                return {} as sqlite3.Statement;
-            });
-
-            try {
-                await expect(repo.insert({} as Loco)).to.eventually.be.rejectedWith("Insert Error");
-            }
-            finally {
-                functionStub.restore();
-            }
-        })
     })
 
     describe("get", () => {
@@ -298,22 +234,6 @@ describe("Repository", () => {
             const repo = await _db.openRepository(LocoRepository);
             const item = await repo.get(123);
             expect(item).to.be.null;
-        })
-
-        it("should reject with error if execution of get fails", async () => {
-            const repo = await _db.openRepository(LocoRepository);
-
-            const functionStub = stub(sqlite3.Statement.prototype, "get").callsFake((params, cb) => {
-                cb(new Error("Get Error"));
-                return {} as sqlite3.Statement;
-            });
-
-            try {
-                await expect(repo.get(1)).to.eventually.be.rejectedWith("Get Error");
-            }
-            finally {
-                functionStub.restore();
-            }
         })
     })
 
@@ -394,24 +314,6 @@ describe("Repository", () => {
             });
             await expect(promise).to.eventually.be.rejectedWith("Unexpected number of updates: 0");
         })
-
-        it("should reject with error if execution of update fails", async () => {
-            const repo = await _db.openRepository(LocoRepository);
-
-            const functionStub = stub(sqlite3.Statement.prototype, "run").callsFake((params, cb) => {
-                cb(new Error("Update Error"));
-                return {} as sqlite3.Statement;
-            });
-
-            try {
-                await expect(repo.update({
-                    id: 1
-                } as Loco)).to.eventually.be.rejectedWith("Update Error");
-            }
-            finally {
-                functionStub.restore();
-            }
-        })
     })
 
     describe("delete", () => {
@@ -456,22 +358,6 @@ describe("Repository", () => {
 
             const items = await repo.list();
             expect(items).to.eql([]);
-        })
-
-        it("should reject with error if execution of delete fails", async () => {
-            const repo = await _db.openRepository(LocoRepository);
-
-            const functionStub = stub(sqlite3.Statement.prototype, "run").callsFake((params, cb) => {
-                cb(new Error("Delete Error"));
-                return {} as sqlite3.Statement;
-            });
-
-            try {
-                await expect(repo.delete(123)).to.eventually.be.rejectedWith("Delete Error");
-            }
-            finally {
-                functionStub.restore();
-            }
         })
     })
 })
