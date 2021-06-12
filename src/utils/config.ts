@@ -66,7 +66,7 @@ export class ConfigNode {
     }
 }
 
-export async function loadConfig(path: string): Promise<ConfigNode> {
+export async function loadConfig(path: string, target?:ConfigNode): Promise<ConfigNode> {
     try {
         log.info(() => `Loading ${path}`);
         if (!fs.existsSync(path)) {
@@ -81,7 +81,7 @@ export async function loadConfig(path: string): Promise<ConfigNode> {
         const parser = new xml2js.Parser({ attrkey: "_attr" });
         const data = await parser.parseStringPromise(xml);
 
-        return _parseNode(data["config"]);
+        return _parseNode(data["config"], target);
     }
     catch (ex) {
         log.error(`Error while loading ${path}`);
@@ -104,8 +104,8 @@ interface TypeDetector {
 };
 
 const _TYPE_DETECTORS: TypeDetector[] = [
-    { regex: /^\d+\.\d*$/, typeName: "float" },
-    { regex: /^\d+$/, typeName: "int" },
+    { regex: /^-?\d+\.\d*$/, typeName: "float" },
+    { regex: /^-?\d+$/, typeName: "int" },
     { regex: /^[tT][rR][uU][eE]$|^[fF][aA][lL][sS][eE]$/, typeName: "bool" }
 ];
 
@@ -125,8 +125,8 @@ function _autoDetectType(value: string) {
     return "string";
 }
 
-function _parseNode(data: any): ConfigNode {
-    const node = new ConfigNode();
+function _parseNode(data: any, baseNode?: ConfigNode): ConfigNode {
+    const node = baseNode ?? new ConfigNode();
 
     for (const key in data) {
         const children = data[key] as any[];
@@ -143,7 +143,7 @@ function _parseNode(data: any): ConfigNode {
                 }
             }
             else{
-                node[key] = _parseNode(value);
+                node[key] = _parseNode(value, node[key]);
             }
         }
         else{

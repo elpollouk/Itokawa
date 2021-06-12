@@ -52,6 +52,22 @@ describe("Backup", () => {
             expect(await hashFile(TEST_DIR + "/data.sqlite3")).to.equal("2f12f4f6899f5eff776a97fde510c1618c5af4d9");
         })
 
+        it("should extract profiles from zip", async () => {
+            await backup.restore("testdata/backup_withprofiles.zip", TEST_DIR);
+            const entires = fs.readdirSync(TEST_DIR);
+
+            expect(entires).to.eql([
+                "config.debug.xml",
+                "config.elink.xml",
+                "config.xml",
+                "data.sqlite3"
+            ]);
+            expect(await hashFile(TEST_DIR + "/config.debug.xml")).to.equal("7f27cd6865866f02a051e8eb418548c53df113d3");
+            expect(await hashFile(TEST_DIR + "/config.elink.xml")).to.equal("3457560f5c753e94814557fa4364fefcc20d9aeb");
+            expect(await hashFile(TEST_DIR + "/config.xml")).to.equal("9e81a9ca805ab7dc46845c6aef5d5a8d1a448da6");
+            expect(await hashFile(TEST_DIR + "/data.sqlite3")).to.equal("2f12f4f6899f5eff776a97fde510c1618c5af4d9");
+        })
+
         it("should handle no database in the back up", async () => {
             await backup.restore("testdata/backup_no_db.zip", TEST_DIR);
             const entires = fs.readdirSync(TEST_DIR);

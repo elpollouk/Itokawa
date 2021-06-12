@@ -5,10 +5,18 @@ import * as path from "path";
 
 const log = new Logger("Backup");
 
-const DATA_FILES = new Set([
-    "config.xml",
-    "data.sqlite3"
-]);
+const DATA_FILE_PATTERNS = [
+    /^config(\..+)?\.xml$/,
+    /^data\.sqlite3$/
+];
+
+function shouldSkip(filename: string): boolean {
+    for (const re of DATA_FILE_PATTERNS)
+        if (filename.match(re))
+            return false;
+
+    return true;
+}
 
 export async function restore(archivePath: string, targetDir: string) {
     log.info(`Restoring backup from ${archivePath} to ${targetDir}...`);
@@ -16,7 +24,7 @@ export async function restore(archivePath: string, targetDir: string) {
     let extractCount = 0;
     const zip = new AdmZip(archivePath);
     for (const entry of zip.getEntries()) {
-        if (entry.isDirectory || !DATA_FILES.has(entry.name)) {
+        if (entry.isDirectory || shouldSkip(entry.name)) {
             log.verbose(`Skipping ${entry.entryName}`);
             continue;
         }

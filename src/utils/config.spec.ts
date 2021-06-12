@@ -10,6 +10,9 @@ import { ConfigNode, loadConfig, saveConfig } from "./config";
 const TEST_CONFIG = '<config><endpoint><publish><ngrok/></publish></endpoint>'
                   + '<test1 type="bool">true</test1><test2 type="number">123</test2><test3>foo bar</test3>'
                   + '<nested><A>a</A><B>b</B><C>c</C></nested>'
+                  + '<negative_int>-42</negative_int>'
+                  + '<positive_float>43.21</positive_float>'
+                  + '<negative_float>-13.37</negative_float>'
                   + '</config>';
 
 describe("Config", () => {
@@ -299,14 +302,31 @@ describe("Config", () => {
             expect(config.get("test1")).to.be.true;
             expect(config.get("test2")).to.equal(123);
             expect(config.get("test3")).to.equal("foo bar");
+            expect(config.get("negative_int")).to.equal(-42);
+            expect(config.get("positive_float")).to.equal(43.21);
+            expect(config.get("negative_float")).to.equal(-13.37);
             expect(config.get("nested.A")).to.equal("a");
             expect(config.get("nested.B")).to.equal("b");
             expect(config.get("nested.C")).to.equal("c");
             expect(config.has("endpoint.publish.ngrok")).to.be.true;
         })
 
-        it("should handle repeated values by keep first entry", async () => {
-            readFsStub.returns("<config><test>A</test><test>B</test></config>")
+        it("should be able to load additional data into an existing config", async () => {
+            readFsStub.returns("<config><test><foo>13</foo><bar>Testing</bar></test></config>");
+            const config = await loadConfig("test/path/config.xml");
+
+            readFsStub.returns("<config><test><foo>New Foo</foo><a><b>Nested</b></a></test><baz>-11</baz></config>");
+            const configNew = await loadConfig("test/path/config.xml", config);
+
+            expect(config.get("test.foo")).to.equal("New Foo");
+            expect(config.get("test.bar")).to.equal("Testing");
+            expect(config.get("test.a.b")).to.equal("Nested");
+            expect(config.get("baz")).to.equal(-11);
+            expect(configNew).to.equal(config);
+        })
+
+        it("should handle repeated values by keeping first entry", async () => {
+            readFsStub.returns("<config><test>A</test><test>B</test></config>");
             const config = await loadConfig("test/path/config.xml");
 
             expect(config.get("test")).to.equal("A");
