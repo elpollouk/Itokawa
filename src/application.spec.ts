@@ -51,7 +51,7 @@ describe("Application", () => {
         applyLogLevelStub = stub(commandLineArgs, "applyLogLevel");
         stub(os, "homedir").returns(TEST_HOME_DIR);
         backupCheckAndRestoreStub = stub(backup, "checkAndRestore").resolves();
-        loadConfigStub = stub(config, "loadConfig").resolves(configXML);
+        loadConfigStub = stub(config, "loadConfig").withArgs(path.join(TEST_ITOKAWA_DIR, "config.xml")).resolves(configXML);
         loggerLogLevelStub = stub(Logger, "logLevel").value(LogLevel.INFO);
         execAsyncStub = stub(exec, "execAsync").resolves("  GITREV  ");
         stub(process, "pid").value(1234);
@@ -185,11 +185,45 @@ describe("Application", () => {
 
         it("should allow for an alternative data directory to be specified via the command line args", async () => {
             args.datadir = path.join(TEST_HOME_DIR, "altpath");
+            loadConfigStub.withArgs(path.join(args.datadir, "config.xml")).resolves(configXML);
             const app = new Application();
+
             await app.start(args, true);
 
             expect(fs.existsSync(args.datadir)).to.be.true;
             expect(fs.existsSync(path.join(TEST_HOME_DIR, "altpath", "pid"))).to.be.true;
+        })
+
+        it("should allow for specifying a config profile via the command line args", async () => {
+            const profileConfg = new config.ConfigNode();
+            configXML.set("profile", "base");
+            profileConfg.set("profile", "debug");
+            stub(fs, "existsSync").withArgs(path.join(TEST_ITOKAWA_DIR, "config.debug.xml")).returns(true);
+            loadConfigStub.withArgs(path.join(TEST_ITOKAWA_DIR, "config.debug.xml"), configXML).resolves(profileConfg);
+            args.profile = "debug";
+            const app = new Application();
+
+            await app.start(args, true);
+
+            expect(app.config).to.equal(profileConfg);
+        })
+
+        it("should continue if profile XML is missing", async () => {
+            configXML.set("profile", "base");
+            stub(fs, "existsSync").withArgs(path.join(TEST_ITOKAWA_DIR, "config.debug.xml")).returns(false);
+            args.profile = "debug";
+            const app = new Application();
+
+            await app.start(args, true);
+
+            expect(app.config).to.equal(configXML);
+        })
+
+        it("should reject an invalid config profile name", async () => {
+            args.profile = "debug/config";
+            const app = new Application();
+
+            await expect(app.start(args, true)).to.be.eventually.rejectedWith("Invalid profile name 'debug/config'");
         })
     })
 

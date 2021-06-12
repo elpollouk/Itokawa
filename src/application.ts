@@ -112,6 +112,18 @@ export class Application {
 
         this._configPath = this.getDataPath("config.xml");
         this._config = await loadConfig(this._configPath);
+        if (args.profile) {
+            let profile = args.profile as string;
+            if (!profile.match(/^[A-Za-z0-9_-]+$/)) throw new Error(`Invalid profile name '${profile}'`);
+            profile = this.getDataPath(`config.${profile}.xml`);
+            if (fs.existsSync(profile)) {
+                log.info(`Loafing profile '${args.profile}' config...`);
+                this._config = await loadConfig(profile, this._config);
+            }
+            else {
+                log.warning(`Profile '${args.profile}' config not found. Ignoring.`);
+            }
+        }
 
         // Load up the feature flags from the config and the command line
         this.featureFlags.setFromConfig(this._config.getAs("featureFlags", new ConfigNode()));

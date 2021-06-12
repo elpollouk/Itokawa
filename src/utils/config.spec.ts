@@ -316,12 +316,13 @@ describe("Config", () => {
             const config = await loadConfig("test/path/config.xml");
 
             readFsStub.returns("<config><test><foo>New Foo</foo><a><b>Nested</b></a></test><baz>-11</baz></config>");
-            await loadConfig("test/path/config.xml", config);
+            const configNew = await loadConfig("test/path/config.xml", config);
 
             expect(config.get("test.foo")).to.equal("New Foo");
             expect(config.get("test.bar")).to.equal("Testing");
             expect(config.get("test.a.b")).to.equal("Nested");
             expect(config.get("baz")).to.equal(-11);
+            expect(configNew).to.equal(config);
         })
 
         it("should handle repeated values by keeping first entry", async () => {
