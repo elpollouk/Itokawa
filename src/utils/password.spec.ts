@@ -7,7 +7,7 @@ const TEST_HASH = "$scrypt512$16384$dqTFQcWIpJ0tXeUKoC8v6ZSOipUfahbaUBMhC2vfgVqh
 
 describe("Password", () => {
     describe("hash", () => {
-        it("should generate a hash in the crrect format - Default cost", async () => {
+        it("should generate a hash in the correct format - Default cost", async () => {
             const hash = await password.hash(TEST_PASSWORD);
             const parts = hash.split("$");
 
@@ -18,7 +18,7 @@ describe("Password", () => {
             expect(parts[3]).to.have.length(110);       // Salt and hash
         })
 
-        it("should generate a hash in the crrect format - Explicit cost", async () => {
+        it("should generate a hash in the correct format - Explicit cost", async () => {
             const hash = await password.hash(TEST_PASSWORD, 256);
             const parts = hash.split("$");
 
