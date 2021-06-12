@@ -8,7 +8,8 @@ export function addCommonOptions(commander: CommanderStatic) {
         .option("-d --device <device>", "Device type to open")
         .option("-c --connection-string <connectionString>", "Connection configuration string")
         .option("--log-level <loglevel>", "Log level")
-        .option("--features <feature flags>", "Pre-release feature flags");
+        .option("--features <feature flags>", "Pre-release feature flags")
+        .option("--profile <profile>", "Config override profile");
 }
 
 export function applyLogLevel(commander: CommanderStatic) {

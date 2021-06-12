@@ -311,8 +311,21 @@ describe("Config", () => {
             expect(config.has("endpoint.publish.ngrok")).to.be.true;
         })
 
-        it("should handle repeated values by keep first entry", async () => {
-            readFsStub.returns("<config><test>A</test><test>B</test></config>")
+        it("should be able to load additional data into an existing config", async () => {
+            readFsStub.returns("<config><test><foo>13</foo><bar>Testing</bar></test></config>");
+            const config = await loadConfig("test/path/config.xml");
+
+            readFsStub.returns("<config><test><foo>New Foo</foo><a><b>Nested</b></a></test><baz>-11</baz></config>");
+            await loadConfig("test/path/config.xml", config);
+
+            expect(config.get("test.foo")).to.equal("New Foo");
+            expect(config.get("test.bar")).to.equal("Testing");
+            expect(config.get("test.a.b")).to.equal("Nested");
+            expect(config.get("baz")).to.equal(-11);
+        })
+
+        it("should handle repeated values by keeping first entry", async () => {
+            readFsStub.returns("<config><test>A</test><test>B</test></config>");
             const config = await loadConfig("test/path/config.xml");
 
             expect(config.get("test")).to.equal("A");
