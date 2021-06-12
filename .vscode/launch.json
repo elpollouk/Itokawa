@@ -13,7 +13,8 @@
             ],
             "program": "${workspaceFolder}/dist/server/main.js",
             "args": [
-                "--log-level", "debug"
+                "--log-level", "debug",
+                "--profile", "debug"
             ],
         },
         {
@@ -26,6 +27,7 @@
             "program": "${workspaceFolder}/dist/cli/main.js",
             "args": [
                 "--log-level", "debug",
+                "--profile", "debug",
                 "-x", ".test.txt"
             ],
         },
