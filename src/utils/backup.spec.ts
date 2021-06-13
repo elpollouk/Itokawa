@@ -17,7 +17,14 @@ const CONFIG_HASH = "9e81a9ca805ab7dc46845c6aef5d5a8d1a448da6";
 const DATABASE_HASH = "2f12f4f6899f5eff776a97fde510c1618c5af4d9";
 
 function rmDir(path: string) {
-    if (fs.existsSync(path)) fs.rmdirSync(path, {recursive: true});
+    if (fs.existsSync(path)) {
+        if (fs.rmSync) {
+            fs.rmSync(path, { recursive: true, force: true });
+        }
+        else {
+            fs.rmdirSync(path, { recursive: true });
+        }
+    }
 }
 
 async function hashFile(filePath: string) {
