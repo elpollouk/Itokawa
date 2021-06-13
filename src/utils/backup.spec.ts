@@ -202,17 +202,23 @@ describe("Backup", () => {
             expect(backupVersion).to.eql(packageVersion);
         })
 
-        it("should reject if input directory is invalid", async () => {
-            await expect(backup.createBackup(_db, "invalidDir", TEST_OUTPUT_DIR)).to.be.eventually.rejectedWith("Invalid source path");
-        });
-
-        it("should create output directory if needed", async () => {
-            rmDir(TEST_OUTPUT_DIR);
+        it("should cope with the output directly already existing", async () => {
+            fs.mkdirSync(TEST_OUTPUT_DIR);
 
             const backupZipPath = await backup.createBackup(_db, TEST_BACKUP_DIR, TEST_OUTPUT_DIR);
 
             expect(fs.existsSync(backupZipPath)).to.be.true;
         });
+
+        it("should reject if input directory is invalid", async () => {
+            await expect(backup.createBackup(_db, "invalidDir", TEST_OUTPUT_DIR)).to.be.eventually.rejectedWith("Invalid source path");
+        });
+
+        it("should reject if it's unable to write to the output directory", async () => {
+            rmDir(TEST_OUTPUT_DIR);
+            fs.writeFileSync(TEST_OUTPUT_DIR, "Not a directory");
+            await expect(backup.createBackup(_db, TEST_BACKUP_DIR, TEST_OUTPUT_DIR)).to.be.eventually.rejected;
+        })
     })
 
     describe("checkAndRestore", () => {

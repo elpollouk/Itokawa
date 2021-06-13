@@ -29,11 +29,11 @@ async function ensureDir(path: string): Promise<void> {
 }
 
 async function withTempDir(cb:(tempDir:string)=>Promise<void>) {
-    const tempDir = await fsp.mkdtemp("Itokawa-");
+    const tempDir = await fsp.mkdtemp("temp-");
     try {
         await cb(tempDir);
     }
-    catch {
+    finally {
         await fsp.rmdir(tempDir, {
             recursive: true
         })
@@ -41,21 +41,32 @@ async function withTempDir(cb:(tempDir:string)=>Promise<void>) {
 }
 
 function writeZip(zip: AdmZip, path: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        zip.writeZip(path, (err) => {
-            if (err) reject(err);
-            else resolve();
+    return new Promise<void>((resolve) => {
+        zip.writeZip(path, () => {
+            resolve();
         })
     });
 }
 
-export async function createBackup(db: Database, dataDir: string, outputDir): Promise<string> {
+export async function createBackup(db: Database, dataDir: string, outputDir: string): Promise<string> {
     const now = timestampShort();
     const outputPath = `${outputDir}/Itokawa_${packageVersion}_${now}.zip`;
 
+    if (!fs.existsSync(dataDir)) throw new Error("Invalid source path");
+
     await ensureDir(outputDir);
     await withTempDir(async (tempDir: string) => {
+        const dbBackupFile = tempDir + "/data.sqlite3";
+        await db.backup(dbBackupFile);
+
+        const dataFiles = await fsp.readdir(dataDir);
+
         const zip = new AdmZip();
+        zip.addLocalFile(dbBackupFile);
+        for (const dataFile of dataFiles) {
+            if (shouldSkip(dataFile)) continue;
+            zip.addLocalFile(`${dataDir}/${dataFile}`);
+        }
         await writeZip(zip, outputPath);
     });
 
