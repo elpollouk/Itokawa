@@ -9,23 +9,29 @@ import * as express from "express";
 import { Express } from "express-serve-static-core";
 import * as cookieParser from "cookie-parser";
 import * as fs from "fs";
+import * as backup from "../../utils/backup";
 import { application } from "../../application";
 import { Permissions } from "../sessionmanager";
 import * as backupRouter from "./backupRouter";
+import { PATH_BACKUP } from "../../common/constants";
+import { Database } from "../../model/database";
 
+const Q_CLASS_LINKBUTTON = ".linkButton";
+const Q_CLASS_MESSAGE = ".message";
+const Q_CLASS_ERROR = ".errorMessage";
 
-describe("Backup Route", () => {
+describe("backupRouter", () => {
     let _dom: JSDOM = null;
     let _app: Express;
-    let _backupList: string[] = null;
-    let _fsExists: SinonStub = null;
     let _smHasPermission: SinonStub = null;
+    let _getDataPath: SinonStub = null;
 
     async function get(path: string) : Promise<void> {
         const response = await request(_app)
             .get(path)
             .set("Cookie", ["sessionId=mock_session"])
             .expect(200);
+        //console.log(response.text)
         _dom = new JSDOM(response.text);
     }
 
@@ -34,17 +40,15 @@ describe("Backup Route", () => {
     }
 
     beforeEach(async () => {
-        _backupList = [];
-
         _app = express();
         _app.set('view engine', 'pug');
         _app.set('views','./views');
         _app.use(cookieParser());
         _app.use("/", await backupRouter.getRouter());
 
-        stub(application, "getDataPath").returns(".test.backups/backups");
-        _fsExists = stub(fs, "existsSync").withArgs(".test.backups/backups").returns(true);
-        stub(fs.promises, "readdir").callsFake(() => Promise.resolve(_backupList) as any);
+        _getDataPath = stub(application, "getDataPath")
+            .withArgs().returns(".test.backups")
+            .withArgs("backups").returns(".test.backups/backups");
         _smHasPermission = stub(application.sessionManager, "hasPermission")
             .withArgs(Permissions.SERVER_BACKUP, "mock_session")
             .resolves(true);
@@ -59,10 +63,19 @@ describe("Backup Route", () => {
     })
 
     describe("/", () => {
+        let _backupList: string[] = null;
+        let _fsExists: SinonStub = null;
+
+        beforeEach(() => {
+            _backupList = [];
+            _fsExists = stub(fs, "existsSync").withArgs(".test.backups/backups").returns(true);
+            stub(fs.promises, "readdir").callsFake(() => Promise.resolve(_backupList) as any);
+        });
+
         it("should return the root page with a 'Create Backups' button", async () => {
             await get("/");
 
-            const button = querySelector<HTMLAnchorElement>(".linkButton");
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
             expect(button.href).to.equal("createBackup");
         }).slow(2000).timeout(3000)
 
@@ -100,7 +113,7 @@ describe("Backup Route", () => {
                 const backupName = element.querySelector(".title").textContent;
                 expect(backupName).to.eql(expectedName);
 
-                const buttons = element.querySelectorAll<HTMLAnchorElement>(".linkButton");
+                const buttons = element.querySelectorAll<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
                 expect(buttons[0].href).to.equal(`restore/${expectedName}`);
                 expect(buttons[1].href).to.equal(`delete/${expectedName}`);
             }
@@ -117,4 +130,182 @@ describe("Backup Route", () => {
             await expect(get("/")).to.eventually.be.rejected;
         })
     });
+
+    describe("/createBackup", () => {
+        let _backupCreate: SinonStub = null;
+        const _db: Database = {} as Database;
+
+        beforeEach(() => {
+            _backupCreate = stub(backup, "createBackup").resolves(".test.backups/backups/test.zip");
+            stub(application, "database").value(_db);
+        })
+
+        it("should report a successful backup", async () => {
+            await get("/createBackup");
+
+            expect(_backupCreate.callCount).to.equal(1);
+            expect(_backupCreate.lastCall.args).to.eql([
+                _db,
+                ".test.backups",
+                ".test.backups/backups"
+            ]);
+
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+            expect(button.href).to.equal(PATH_BACKUP);
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal(".test.backups/backups/test.zip created.");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("");
+        }).slow(2000).timeout(3000)
+
+        it("should report an error if backup failed", async () => {
+            _backupCreate.rejects(new Error("Test Error"));
+            await get("/createBackup");
+
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+            expect(button.href).to.equal(PATH_BACKUP);
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("Error: Test Error");
+        }).slow(2000).timeout(3000)
+
+        it("should reject if has no permission", async () => {
+            _smHasPermission.resolves(false);
+            await expect(get("/createBackup")).to.eventually.be.rejected;
+        })
+    })
+
+    describe("/deleteBackup", () => {
+        let _fsExists: SinonStub = null;
+        let _fsUnlink: SinonStub = null;
+
+        beforeEach(() => {
+            _fsExists = stub(fs, "existsSync").returns(true);
+            _fsUnlink = stub(fs.promises, "unlink").resolves();
+        })
+
+        it("should delete existing backup", async () => {
+            await get("/deleteBackup/backup.zip");
+
+            expect(_fsExists.callCount).to.eql(1);
+            expect(_fsExists.lastCall.args).to.eql([".test.backups/backups/backup.zip"]);
+            expect(_fsUnlink.callCount).to.eql(1);
+            expect(_fsUnlink.lastCall.args).to.eql([".test.backups/backups/backup.zip"]);
+
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+            expect(button.href).to.equal(PATH_BACKUP);
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("Backup deleted.");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("");
+        }).slow(2000).timeout(3000)
+
+        it("should handle non-existent backup", async () => {
+            _fsExists.returns(false);
+
+            await get("/deleteBackup/backup.zip");
+
+            expect(_fsExists.callCount).to.eql(1);
+            expect(_fsExists.lastCall.args).to.eql([".test.backups/backups/backup.zip"]);
+            expect(_fsUnlink.callCount).to.eql(0);
+
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+            expect(button.href).to.equal(PATH_BACKUP);
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("Backup deleted.");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("");
+        }).slow(2000).timeout(3000)
+
+        it("should reject non-zip file", async () => {
+             await get("/deleteBackup/spurious.txt");
+
+            expect(_fsExists.callCount).to.eql(0);
+            expect(_fsUnlink.callCount).to.eql(0);
+
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+            expect(button.href).to.equal(PATH_BACKUP);
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("Error: Invalid backup");
+        }).slow(2000).timeout(3000)
+
+        it("should reject invalid backup name", async () => {
+            await get("/deleteBackup/%2E%2E%2Fconfig.xml");
+
+           expect(_fsExists.callCount).to.eql(0);
+           expect(_fsUnlink.callCount).to.eql(0);
+
+           const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+           expect(button.href).to.equal(PATH_BACKUP);
+           const message = querySelector(Q_CLASS_MESSAGE).textContent;
+           expect(message).to.equal("");
+           const error = querySelector(Q_CLASS_ERROR).textContent;
+           expect(error).to.equal("Error: Invalid backup");
+       }).slow(2000).timeout(3000)
+
+        it("should reject if has no permission", async () => {
+            _smHasPermission.resolves(false);
+            await expect(get("/deleteBackup/backup.zip")).to.eventually.be.rejected;
+        }).slow(2000).timeout(3000)
+    })
+
+    describe("/restoreBackup", () => {
+        let _fsCopy: SinonStub = null;
+
+        beforeEach(() => {
+            _getDataPath.withArgs("restore.zip").returns(".test.backups/restore.zip");
+            _fsCopy = stub(fs.promises, "copyFile").resolves();
+        })
+
+        it("should copy backup to data directory", async () => {
+            await get("/restoreBackup/backup.zip");
+
+            expect(_fsCopy.callCount).to.eql(1);
+            expect(_fsCopy.lastCall.args).to.eql([
+                ".test.backups/backups/backup.zip",
+                ".test.backups/restore.zip"
+            ]);
+
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+            expect(button.href).to.equal(PATH_BACKUP);
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("Backup copied, please restart Itokawa to apply.");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("");
+        }).slow(2000).timeout(3000)
+
+        it("should reject non-zip file", async () => {
+            await get("/restoreBackup/spurious.txt");
+
+            expect(_fsCopy.callCount).to.eql(0);
+
+           const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+           expect(button.href).to.equal(PATH_BACKUP);
+           const message = querySelector(Q_CLASS_MESSAGE).textContent;
+           expect(message).to.equal("");
+           const error = querySelector(Q_CLASS_ERROR).textContent;
+           expect(error).to.equal("Error: Invalid backup");
+       }).slow(2000).timeout(3000)
+
+       it("should reject invalid backup name", async () => {
+           await get("/restoreBackup/%2E%2E%2Fconfig.xml");
+
+           expect(_fsCopy.callCount).to.eql(0);
+
+          const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+          expect(button.href).to.equal(PATH_BACKUP);
+          const message = querySelector(Q_CLASS_MESSAGE).textContent;
+          expect(message).to.equal("");
+          const error = querySelector(Q_CLASS_ERROR).textContent;
+          expect(error).to.equal("Error: Invalid backup");
+      }).slow(2000).timeout(3000)
+
+       it("should reject if has no permission", async () => {
+           _smHasPermission.resolves(false);
+           await expect(get("/restoreBackup/backup.zip")).to.eventually.be.rejected;
+       }).slow(2000).timeout(3000)
+    })
 })
