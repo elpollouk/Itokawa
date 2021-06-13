@@ -6,7 +6,8 @@ html
         link(rel="stylesheet", href="/common.css")
     body
         div
-            div.errorMessage #{errorMessage}
-            div.message #{message}
-            div.buttons
-                a.linkButton(href=okLink) Ok
+            div.uiContainer
+                div.errorMessage #{errorMessage}
+                div.message #{message}
+                div.buttons
+                    a.linkButton(href=okLink) Ok

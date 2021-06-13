@@ -76,7 +76,7 @@ describe("backupRouter", () => {
             await get("/");
 
             const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
-            expect(button.href).to.equal("createBackup");
+            expect(button.href).to.equal("/backup/create");
         }).slow(2000).timeout(3000)
 
         it("should return an empty list of backups if the backup directory doesn't exist", async () => {
@@ -114,8 +114,8 @@ describe("backupRouter", () => {
                 expect(backupName).to.eql(expectedName);
 
                 const buttons = element.querySelectorAll<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
-                expect(buttons[0].href).to.equal(`restore/${expectedName}`);
-                expect(buttons[1].href).to.equal(`delete/${expectedName}`);
+                expect(buttons[0].href).to.equal(`/backup/restore/${expectedName}`);
+                expect(buttons[1].href).to.equal(`/backup/delete/${expectedName}`);
             }
 
             const backupList = querySelector(".backups");
@@ -131,7 +131,7 @@ describe("backupRouter", () => {
         })
     });
 
-    describe("/createBackup", () => {
+    describe("/create", () => {
         let _backupCreate: SinonStub = null;
         const _db: Database = {} as Database;
 
@@ -141,7 +141,7 @@ describe("backupRouter", () => {
         })
 
         it("should report a successful backup", async () => {
-            await get("/createBackup");
+            await get("/create");
 
             expect(_backupCreate.callCount).to.equal(1);
             expect(_backupCreate.lastCall.args).to.eql([
@@ -160,7 +160,7 @@ describe("backupRouter", () => {
 
         it("should report an error if backup failed", async () => {
             _backupCreate.rejects(new Error("Test Error"));
-            await get("/createBackup");
+            await get("/create");
 
             const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
             expect(button.href).to.equal(PATH_BACKUP);
@@ -172,11 +172,11 @@ describe("backupRouter", () => {
 
         it("should reject if has no permission", async () => {
             _smHasPermission.resolves(false);
-            await expect(get("/createBackup")).to.eventually.be.rejected;
+            await expect(get("/create")).to.eventually.be.rejected;
         })
     })
 
-    describe("/deleteBackup", () => {
+    describe("/delete", () => {
         let _fsExists: SinonStub = null;
         let _fsUnlink: SinonStub = null;
 
@@ -186,7 +186,7 @@ describe("backupRouter", () => {
         })
 
         it("should delete existing backup", async () => {
-            await get("/deleteBackup/backup.zip");
+            await get("/delete/backup.zip");
 
             expect(_fsExists.callCount).to.eql(1);
             expect(_fsExists.lastCall.args).to.eql([".test.backups/backups/backup.zip"]);
@@ -204,7 +204,7 @@ describe("backupRouter", () => {
         it("should handle non-existent backup", async () => {
             _fsExists.returns(false);
 
-            await get("/deleteBackup/backup.zip");
+            await get("/delete/backup.zip");
 
             expect(_fsExists.callCount).to.eql(1);
             expect(_fsExists.lastCall.args).to.eql([".test.backups/backups/backup.zip"]);
@@ -219,7 +219,7 @@ describe("backupRouter", () => {
         }).slow(2000).timeout(3000)
 
         it("should reject non-zip file", async () => {
-             await get("/deleteBackup/spurious.txt");
+             await get("/delete/spurious.txt");
 
             expect(_fsExists.callCount).to.eql(0);
             expect(_fsUnlink.callCount).to.eql(0);
@@ -233,7 +233,7 @@ describe("backupRouter", () => {
         }).slow(2000).timeout(3000)
 
         it("should reject invalid backup name", async () => {
-            await get("/deleteBackup/%2E%2E%2Fconfig.xml");
+            await get("/delete/%2E%2E%2Fconfig.xml");
 
            expect(_fsExists.callCount).to.eql(0);
            expect(_fsUnlink.callCount).to.eql(0);
@@ -248,11 +248,11 @@ describe("backupRouter", () => {
 
         it("should reject if has no permission", async () => {
             _smHasPermission.resolves(false);
-            await expect(get("/deleteBackup/backup.zip")).to.eventually.be.rejected;
+            await expect(get("/delete/backup.zip")).to.eventually.be.rejected;
         }).slow(2000).timeout(3000)
     })
 
-    describe("/restoreBackup", () => {
+    describe("/restore", () => {
         let _fsCopy: SinonStub = null;
 
         beforeEach(() => {
@@ -261,7 +261,7 @@ describe("backupRouter", () => {
         })
 
         it("should copy backup to data directory", async () => {
-            await get("/restoreBackup/backup.zip");
+            await get("/restore/backup.zip");
 
             expect(_fsCopy.callCount).to.eql(1);
             expect(_fsCopy.lastCall.args).to.eql([
@@ -278,7 +278,7 @@ describe("backupRouter", () => {
         }).slow(2000).timeout(3000)
 
         it("should reject non-zip file", async () => {
-            await get("/restoreBackup/spurious.txt");
+            await get("/restore/spurious.txt");
 
             expect(_fsCopy.callCount).to.eql(0);
 
@@ -291,7 +291,7 @@ describe("backupRouter", () => {
        }).slow(2000).timeout(3000)
 
        it("should reject invalid backup name", async () => {
-           await get("/restoreBackup/%2E%2E%2Fconfig.xml");
+           await get("/restore/%2E%2E%2Fconfig.xml");
 
            expect(_fsCopy.callCount).to.eql(0);
 
@@ -305,7 +305,7 @@ describe("backupRouter", () => {
 
        it("should reject if has no permission", async () => {
            _smHasPermission.resolves(false);
-           await expect(get("/restoreBackup/backup.zip")).to.eventually.be.rejected;
+           await expect(get("/restore/backup.zip")).to.eventually.be.rejected;
        }).slow(2000).timeout(3000)
     })
 })

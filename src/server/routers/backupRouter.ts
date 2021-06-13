@@ -6,6 +6,8 @@ import { Permissions } from "../sessionmanager";
 import { PATH_BACKUP } from "../../common/constants";
 import * as backup from "../../utils/backup";
 
+const VALID_BACKUP = /^[\w\.-]+\.zip$/;
+
 const _router = express.Router();
 _router.use(requirePermission(Permissions.SERVER_BACKUP))
 
@@ -26,7 +28,7 @@ _router.route("/")
     });
 });
 
-_router.route("/createBackup")
+_router.route("/create")
 .get(async (_, res) => {
     try {
         const backupFile = await backup.createBackup(
@@ -48,11 +50,11 @@ _router.route("/createBackup")
     }
 });
 
-_router.route("/deleteBackup/:backup")
+_router.route("/delete/:backup")
 .get(async (req, res) => {
     try {
         const backup = req.params.backup;
-        if (!backup.match(/^[\w\.]+\.zip$/)) throw new Error("Invalid backup");
+        if (!backup.match(VALID_BACKUP)) throw new Error("Invalid backup");
 
         const backupDir = application.getDataPath("backups");
         const backupFile = `${backupDir}/${backup}`
@@ -73,11 +75,11 @@ _router.route("/deleteBackup/:backup")
     }
 });
 
-_router.route("/restoreBackup/:backup")
+_router.route("/restore/:backup")
 .get(async (req, res) => {
     try {
         const backup = req.params.backup;
-        if (!backup.match(/^[\w\.]+\.zip$/)) throw new Error("Invalid backup");
+        if (!backup.match(VALID_BACKUP)) throw new Error("Invalid backup");
 
         const backupDir = application.getDataPath("backups");
         const backupFile = `${backupDir}/${backup}`

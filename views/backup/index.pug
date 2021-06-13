@@ -5,11 +5,14 @@ html
         link(rel="stylesheet", href="/common.css")
     body
         div
-            div.backups
-                each backup in backups
-                    div
-                        span.title #{backup}
-                        a.linkButton(href="restore/" + backup) Restore
-                        a.linkButton(href="delete/" + backup) Delete
-            div
-                a.linkButton(href="createBackup") Create Backup
+            div.uiContainer
+                div.backups
+                    div.title Backups:
+                    each backup in backups
+                        div.backupContainer
+                            span.title #{backup}
+                            div.backupControls
+                                a.linkButton(href="/backup/restore/" + backup) &lt;
+                                a.linkButton(href="/backup/delete/" + backup) X
+                div.buttons
+                    a.linkButton(href="/backup/create") Create Backup

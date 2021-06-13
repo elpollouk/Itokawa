@@ -38,7 +38,7 @@ export enum Permissions {
 }
 
 export const ROLES: { [key: string]: string[] } = {
-    "SERVER_ADMIN": [ Permissions.SERVER_CONTROL, Permissions.SERVER_UPDATE, Permissions.APP_UPDATE, Permissions.SERVER_CONFIG ],
+    "SERVER_ADMIN": [ Permissions.SERVER_CONTROL, Permissions.SERVER_UPDATE, Permissions.SERVER_BACKUP, Permissions.APP_UPDATE, Permissions.SERVER_CONFIG ],
     "USER_ADMIN": [ Permissions.SESSION_MANAGE ],
     "TRAIN_ADMIN": [ Permissions.TRAIN_EDIT, Permissions.TRAIN_SELECT ]
 };

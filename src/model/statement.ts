@@ -13,6 +13,7 @@ export class Statement<ResultType=any> {
                     reject(err);
                 }
                 else {
+                    this._statement.reset();
                     const result = transform(row);
                     resolve(result);
                 }
