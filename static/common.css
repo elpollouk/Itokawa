@@ -63,7 +63,7 @@ a.linkButton:hover {
     text-align: center;
 }
 
-.backups > .title {
+.uiContainer > .title {
     font-size: larger;
     font-weight: bold;
 }
