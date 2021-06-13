@@ -1,8 +1,12 @@
 import AdmZip = require("adm-zip");
 import { Logger } from "./logger";
 import * as fs from "fs";
+const fsp = fs.promises;
 import * as path from "path";
 import { Database } from "../model/database";
+import { timestampShort } from "../common/time";
+//import * as dateFormat from "date"
+let packageVersion = require('../../package.json').version;
 
 const log = new Logger("Backup");
 
@@ -19,8 +23,43 @@ function shouldSkip(filename: string): boolean {
     return true;
 }
 
-export async function createBackup(db: Database, dataPath: string, outputPath: string, tempPath: string): Promise<string> {
-    throw new Error("Not Implemented");
+async function ensureDir(path: string): Promise<void> {
+    if (fs.existsSync(path)) return;
+    await fsp.mkdir(path);
+}
+
+async function withTempDir(cb:(tempDir:string)=>Promise<void>) {
+    const tempDir = await fsp.mkdtemp("Itokawa-");
+    try {
+        await cb(tempDir);
+    }
+    catch {
+        await fsp.rmdir(tempDir, {
+            recursive: true
+        })
+    }
+}
+
+function writeZip(zip: AdmZip, path: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        zip.writeZip(path, (err) => {
+            if (err) reject(err);
+            else resolve();
+        })
+    });
+}
+
+export async function createBackup(db: Database, dataDir: string, outputDir): Promise<string> {
+    const now = timestampShort();
+    const outputPath = `${outputDir}/Itokawa_${packageVersion}_${now}.zip`;
+
+    await ensureDir(outputDir);
+    await withTempDir(async (tempDir: string) => {
+        const zip = new AdmZip();
+        await writeZip(zip, outputPath);
+    });
+
+    return outputPath;
 }
 
 export async function restore(archivePath: string, targetDir: string) {
