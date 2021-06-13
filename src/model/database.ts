@@ -211,6 +211,12 @@ export class Database {
         });
     }
 
+    async backup(path: string): Promise<void> {
+        await this.run("VACUUM INTO $path", {
+            $path: path
+        });
+    }
+
     async openRepository<ItemType, RepositoryType extends Repository<ItemType> = Repository<ItemType>>(repoType: RepositoryConstructable<ItemType, RepositoryType>): Promise<RepositoryType> {
         if (this._repositories.has(repoType))
             return this._repositories.get(repoType) as RepositoryType;

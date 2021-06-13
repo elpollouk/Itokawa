@@ -208,4 +208,48 @@ describe("Database", () => {
             expect(value).to.be.undefined;
         })
     })
+
+    describe("backup", () => {
+        const BACKUP_DB = ".test.backup.sqlite3";
+        const BACKUP_DIR = ".test.backup";
+
+        beforeEach(() => {
+            if (fs.existsSync(BACKUP_DB)) {
+                fs.unlinkSync(BACKUP_DB);
+            }
+            if (fs.existsSync(BACKUP_DIR)) {
+                if (fs.rmSync) {
+                    fs.rmSync(BACKUP_DIR, {
+                        force: true
+                    });
+                }
+                else {
+                    fs.rmdirSync(BACKUP_DIR, {
+                        recursive: true,
+                    });
+                }
+            }
+        })
+
+        it("should create a new backup file", async () => {
+            expect(fs.existsSync(BACKUP_DB)).to.be.false;
+
+            await _db.backup(BACKUP_DB);
+
+            expect(fs.existsSync(BACKUP_DB)).to.be.true;
+        })
+
+        it("should create a new backup file into a sub directory", async () => {
+            const path = BACKUP_DIR + "/backup.sqlite3";
+            fs.mkdirSync(BACKUP_DIR);
+
+            await _db.backup(path);
+
+            expect(fs.existsSync(path)).to.be.true;
+        })
+
+        it("should reject invalid paths", async () => {
+            await expect(_db.backup("/")).to.be.eventually.rejected;
+        })
+    })
 })

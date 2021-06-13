@@ -19,7 +19,7 @@ function shouldSkip(filename: string): boolean {
     return true;
 }
 
-export async function createBackup(db: Database, dataPath: string, outputPath: string): Promise<string> {
+export async function createBackup(db: Database, dataPath: string, outputPath: string, tempPath: string): Promise<string> {
     throw new Error("Not Implemented");
 }
 
