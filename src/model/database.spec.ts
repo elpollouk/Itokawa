@@ -210,8 +210,8 @@ describe("Database", () => {
     })
 
     describe("backup", () => {
-        const BACKUP_DB = ".test.backup.sqlite3";
-        const BACKUP_DIR = ".test.backup";
+        const BACKUP_DB = ".test.dbbackup.sqlite3";
+        const BACKUP_DIR = ".test.dbbackup";
 
         beforeEach(() => {
             if (fs.existsSync(BACKUP_DB)) {
@@ -220,7 +220,7 @@ describe("Database", () => {
             if (fs.existsSync(BACKUP_DIR)) {
                 if (fs.rmSync) {
                     fs.rmSync(BACKUP_DIR, {
-                        force: true
+                        force: true, recursive: true
                     });
                 }
                 else {
