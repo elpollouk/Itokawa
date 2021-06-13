@@ -2,12 +2,14 @@ html
     head
         meta(name="viewport", content="width=device-width, initial-scale=1")
         title Itokawa Backup
-        link(rel="stylesheet", href="/auth/auth.css")
+        link(rel="stylesheet", href="/common.css")
     body
         div
             div.backups
                 each backup in backups
                     div
                         span.title #{backup}
+                        a.linkButton(href="restore/" + backup) Restore
+                        a.linkButton(href="delete/" + backup) Delete
             div
                 a.linkButton(href="createBackup") Create Backup
