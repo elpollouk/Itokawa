@@ -1,0 +1,13 @@
+html
+    head
+        meta(name="viewport", content="width=device-width, initial-scale=1")
+        title Itokawa Backup
+        link(rel="stylesheet", href="/auth/auth.css")
+    body
+        div
+            div.backups
+                each backup in backups
+                    div
+                        span.title #{backup}
+            div
+                a.linkButton(href="createBackup") Create Backup
