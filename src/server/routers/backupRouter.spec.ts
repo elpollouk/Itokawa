@@ -272,7 +272,7 @@ describe("backupRouter", () => {
             const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
             expect(button.href).to.equal(PATH_BACKUP);
             const message = querySelector(Q_CLASS_MESSAGE).textContent;
-            expect(message).to.equal("Backup copied, please restart Itokawa to apply.");
+            expect(message).to.equal("Backup staged, please restart Itokawa to apply.");
             const error = querySelector(Q_CLASS_ERROR).textContent;
             expect(error).to.equal("");
         }).slow(2000).timeout(3000)

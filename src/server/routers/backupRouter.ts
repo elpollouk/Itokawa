@@ -88,7 +88,7 @@ _router.route("/restore/:backup")
         await fs.promises.copyFile(backupFile, targetFile);
 
         res.render("result", {
-            message: "Backup copied, please restart Itokawa to apply.",
+            message: "Backup staged, please restart Itokawa to apply.",
             okLink: PATH_BACKUP
         });
     }
