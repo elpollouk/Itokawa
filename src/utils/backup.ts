@@ -2,6 +2,7 @@ import AdmZip = require("adm-zip");
 import { Logger } from "./logger";
 import * as fs from "fs";
 import * as path from "path";
+import { Database } from "../model/database";
 
 const log = new Logger("Backup");
 
@@ -16,6 +17,10 @@ function shouldSkip(filename: string): boolean {
             return false;
 
     return true;
+}
+
+export async function createBackup(db: Database, dataPath: string, outputPath: string): Promise<string> {
+    throw new Error("Not Implemented");
 }
 
 export async function restore(archivePath: string, targetDir: string) {

@@ -32,7 +32,7 @@ describe("Backup Route", () => {
             await request(app)
                 .get("/")
                 .expect(200);
-        })
+        }).slow(500);
     });
 
     it("test", () => {
@@ -40,5 +40,5 @@ describe("Backup Route", () => {
         const list = dom.window.document.querySelector(".list");
 
         expect(list.childNodes[1].textContent).to.equal("Bar");
-    })
+    }).slow(400)
 })
