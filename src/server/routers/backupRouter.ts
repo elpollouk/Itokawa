@@ -103,3 +103,7 @@ _router.route("/restore/:backup")
 export async function getRouter(): Promise<express.Router> {
     return _router;
 }
+
+export function setDownloadDir(path: string) {
+    _router.use("/download", express.static(path));
+}

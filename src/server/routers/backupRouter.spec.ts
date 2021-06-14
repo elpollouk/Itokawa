@@ -9,6 +9,7 @@ import * as express from "express";
 import { Express } from "express-serve-static-core";
 import * as cookieParser from "cookie-parser";
 import * as fs from "fs";
+import { cleanDir } from "../../utils/testUtils";
 import * as backup from "../../utils/backup";
 import { application } from "../../application";
 import { Permissions } from "../sessionmanager";
@@ -26,13 +27,14 @@ describe("backupRouter", () => {
     let _smHasPermission: SinonStub = null;
     let _getDataPath: SinonStub = null;
 
-    async function get(path: string) : Promise<void> {
+    async function get(path: string) : Promise<string> {
         const response = await request(_app)
             .get(path)
             .set("Cookie", ["sessionId=mock_session"])
             .expect(200);
         //console.log(response.text)
         _dom = new JSDOM(response.text);
+        return response.text;
     }
 
     function querySelector<E extends Element = Element>(query: string): E {
@@ -307,5 +309,28 @@ describe("backupRouter", () => {
            _smHasPermission.resolves(false);
            await expect(get("/restore/backup.zip")).to.eventually.be.rejectedWith(/404/);
        }).slow(2000).timeout(3000)
+    })
+
+    describe("/download", () => {
+        beforeEach(() => {
+            const DOWNLOAD_DIR = ".test.backups";
+            cleanDir(DOWNLOAD_DIR);
+            fs.writeFileSync(`${DOWNLOAD_DIR}/backup.zip`, "Mock backup");
+            backupRouter.setDownloadDir(DOWNLOAD_DIR);
+        })
+
+        it("should download the specified file", async () => {
+            const data = await get("/download/backup.zip");
+            expect(data).to.equal("Mock backup");
+        }).slow(2000).timeout(3000)
+
+        it("should return 404 for non-existent files", async () => {
+            await expect(get("/download/foo.zip")).to.be.eventually.rejectedWith(/404/);
+        }).slow(2000).timeout(3000)
+
+        it("should reject if has no permission", async () => {
+            _smHasPermission.resolves(false);
+            await expect(get("/download/backup.zip")).to.eventually.be.rejectedWith(/404/);
+        }).slow(2000).timeout(3000)
     })
 })

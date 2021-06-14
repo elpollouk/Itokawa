@@ -2,6 +2,7 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
 import * as fs from "fs";
+import { rmDir } from "../utils/testUtils";
 import * as crypto from "crypto";
 import * as backup from "./backup";
 import { Database } from "../model/database";
@@ -15,17 +16,6 @@ const CONFIG_DEBUG_HASH = "7f27cd6865866f02a051e8eb418548c53df113d3";
 const CONFIG_ELINK_HASH = "3457560f5c753e94814557fa4364fefcc20d9aeb";
 const CONFIG_HASH = "9e81a9ca805ab7dc46845c6aef5d5a8d1a448da6";
 const DATABASE_HASH = "2f12f4f6899f5eff776a97fde510c1618c5af4d9";
-
-function rmDir(path: string) {
-    if (fs.existsSync(path)) {
-        if (fs.rmSync) {
-            fs.rmSync(path, { recursive: true, force: true });
-        }
-        else {
-            fs.rmdirSync(path, { recursive: true });
-        }
-    }
-}
 
 async function hashFile(filePath: string) {
     return new Promise<string>((resolve, reject) => {
