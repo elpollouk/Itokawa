@@ -55,6 +55,8 @@ async function main()
     app.use("/auth", await authRouter.getRouter());
     app.use("/backup", await backupRouter.getRouter());
 
+    backupRouter.setDownloadDir(application.getDataPath("backups"));
+
     let port = args.port || application.config.get("server.port", 8080);
     if (typeof(port) === "string") port = parseIntStrict(port);
 

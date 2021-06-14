@@ -10,7 +10,7 @@ html
                 div.backups
                     each backup in backups
                         div.backupContainer
-                            span.title #{backup}
+                            a.title(href="/backup/download/" + backup) #{backup}
                             div.backupControls
                                 a.linkButton(href="/backup/restore/" + backup) &lt;
                                 a.linkButton(href="/backup/delete/" + backup) X
