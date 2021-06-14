@@ -211,9 +211,13 @@ export class Database {
         });
     }
 
-    async backup(path: string): Promise<void> {
-        await this.run("VACUUM INTO $path", {
-            $path: path
+    backup(path: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this._db.serialize(() => {
+                this.run("VACUUM INTO $path", {
+                    $path: path
+                }).then(() => resolve(), reject);
+            });
         });
     }
 
