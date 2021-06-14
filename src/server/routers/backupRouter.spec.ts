@@ -21,6 +21,8 @@ const Q_CLASS_LINKBUTTON = ".linkButton";
 const Q_CLASS_MESSAGE = ".message";
 const Q_CLASS_ERROR = ".errorMessage";
 
+const TEST_DIR = ".test.backups";
+
 describe("backupRouter", () => {
     let _dom: JSDOM = null;
     let _app: Express;
@@ -32,7 +34,18 @@ describe("backupRouter", () => {
             .get(path)
             .set("Cookie", ["sessionId=mock_session"])
             .expect(200);
-        //console.log(response.text)
+
+        _dom = new JSDOM(response.text);
+        return response.text;
+    }
+
+    async function post(path: string, filename: string, data: Buffer) : Promise<string> {
+        const response = await request(_app)
+            .post(path)
+            .set("Cookie", ["sessionId=mock_session"])
+            .attach("file", data, filename)
+            .expect(200);
+
         _dom = new JSDOM(response.text);
         return response.text;
     }
@@ -49,11 +62,14 @@ describe("backupRouter", () => {
         _app.use("/", await backupRouter.getRouter());
 
         _getDataPath = stub(application, "getDataPath")
-            .withArgs().returns(".test.backups")
-            .withArgs("backups").returns(".test.backups/backups");
+            .withArgs().returns(TEST_DIR)
+            .withArgs("backups").returns(`${TEST_DIR}/backups`);
         _smHasPermission = stub(application.sessionManager, "hasPermission")
             .withArgs(Permissions.SERVER_BACKUP, "mock_session")
             .resolves(true);
+
+        cleanDir(TEST_DIR);
+        backupRouter.setDownloadDir(TEST_DIR);
     })
 
     afterEach(() => {
@@ -70,7 +86,7 @@ describe("backupRouter", () => {
 
         beforeEach(() => {
             _backupList = [];
-            _fsExists = stub(fs, "existsSync").withArgs(".test.backups/backups").returns(true);
+            _fsExists = stub(fs, "existsSync").withArgs(`${TEST_DIR}/backups`).returns(true);
             stub(fs.promises, "readdir").callsFake(() => Promise.resolve(_backupList) as any);
         });
 
@@ -127,9 +143,30 @@ describe("backupRouter", () => {
 
         }).slow(2000).timeout(3000)
 
-        it("should reject if has no permission", async () => {
+        it("should accept a file upload", async () => {
+            const buffer = Buffer.from("Mock backup");
+            await post("/", "c:\\fake_path\\uploaded_backup.zip", buffer);
+
+            const fileContent = fs.readFileSync(`${TEST_DIR}/uploaded_backup.zip`);
+            expect(fileContent).to.eql(buffer);
+        }).slow(2000).timeout(3000)
+
+        it("should reject a file that doest present as a zip", async () => {
+            const buffer = Buffer.from("Mock backup");
+            await expect(post("/", "c:\\fake_path\\uploaded_backup.exe", buffer)).to.be.eventually.rejectedWith(/400/);
+
+            expect(() => fs.accessSync(`${TEST_DIR}/uploaded_backup.zip`)).to.throw();
+        }).slow(2000).timeout(3000)
+
+        it("should reject get if has no permission", async () => {
             _smHasPermission.resolves(false);
             await expect(get("/")).to.eventually.be.rejectedWith(/404/);
+        })
+
+        it("should reject post if has no permission", async () => {
+            _smHasPermission.resolves(false);
+            const buffer = Buffer.from("Mock backup");
+            await expect(post("/", "uploaded_backup.zip", buffer)).to.eventually.be.rejectedWith(/404/);
         })
     });
 
@@ -138,7 +175,7 @@ describe("backupRouter", () => {
         const _db: Database = {} as Database;
 
         beforeEach(() => {
-            _backupCreate = stub(backup, "createBackup").resolves(".test.backups/backups/test.zip");
+            _backupCreate = stub(backup, "createBackup").resolves(`${TEST_DIR}/backups/test.zip`);
             stub(application, "database").value(_db);
         })
 
@@ -148,14 +185,14 @@ describe("backupRouter", () => {
             expect(_backupCreate.callCount).to.equal(1);
             expect(_backupCreate.lastCall.args).to.eql([
                 _db,
-                ".test.backups",
-                ".test.backups/backups"
+                TEST_DIR,
+                `${TEST_DIR}/backups`
             ]);
 
             const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
             expect(button.href).to.equal(PATH_BACKUP);
             const message = querySelector(Q_CLASS_MESSAGE).textContent;
-            expect(message).to.equal(".test.backups/backups/test.zip created.");
+            expect(message).to.equal("test.zip created.");
             const error = querySelector(Q_CLASS_ERROR).textContent;
             expect(error).to.equal("");
         }).slow(2000).timeout(3000)
@@ -191,9 +228,9 @@ describe("backupRouter", () => {
             await get("/delete/backup.zip");
 
             expect(_fsExists.callCount).to.eql(1);
-            expect(_fsExists.lastCall.args).to.eql([".test.backups/backups/backup.zip"]);
+            expect(_fsExists.lastCall.args).to.eql([`${TEST_DIR}/backups/backup.zip`]);
             expect(_fsUnlink.callCount).to.eql(1);
-            expect(_fsUnlink.lastCall.args).to.eql([".test.backups/backups/backup.zip"]);
+            expect(_fsUnlink.lastCall.args).to.eql([`${TEST_DIR}/backups/backup.zip`]);
 
             const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
             expect(button.href).to.equal(PATH_BACKUP);
@@ -209,7 +246,7 @@ describe("backupRouter", () => {
             await get("/delete/backup.zip");
 
             expect(_fsExists.callCount).to.eql(1);
-            expect(_fsExists.lastCall.args).to.eql([".test.backups/backups/backup.zip"]);
+            expect(_fsExists.lastCall.args).to.eql([`${TEST_DIR}/backups/backup.zip`]);
             expect(_fsUnlink.callCount).to.eql(0);
 
             const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
@@ -258,7 +295,7 @@ describe("backupRouter", () => {
         let _fsCopy: SinonStub = null;
 
         beforeEach(() => {
-            _getDataPath.withArgs("restore.zip").returns(".test.backups/restore.zip");
+            _getDataPath.withArgs("restore.zip").returns(`${TEST_DIR}/restore.zip`);
             _fsCopy = stub(fs.promises, "copyFile").resolves();
         })
 
@@ -267,8 +304,8 @@ describe("backupRouter", () => {
 
             expect(_fsCopy.callCount).to.eql(1);
             expect(_fsCopy.lastCall.args).to.eql([
-                ".test.backups/backups/backup.zip",
-                ".test.backups/restore.zip"
+                `${TEST_DIR}/backups/backup.zip`,
+                `${TEST_DIR}/restore.zip`
             ]);
 
             const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
@@ -313,10 +350,8 @@ describe("backupRouter", () => {
 
     describe("/download", () => {
         beforeEach(() => {
-            const DOWNLOAD_DIR = ".test.backups";
-            cleanDir(DOWNLOAD_DIR);
-            fs.writeFileSync(`${DOWNLOAD_DIR}/backup.zip`, "Mock backup");
-            backupRouter.setDownloadDir(DOWNLOAD_DIR);
+            fs.writeFileSync(`${TEST_DIR}/backup.zip`, "Mock backup");
+            fs.writeFileSync(`${TEST_DIR}/not_backup.txt`, "Not a backup file");
         })
 
         it("should download the specified file", async () => {
@@ -326,6 +361,10 @@ describe("backupRouter", () => {
 
         it("should return 404 for non-existent files", async () => {
             await expect(get("/download/foo.zip")).to.be.eventually.rejectedWith(/404/);
+        }).slow(2000).timeout(3000)
+
+        it("should return 404 for non-zip files", async () => {
+            await expect(get("/download/not_backup.txt")).to.be.eventually.rejectedWith(/404/);
         }).slow(2000).timeout(3000)
 
         it("should reject if has no permission", async () => {
