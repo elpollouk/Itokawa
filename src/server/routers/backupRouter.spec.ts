@@ -127,7 +127,7 @@ describe("backupRouter", () => {
 
         it("should reject if has no permission", async () => {
             _smHasPermission.resolves(false);
-            await expect(get("/")).to.eventually.be.rejected;
+            await expect(get("/")).to.eventually.be.rejectedWith(/404/);
         })
     });
 
@@ -172,7 +172,7 @@ describe("backupRouter", () => {
 
         it("should reject if has no permission", async () => {
             _smHasPermission.resolves(false);
-            await expect(get("/create")).to.eventually.be.rejected;
+            await expect(get("/create")).to.eventually.be.rejectedWith(/404/);
         })
     })
 
@@ -248,7 +248,7 @@ describe("backupRouter", () => {
 
         it("should reject if has no permission", async () => {
             _smHasPermission.resolves(false);
-            await expect(get("/delete/backup.zip")).to.eventually.be.rejected;
+            await expect(get("/delete/backup.zip")).to.eventually.be.rejectedWith(/404/);
         }).slow(2000).timeout(3000)
     })
 
@@ -305,7 +305,7 @@ describe("backupRouter", () => {
 
        it("should reject if has no permission", async () => {
            _smHasPermission.resolves(false);
-           await expect(get("/restore/backup.zip")).to.eventually.be.rejected;
+           await expect(get("/restore/backup.zip")).to.eventually.be.rejectedWith(/404/);
        }).slow(2000).timeout(3000)
     })
 })

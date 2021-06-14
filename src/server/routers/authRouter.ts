@@ -124,7 +124,7 @@ export function requirePermission(permission: Permissions): express.Handler {
         }
         else {
             log.warning(`Rejected permission '${permission} check for path ${req.path} by session ${sessionId}`);
-            res.sendStatus(403);
+            res.sendStatus(404);
         }
     }
 }
