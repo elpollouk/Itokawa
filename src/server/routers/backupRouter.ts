@@ -34,15 +34,24 @@ async function rootPageView(_: express.Request, res: express.Response) {
 _router.route("/")
 .get(rootPageView)
 .post(async (req, res) => {
+    try {
+        if (!req.files || !req.files.file) throw new Error("No file uploaded");
 
-    const file = req.files.file as fileUpload.UploadedFile;
-    if (!file.name.endsWith(".zip")) {
-        res.sendStatus(400);
-        return;
+        const file = req.files.file as fileUpload.UploadedFile;
+        if (!file.name.match(VALID_BACKUP)) throw new Error("Not a backup file");
+
+        const copyDest = `${_backupDir}/${file.name}`;
+        if (fs.existsSync(copyDest)) throw new Error("Backup already exists");
+
+        await file.mv(copyDest);
+        await rootPageView(req, res);
     }
-
-    await file.mv(`${_backupDir}/${file.name}`);
-    await rootPageView(req, res);
+    catch (err) {
+        res.render("result", {
+            errorMessage: err,
+            okLink: PATH_BACKUP
+        });
+    }
 });
 
 _router.route("/create")

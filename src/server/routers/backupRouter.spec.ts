@@ -151,11 +151,45 @@ describe("backupRouter", () => {
             expect(fileContent).to.eql(buffer);
         }).slow(2000).timeout(3000)
 
+        it("should reject any already existing zip file", async () => {
+            _fsExists.withArgs(`${TEST_DIR}/uploaded_backup.zip`).returns(true);
+
+            const buffer = Buffer.from("Invalid backup");
+            await post("/", "c:\\fake_path\\uploaded_backup.zip", buffer);
+
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("Error: Backup already exists");
+        }).slow(2000).timeout(3000)
+
+        it("should reject if invalid file name a zip", async () => {
+            const buffer = Buffer.from("Mock backup");
+            await post("/", "c:\\fake_path\\new backup.zip", buffer);
+
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("Error: Not a backup file");
+        }).slow(2000).timeout(3000)
+
         it("should reject a file that doest present as a zip", async () => {
             const buffer = Buffer.from("Mock backup");
-            await expect(post("/", "c:\\fake_path\\uploaded_backup.exe", buffer)).to.be.eventually.rejectedWith(/400/);
+            await post("/", "c:\\fake_path\\uploaded_backup.exe", buffer);
 
-            expect(() => fs.accessSync(`${TEST_DIR}/uploaded_backup.zip`)).to.throw();
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("Error: Not a backup file");
+        }).slow(2000).timeout(3000)
+
+        it("should reject if no file is uploaded", async () => {
+            await post("/", "c:\\fake_path\\uploaded_backup.exe", null);
+
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("Error: No file uploaded");
         }).slow(2000).timeout(3000)
 
         it("should reject get if has no permission", async () => {
@@ -274,16 +308,16 @@ describe("backupRouter", () => {
         it("should reject invalid backup name", async () => {
             await get("/delete/%2E%2E%2Fconfig.xml");
 
-           expect(_fsExists.callCount).to.eql(0);
-           expect(_fsUnlink.callCount).to.eql(0);
+            expect(_fsExists.callCount).to.eql(0);
+            expect(_fsUnlink.callCount).to.eql(0);
 
-           const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
-           expect(button.href).to.equal(PATH_BACKUP);
-           const message = querySelector(Q_CLASS_MESSAGE).textContent;
-           expect(message).to.equal("");
-           const error = querySelector(Q_CLASS_ERROR).textContent;
-           expect(error).to.equal("Error: Invalid backup");
-       }).slow(2000).timeout(3000)
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+            expect(button.href).to.equal(PATH_BACKUP);
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("Error: Invalid backup");
+        }).slow(2000).timeout(3000)
 
         it("should reject if has no permission", async () => {
             _smHasPermission.resolves(false);
@@ -321,31 +355,31 @@ describe("backupRouter", () => {
 
             expect(_fsCopy.callCount).to.eql(0);
 
-           const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
-           expect(button.href).to.equal(PATH_BACKUP);
-           const message = querySelector(Q_CLASS_MESSAGE).textContent;
-           expect(message).to.equal("");
-           const error = querySelector(Q_CLASS_ERROR).textContent;
-           expect(error).to.equal("Error: Invalid backup");
-       }).slow(2000).timeout(3000)
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+            expect(button.href).to.equal(PATH_BACKUP);
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("Error: Invalid backup");
+        }).slow(2000).timeout(3000)
 
-       it("should reject invalid backup name", async () => {
-           await get("/restore/%2E%2E%2Fconfig.xml");
+        it("should reject invalid backup name", async () => {
+            await get("/restore/%2E%2E%2Fconfig.xml");
 
-           expect(_fsCopy.callCount).to.eql(0);
+            expect(_fsCopy.callCount).to.eql(0);
 
-          const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
-          expect(button.href).to.equal(PATH_BACKUP);
-          const message = querySelector(Q_CLASS_MESSAGE).textContent;
-          expect(message).to.equal("");
-          const error = querySelector(Q_CLASS_ERROR).textContent;
-          expect(error).to.equal("Error: Invalid backup");
-      }).slow(2000).timeout(3000)
+            const button = querySelector<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
+            expect(button.href).to.equal(PATH_BACKUP);
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("");
+            const error = querySelector(Q_CLASS_ERROR).textContent;
+            expect(error).to.equal("Error: Invalid backup");
+        }).slow(2000).timeout(3000)
 
-       it("should reject if has no permission", async () => {
-           _smHasPermission.resolves(false);
-           await expect(get("/restore/backup.zip")).to.eventually.be.rejectedWith(/404/);
-       }).slow(2000).timeout(3000)
+        it("should reject if has no permission", async () => {
+            _smHasPermission.resolves(false);
+            await expect(get("/restore/backup.zip")).to.eventually.be.rejectedWith(/404/);
+        }).slow(2000).timeout(3000)
     })
 
     describe("/download", () => {

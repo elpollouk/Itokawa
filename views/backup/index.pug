@@ -2,6 +2,7 @@ html
     head
         meta(name="viewport", content="width=device-width, initial-scale=1")
         title Itokawa Backup
+        script(src="/backup/index.js") 
         link(rel="stylesheet", href="/common.css")
     body
         div
@@ -15,4 +16,7 @@ html
                                 a.linkButton(href="/backup/restore/" + backup) &lt;
                                 a.linkButton(href="/backup/delete/" + backup) X
                 div.buttons
-                    a.linkButton(href="/backup/create") Create Backup
+                    form(id="UploadForm", action="/backup", method="post", encType="multipart/form-data")
+                        a.linkButton(href="/backup/create") Create Backup
+                        label.linkButton(for="file") Upload Backup
+                        input(id="file", name="file", type="file", onchange="uploadFile(this.value)")
