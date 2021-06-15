@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 import { stub, spy, SinonStub, restore } from "sinon";
+import { cleanDir } from "./utils/testUtils";
 import { Application, application } from "./application";
 let packagejson = require('../package.json');
 import * as path from "path"
@@ -57,9 +58,7 @@ describe("Application", () => {
         registerCommandStationsStub = stub(commandStationDirectory, "registerCommandStations");
         monitorForDeviceStub = stub(DeviceEnumerator, "monitorForDevice").resolves();
 
-        if (fs.existsSync(TEST_HOME_DIR))
-            fs.rmdirSync(TEST_HOME_DIR, { recursive: true });
-        fs.mkdirSync(TEST_HOME_DIR);
+        cleanDir(TEST_HOME_DIR);
     })
 
     afterEach(async () => {
