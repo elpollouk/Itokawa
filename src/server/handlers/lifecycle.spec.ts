@@ -40,7 +40,7 @@ describe("Life Cycle Handler", () => {
 
             await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
                 action: -1
-            } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Unrecognised life cycle action: -1");
+            } as unknown as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Unrecognised life cycle action: -1");
         })
     })
 
