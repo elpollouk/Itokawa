@@ -44,8 +44,8 @@ async function main()
     const ews = expressWs(express());
     const app = ews.app;
 
-    app.set('view engine', 'pug');
-    app.set('views','./views');
+    app.set("view engine", "pug");
+    app.set("views", "./views");
 
     app.use(cookieParser());
     app.use(authRouter.pingSession());
@@ -54,6 +54,9 @@ async function main()
     app.use("/api/v1", await apiRouter.getRouter());
     app.use("/auth", await authRouter.getRouter());
     app.use("/backup", await backupRouter.getRouter());
+    app.use((_, res) => {
+        res.sendStatus(404);
+    });
 
     backupRouter.setDownloadDir(application.getDataPath("backups"));
 

@@ -76,7 +76,8 @@ input[type="file"] {
 }
 
 .backupContainer {
-    padding: 8px 2px 8px 8px;
+    box-sizing: border-box;
+    padding: 8px 0px 8px 8px;
     width: 100%;
 }
 
@@ -96,4 +97,5 @@ input[type="file"] {
 
 .backupContainer a.linkButton {
     min-width: unset;
+    margin-left: 0;
 }

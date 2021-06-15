@@ -39,13 +39,20 @@ describe("backupRouter", () => {
         return response.text;
     }
 
-    async function post(path: string, filename: string, data: Buffer) : Promise<string> {
-        const response = await request(_app)
+    async function post(path: string, filename: string, data: Buffer, redirectTo?: string) : Promise<string> {
+        const req = request(_app)
             .post(path)
             .set("Cookie", ["sessionId=mock_session"])
-            .attach("file", data, filename)
-            .expect(200);
+            .attach("file", data, filename);
 
+        if (redirectTo) {
+            req.expect(302).expect("Location", redirectTo);
+        }
+        else {
+            req.expect(200);
+        }
+
+        const response = await req;
         _dom = new JSDOM(response.text);
         return response.text;
     }
@@ -56,8 +63,8 @@ describe("backupRouter", () => {
 
     beforeEach(async () => {
         _app = express();
-        _app.set('view engine', 'pug');
-        _app.set('views','./views');
+        _app.set("view engine", "pug");
+        _app.set("views", "./views");
         _app.use(cookieParser());
         _app.use("/", await backupRouter.getRouter());
 
@@ -145,7 +152,7 @@ describe("backupRouter", () => {
 
         it("should accept a file upload", async () => {
             const buffer = Buffer.from("Mock backup");
-            await post("/", "c:\\fake_path\\uploaded_backup.zip", buffer);
+            await post("/", "c:\\fake_path\\uploaded_backup.zip", buffer, PATH_BACKUP);
 
             const fileContent = fs.readFileSync(`${TEST_DIR}/uploaded_backup.zip`);
             expect(fileContent).to.eql(buffer);
@@ -163,7 +170,7 @@ describe("backupRouter", () => {
             expect(error).to.equal("Error: Backup already exists");
         }).slow(2000).timeout(3000)
 
-        it("should reject if invalid file name a zip", async () => {
+        it("should reject if invalid file name for zip", async () => {
             const buffer = Buffer.from("Mock backup");
             await post("/", "c:\\fake_path\\new backup.zip", buffer);
 

@@ -5,7 +5,6 @@ const fsp = fs.promises;
 import * as path from "path";
 import { Database } from "../model/database";
 import { timestampShort } from "../common/time";
-//import * as dateFormat from "date"
 let packageVersion = require('../../package.json').version;
 
 const log = new Logger("Backup");
@@ -28,7 +27,7 @@ async function ensureDir(path: string): Promise<void> {
     await fsp.mkdir(path);
 }
 
-async function withTempDir(cb:(tempDir:string)=>Promise<void>) {
+async function withTempDir(cb: (tempDir:string)=>Promise<void>) {
     const tempDir = await fsp.mkdtemp("temp-");
     try {
         await cb(tempDir);

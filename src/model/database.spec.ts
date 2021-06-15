@@ -5,6 +5,7 @@ import { stub } from "sinon";
 import { Database } from "./database";
 import * as sqlite3 from "sqlite3";
 import * as fs from "fs";
+import { rmDir, rmFile } from "../utils/testUtils";
 
 const SCHEMA_VERSION = 2;
 const TEST_DB_FILE = ".test.sqlite3";
@@ -214,21 +215,8 @@ describe("Database", () => {
         const BACKUP_DIR = ".test.dbbackup";
 
         beforeEach(() => {
-            if (fs.existsSync(BACKUP_DB)) {
-                fs.unlinkSync(BACKUP_DB);
-            }
-            if (fs.existsSync(BACKUP_DIR)) {
-                if (fs.rmSync) {
-                    fs.rmSync(BACKUP_DIR, {
-                        force: true, recursive: true
-                    });
-                }
-                else {
-                    fs.rmdirSync(BACKUP_DIR, {
-                        recursive: true,
-                    });
-                }
-            }
+            rmFile(BACKUP_DB);
+            rmDir(BACKUP_DIR);
         })
 
         it("should create a new backup file", async () => {

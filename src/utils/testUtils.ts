@@ -48,6 +48,12 @@ export function removePermission(context: ConnectionContext, permission: string)
 //-----------------------------------------------------------------------------------------------//
 // File system helpers
 //-----------------------------------------------------------------------------------------------//
+export function rmFile(path: string) {
+    if (fs.existsSync(path)) {
+        fs.unlinkSync(path);
+    }
+}
+
 export function rmDir(path: string) {
     if (fs.existsSync(path)) {
         if (fs.rmSync) {

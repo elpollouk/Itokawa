@@ -15,7 +15,8 @@ const _router = express.Router();
 _router.use(requirePermission(Permissions.SERVER_BACKUP))
 _router.use(fileUpload());
 
-async function rootPageView(_: express.Request, res: express.Response) {
+_router.route("/")
+.get(async (_: express.Request, res: express.Response)=> {
     const backups: string[] = [];
     const backupDir = application.getDataPath("backups");
 
@@ -29,10 +30,7 @@ async function rootPageView(_: express.Request, res: express.Response) {
     res.render("backup/index", {
         backups: backups
     });
-}
-
-_router.route("/")
-.get(rootPageView)
+})
 .post(async (req, res) => {
     try {
         if (!req.files || !req.files.file) throw new Error("No file uploaded");
@@ -44,7 +42,7 @@ _router.route("/")
         if (fs.existsSync(copyDest)) throw new Error("Backup already exists");
 
         await file.mv(copyDest);
-        await rootPageView(req, res);
+        res.redirect(PATH_BACKUP);
     }
     catch (err) {
         res.render("result", {
