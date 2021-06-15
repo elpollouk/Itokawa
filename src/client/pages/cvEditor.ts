@@ -6,7 +6,7 @@ import { CvControl, State } from "../controls/cvControl";
 import { RequestType, LocoCvReadRequest, CvValuePair, LocoCvWriteRequest } from "../../common/messages";
 import { CvMap } from "../../common/api";
 import { loadData, getLocoDecoderProfile, LocoDecoderProfile, getLocoScanCvs, getLocoCvName } from "../utils/decoders";
-const html = require("./cvEditor.html");
+const html = require("./cvEditor.html").default;
 
 export class CvEditorPage extends Page {
     path: string = CvEditorConstructor.path;

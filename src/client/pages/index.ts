@@ -6,7 +6,7 @@ import { RequestType, TransportMessage, LocoSpeedRequest } from "../../common/me
 import { Loco } from "../../common/api";
 import { parseHtml, getById } from "../utils/dom";
 import { TrainRosterConstructor } from "./trainRoster";
-const html = require("./index.html");
+const html = require("./index.html").default;
 
 class IndexPage extends Page {
     path: string = IndexPageConstructor.path;    

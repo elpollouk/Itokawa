@@ -5,7 +5,7 @@ import * as popup from "./popup";
 import { client } from "../client";
 import { AttributionsConstructor } from "../pages/attributions";
 import { getDecoderDataVersion, loadData } from "../utils/decoders";
-const html = require("./about.html");
+const html = require("./about.html").default;
 
 const REVISION_URL = "https://github.com/elpollouk/Itokawa/tree/";
 

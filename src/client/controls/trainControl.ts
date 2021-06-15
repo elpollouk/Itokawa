@@ -5,7 +5,7 @@ import { parseHtml, getById } from "../utils/dom";
 import { Loco } from "../../common/api";
 import { client } from "../client";
 import { LocoPanelConstructor } from "../pages/locoPanel";
-const html = require("./trainControl.html");
+const html = require("./trainControl.html").default;
 
 export class TrainControl extends ControlBase {
     private _reverse = false;

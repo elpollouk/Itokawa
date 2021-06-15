@@ -1,6 +1,6 @@
 import { ControlBase } from "./control";
 import { parseHtml, getById } from "../utils/dom";
-const elementHtml = require("./draggableListElement.html");
+const elementHtml = require("./draggableListElement.html").default;
 
 export type ContentCreator<T> = (data: T) => HTMLElement;
 export type DeleteHandler<T> = (data: T) => Promise<boolean>;

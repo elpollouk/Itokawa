@@ -14,7 +14,7 @@ import { PromptButton } from "../controls/promptControl";
 import { getById, parseHtml } from "../utils/dom";
 import { AboutControl } from "./about";
 
-const html = require("./systemDrawer.html");
+const html = require("./systemDrawer.html").default;
 
 export class SystemDrawControl extends ControlBase {
     constructor(parent: HTMLElement) {

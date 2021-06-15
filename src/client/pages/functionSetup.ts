@@ -3,8 +3,8 @@ import { parseHtml, getById } from "../utils/dom";
 import { DraggableList } from "../controls/draggableList";
 import { FunctionConfig, FunctionMode } from "../../common/api";
 
-const html = require("./functionSetup.html");
-const controlHtml = require("../controls/functionConfigControl.html");
+const html = require("./functionSetup.html").default;
+const controlHtml = require("../controls/functionConfigControl.html").default;
 
 function _getMode(content: HTMLElement): FunctionMode {
     const value = getById<HTMLSelectElement>(content, "mode").value;

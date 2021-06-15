@@ -6,7 +6,7 @@ import { FunctionControl } from "../controls/functionControl";
 import { TransportMessage, RequestType, LocoFunctionRequest, FunctionAction, LocoFunctionRefreshRequest, LocoSpeedRequest } from "../../common/messages";
 import { client } from "../client";
 import { TrainControl } from "../controls/trainControl";
-const html = require("./locoPanel.html");
+const html = require("./locoPanel.html").default;
 
 export class LocoPanelPage extends Page {
     path: string = LocoPanelConstructor.path;
