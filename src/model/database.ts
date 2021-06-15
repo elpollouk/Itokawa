@@ -211,6 +211,16 @@ export class Database {
         });
     }
 
+    backup(path: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this._db.serialize(() => {
+                this.run("VACUUM INTO $path", {
+                    $path: path
+                }).then(() => resolve(), reject);
+            });
+        });
+    }
+
     async openRepository<ItemType, RepositoryType extends Repository<ItemType> = Repository<ItemType>>(repoType: RepositoryConstructable<ItemType, RepositoryType>): Promise<RepositoryType> {
         if (this._repositories.has(repoType))
             return this._repositories.get(repoType) as RepositoryType;

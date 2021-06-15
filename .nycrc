@@ -4,6 +4,7 @@
     "**/*.d.ts",
     "**/*.spec.ts",
     "**/*.mock.ts",
-    "**/testdata"
+    "**/testdata",
+    "**/testUtils.ts"
   ]
 }

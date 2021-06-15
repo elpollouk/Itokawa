@@ -5,6 +5,7 @@ import { stub } from "sinon";
 import { Database } from "./database";
 import * as sqlite3 from "sqlite3";
 import * as fs from "fs";
+import { rmDir, rmFile } from "../utils/testUtils";
 
 const SCHEMA_VERSION = 2;
 const TEST_DB_FILE = ".test.sqlite3";
@@ -206,6 +207,37 @@ describe("Database", () => {
         it("should return undefined for unset values", async () => {
             const value = await _db.getValue("test");
             expect(value).to.be.undefined;
+        })
+    })
+
+    describe("backup", () => {
+        const BACKUP_DB = ".test.dbbackup.sqlite3";
+        const BACKUP_DIR = ".test.dbbackup";
+
+        beforeEach(() => {
+            rmFile(BACKUP_DB);
+            rmDir(BACKUP_DIR);
+        })
+
+        it("should create a new backup file", async () => {
+            expect(fs.existsSync(BACKUP_DB)).to.be.false;
+
+            await _db.backup(BACKUP_DB);
+
+            expect(fs.existsSync(BACKUP_DB)).to.be.true;
+        })
+
+        it("should create a new backup file into a sub directory", async () => {
+            const path = BACKUP_DIR + "/backup.sqlite3";
+            fs.mkdirSync(BACKUP_DIR);
+
+            await _db.backup(path);
+
+            expect(fs.existsSync(path)).to.be.true;
+        })
+
+        it("should reject invalid paths", async () => {
+            await expect(_db.backup("/")).to.be.eventually.rejected;
         })
     })
 })

@@ -1,4 +1,5 @@
 import { createStubInstance, SinonStubbedInstance, StubbableType, SinonStubbedMember, stub } from "sinon"
+import * as fs from "fs";
 import { ICommandBatch } from "../devices/commandStations/commandStation";
 import { ConnectionContext } from "../server/handlers/handlers";
 import { Permissions } from "../server/sessionmanager";
@@ -42,4 +43,29 @@ export function removePermission(context: ConnectionContext, permission: string)
 
     // This is is just to satify code coverage
     context.requirePermission(null);
+}
+
+//-----------------------------------------------------------------------------------------------//
+// File system helpers
+//-----------------------------------------------------------------------------------------------//
+export function rmFile(path: string) {
+    if (fs.existsSync(path)) {
+        fs.unlinkSync(path);
+    }
+}
+
+export function rmDir(path: string) {
+    if (fs.existsSync(path)) {
+        if (fs.rmSync) {
+            fs.rmSync(path, { recursive: true, force: true });
+        }
+        else {
+            fs.rmdirSync(path, { recursive: true });
+        }
+    }
+}
+
+export function cleanDir(path: string) {
+    rmDir(path);
+    fs.mkdirSync(path);
 }

@@ -1,0 +1,13 @@
+doctype html
+html
+    head
+        meta(name="viewport", content="width=device-width, initial-scale=1")
+        title Itokawa
+        link(rel="stylesheet", href="/common.css")
+    body
+        div
+            div.uiContainer
+                div.errorMessage #{errorMessage}
+                div.message #{message}
+                div.buttons
+                    a.linkButton(href=okLink) Ok
