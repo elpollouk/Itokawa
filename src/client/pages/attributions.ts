@@ -1,6 +1,6 @@
 import { Page, IPageConstructor } from "./page";
 import { parseHtml } from "../utils/dom";
-const html = require("./attributions.html");
+const html = require("./attributions.html").default;
 
 export class AttributionsPage extends Page {
     path: string = AttributionsConstructor.path;

@@ -1,6 +1,6 @@
 import { ControlBase } from "./control";
 import { parseHtml, getById } from "../utils/dom";
-const html = require("./cvControl.html");
+const html = require("./cvControl.html").default;
 
 export enum State {
     clean = 0,

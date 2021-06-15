@@ -4,7 +4,7 @@ import { IApiClient, client } from "../client";
 import { Loco } from "../../common/api";
 import { createElement, parseHtml, getById } from "../utils/dom";
 import { TrainEditConstructor } from "./trainEditor";
-const html = require("./trainRoster.html");
+const html = require("./trainRoster.html").default;
 
 function pad(address: number) {
     const addr = `${address}`;

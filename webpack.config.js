@@ -9,7 +9,6 @@ module.exports = {
       {
         test: /\.tsx?$/,
         loader: 'ts-loader',
-//        exclude: /node_modules/,
         options: {
           transpileOnly: true
         }
@@ -18,8 +17,10 @@ module.exports = {
         test: /\.html$/i,
         loader: 'html-loader',
         options: {
-          minimize: true,
-          conservativeCollapse: false,
+          sources: false,
+          minimize: {
+            conservativeCollapse: false
+          }
         }
       },
     ],

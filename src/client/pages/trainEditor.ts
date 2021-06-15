@@ -5,7 +5,7 @@ import * as prompt from "../controls/promptControl";
 import { CvEditorConstructor, CvEditorPage } from "./cvEditor";
 import { CvMap, FunctionConfig } from "../../common/api";
 import { FunctionSetupConstructor, FunctionSetupPage } from "./functionSetup";
-const content = require("./trainEditor.html");
+const content = require("./trainEditor.html").default;
 
 export interface TrainEditParams {
     id?: number,
