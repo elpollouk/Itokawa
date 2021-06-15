@@ -5,6 +5,7 @@ const fsp = fs.promises;
 import * as path from "path";
 import { Database } from "../model/database";
 import { timestampShort } from "../common/time";
+import { rmdir } from "./compatibility";
 let packageVersion = require('../../package.json').version;
 
 const log = new Logger("Backup");
@@ -33,9 +34,7 @@ async function withTempDir(cb: (tempDir:string)=>Promise<void>) {
         await cb(tempDir);
     }
     finally {
-        await fsp.rmdir(tempDir, {
-            recursive: true
-        })
+        await rmdir(tempDir);
     }
 }
 
