@@ -213,7 +213,7 @@ describe("Loco Handler", () => {
                 locoId: 3,
                 function: 1,
                 action: -1
-            } as LocoFunctionRequest, senderStub)).to.be.eventually.rejectedWith("Invalid action -1");
+            } as unknown as LocoFunctionRequest, senderStub)).to.be.eventually.rejectedWith("Invalid action -1");
         })
 
         it("should reject the request if no command station is connected", async () => {
