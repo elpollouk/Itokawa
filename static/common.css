@@ -51,10 +51,6 @@ body > div {
     background-color: rgb(250, 250, 250);
 }
 
-input[type="file"] {
-    display: none;
-}
-
 .buttons {
     text-align: center;
     margin-top: 1em;
@@ -73,29 +69,4 @@ input[type="file"] {
 .uiContainer > .title {
     font-size: larger;
     font-weight: bold;
-}
-
-.backupContainer {
-    box-sizing: border-box;
-    padding: 8px 0px 8px 8px;
-    width: 100%;
-}
-
-.backupContainer:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-.backupControls {
-    float: right;
-    display: none;
-    margin-top: -7px;
-}
-
-.backupContainer:hover .backupControls{
-    display: unset;
-}
-
-.backupContainer a.linkButton {
-    min-width: unset;
-    margin-left: 0;
 }
