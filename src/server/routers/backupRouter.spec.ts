@@ -2,14 +2,13 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
 import { stub, restore, SinonStub } from "sinon";
-import * as request from "supertest";
 import { JSDOM } from "jsdom";
 
 import * as express from "express";
 import { Express } from "express-serve-static-core";
 import * as cookieParser from "cookie-parser";
 import * as fs from "fs";
-import { cleanDir } from "../../utils/testUtils";
+import { cleanDir, requestGet, requestPost } from "../../utils/testUtils";
 import * as backup from "../../utils/backup";
 import { application } from "../../application";
 import { Permissions } from "../sessionmanager";
@@ -30,29 +29,13 @@ describe("backupRouter", () => {
     let _getDataPath: SinonStub = null;
 
     async function get(path: string) : Promise<string> {
-        const response = await request(_app)
-            .get(path)
-            .set("Cookie", ["sessionId=mock_session"])
-            .expect(200);
-
+        const response = await requestGet(_app, path);
         _dom = new JSDOM(response.text);
         return response.text;
     }
 
     async function post(path: string, filename: string, data: Buffer, redirectTo?: string) : Promise<string> {
-        const req = request(_app)
-            .post(path)
-            .set("Cookie", ["sessionId=mock_session"])
-            .attach("file", data, filename);
-
-        if (redirectTo) {
-            req.expect(302).expect("Location", redirectTo);
-        }
-        else {
-            req.expect(200);
-        }
-
-        const response = await req;
+        const response = await requestPost(_app, path, filename, data, redirectTo);
         _dom = new JSDOM(response.text);
         return response.text;
     }
@@ -72,7 +55,7 @@ describe("backupRouter", () => {
             .withArgs().returns(TEST_DIR)
             .withArgs("backups").returns(`${TEST_DIR}/backups`);
         _smHasPermission = stub(application.sessionManager, "hasPermission")
-            .withArgs(Permissions.SERVER_BACKUP, "mock_session")
+            .withArgs(Permissions.SERVER_BACKUP, "mock_session_id")
             .resolves(true);
 
         cleanDir(TEST_DIR);

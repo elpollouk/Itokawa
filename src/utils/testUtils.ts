@@ -1,5 +1,7 @@
 import { createStubInstance, SinonStubbedInstance, StubbableType, SinonStubbedMember, stub } from "sinon"
 import * as fs from "fs";
+import * as request from "supertest";
+import { Express } from "express-serve-static-core";
 import { ICommandBatch } from "../devices/commandStations/commandStation";
 import { ConnectionContext } from "../server/handlers/handlers";
 import { Permissions } from "../server/sessionmanager";
@@ -68,4 +70,38 @@ export function rmDir(path: string) {
 export function cleanDir(path: string) {
     rmDir(path);
     fs.mkdirSync(path);
+}
+
+//-----------------------------------------------------------------------------------------------//
+// Request helpers
+//-----------------------------------------------------------------------------------------------//
+export async function requestGet(app: Express, path: string, redirectTo?: string) : Promise<request.Response> {
+    const req = request(app)
+        .get(path)
+        .set("Cookie", ["sessionId=mock_session_id"]);
+
+    if (redirectTo) {
+        req.expect(302).expect("Location", redirectTo);
+    }
+    else {
+        req.expect(200);
+    }
+
+    return req;
+}
+
+export async function requestPost(app: Express, path: string, filename: string, data: Buffer, redirectTo?: string) : Promise<request.Response> {
+    const req = request(app)
+        .post(path)
+        .set("Cookie", ["sessionId=mock_session_id"])
+        .attach("file", data, filename);
+
+    if (redirectTo) {
+        req.expect(302).expect("Location", redirectTo);
+    }
+    else {
+        req.expect(200);
+    }
+
+    return req;
 }

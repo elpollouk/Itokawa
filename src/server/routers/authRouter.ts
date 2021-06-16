@@ -13,17 +13,22 @@ _authRouter.use(express.urlencoded({extended: true}));
 // User pages
 //-----------------------------------------------------------------------------------------------//
 _authRouter.route("/")
-.get(async (req, res) => {
-    const sessionId = req.cookies[COOKIE_SESSION_ID];
-    const session = await application.sessionManager.getSession(sessionId);
-    if (session && session.isValid) {
-        await session.ping();
-        res.cookie(COOKIE_SESSION_ID, session.id, {
-            expires: session.expires
-        }).redirect(PATH_MAIN);
+.get(async (req, res, next) => {
+    try {
+        const sessionId = req.cookies[COOKIE_SESSION_ID];
+        const session = await application.sessionManager.getSession(sessionId);
+        if (session && session.isValid) {
+            await session.ping();
+            res.cookie(COOKIE_SESSION_ID, session.id, {
+                expires: session.expires
+            }).redirect(PATH_MAIN);
+        }
+        else {
+            res.clearCookie(COOKIE_SESSION_ID).render('auth/index');
+        }
     }
-    else {
-        res.clearCookie(COOKIE_SESSION_ID).render('auth/index');
+    catch (err) {
+        next(err);
     }
 })
 .post(async (req, res) => {
