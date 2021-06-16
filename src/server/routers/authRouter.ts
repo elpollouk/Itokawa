@@ -1,6 +1,6 @@
 import * as express from "express";
 import { application } from "../../application";
-import { COOKIE_SESSION_ID, PATH_MAIN } from "../../common/constants";
+import { COOKIE_SESSION_ID, PATH_AUTH, PATH_MAIN } from "../../common/constants";
 import { Logger } from "../../utils/logger";
 import { Permissions } from "../sessionmanager";
 
@@ -63,7 +63,9 @@ _authRouter.use(requirePermission(Permissions.SESSION_MANAGE));
 _authRouter.route("/clearAllSessions")
 .get(async (_req, res) => {
     log.display("Request to clear all sessions");
-    const result = {};
+    const result = {
+        okLink: PATH_MAIN
+    };
     try {
         await application.sessionManager.clearAll();
         result["message"] = "All sessions cleared.";
@@ -73,12 +75,14 @@ _authRouter.route("/clearAllSessions")
         result["errorMessage"] = err;
         log.error(`Failed to clear all sessions: ${err}`);
     }
-    res.render("auth/result", result);
+    res.render("result", result);
 });
 _authRouter.route("/clearExpiredSessions")
 .get(async (_req, res) => {
     log.info("Request to clear expired sessions");
-    const result = {};
+    const result = {
+        okLink: PATH_MAIN
+    };
     try {
         await application.sessionManager.clearExpired();
         result["message"] = "Expired sessions cleared.";
@@ -88,7 +92,7 @@ _authRouter.route("/clearExpiredSessions")
         result["errorMessage"] = err;
         log.error(`Failed to clear expired sessions: ${err}`);
     }
-    res.render("auth/result", result);
+    res.render("result", result);
 });
 
 export async function getRouter(): Promise<express.Router> {

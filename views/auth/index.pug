@@ -3,10 +3,11 @@ html
     head
         meta(name="viewport", content="width=device-width, initial-scale=1")
         title Itokawa Sign In
+        link(rel="stylesheet", href="/common.css")
         link(rel="stylesheet", href="/auth/auth.css")
     body
         div
-            div.formContainer
+            div.uiContainer
                 div.errorMessage #{errorMessage}
                 form(action="/auth", method="post")
                     div.formRow
