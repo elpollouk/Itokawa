@@ -12,7 +12,7 @@ import { requestGet, requestPost, RequestOptions } from "../../utils/testUtils";
 import * as authRouter from "./authRouter";
 import { PATH_AUTH, PATH_MAIN } from "../../common/constants";
 import { application } from "../../application";
-import { Session } from "../sessionmanager";
+import { Permissions, Session } from "../sessionmanager";
 
 describe("authRouter", () => {
     let _dom: JSDOM = null;
@@ -195,13 +195,85 @@ describe("authRouter", () => {
             expect(signOutStub.callCount).to.eql(1);
             expect(signOutStub.lastCall.args).to.eql(["mock_session_id"]);
             expect(response.get("Set-Cookie")).to.eql(["sessionId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT"]);
-        })
+        }).slow(2000).timeout(3000)
 
         it("should redirect even if there is no session", async () => {
             const response = await get("/logout", {
                 expectRedirectTo: PATH_MAIN
             });
             expect(response.get("Set-Cookie")).to.eql(["sessionId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT"]);
-        })
+        }).slow(2000).timeout(3000)
+    })
+
+    describe("GET /clearAllSessions", () => {
+        it("should clear all sessions if session has permission", async () => {
+            stub(application.sessionManager, "hasPermission")
+                .withArgs(Permissions.SESSION_MANAGE, "mock_session_id")
+                .resolves(true);
+            const clearAllStub = stub(application.sessionManager, "clearAll").resolves();
+
+            await get("/clearAllSessions", {
+                sessionId: "mock_session_id"
+            });
+
+            expect(clearAllStub.callCount).to.eql(1);
+        }).slow(2000).timeout(3000)
+
+        it("should handle error from clearing sessions", async () => {
+            stub(application.sessionManager, "hasPermission")
+                .withArgs(Permissions.SESSION_MANAGE, "mock_session_id")
+                .resolves(true);
+            const clearAllStub = stub(application.sessionManager, "clearAll").rejects(new Error());
+
+            await get("/clearAllSessions", {
+                sessionId: "mock_session_id"
+            });
+
+            expect(clearAllStub.callCount).to.eql(1);
+        }).slow(2000).timeout(3000)
+
+        it("shoulr return 404 if session doesn't have permission", async () => {
+            stub(application.sessionManager, "hasPermission").resolves(false);
+
+            await expect(get("/clearAllSessions", {
+                sessionId: "mock_session_id"
+            })).to.be.eventually.rejectedWith(/404/);
+        }).slow(2000).timeout(3000)
+    })
+
+    describe("GET /clearExpiredSessions", () => {
+        it("should clear all sessions if session has permission", async () => {
+            stub(application.sessionManager, "hasPermission")
+                .withArgs(Permissions.SESSION_MANAGE, "mock_session_id")
+                .resolves(true);
+            const clearAllStub = stub(application.sessionManager, "clearExpired").resolves();
+
+            await get("/clearExpiredSessions", {
+                sessionId: "mock_session_id"
+            });
+
+            expect(clearAllStub.callCount).to.eql(1);
+        }).slow(2000).timeout(3000)
+
+        it("should handle error from clearing sessions", async () => {
+            stub(application.sessionManager, "hasPermission")
+                .withArgs(Permissions.SESSION_MANAGE, "mock_session_id")
+                .resolves(true);
+            const clearAllStub = stub(application.sessionManager, "clearExpired").rejects(new Error());
+
+            await get("/clearExpiredSessions", {
+                sessionId: "mock_session_id"
+            });
+
+            expect(clearAllStub.callCount).to.eql(1);
+        }).slow(2000).timeout(3000)
+
+        it("shoulr return 404 if session doesn't have permission", async () => {
+            stub(application.sessionManager, "hasPermission").resolves(false);
+
+            await expect(get("/clearExpiredSessions", {
+                sessionId: "mock_session_id"
+            })).to.be.eventually.rejectedWith(/404/);
+        }).slow(2000).timeout(3000)
     })
 })
