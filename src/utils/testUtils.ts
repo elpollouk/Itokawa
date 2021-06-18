@@ -75,13 +75,25 @@ export function cleanDir(path: string) {
 //-----------------------------------------------------------------------------------------------//
 // Request helpers
 //-----------------------------------------------------------------------------------------------//
-export async function requestGet(app: Express, path: string, redirectTo?: string) : Promise<request.Response> {
-    const req = request(app)
-        .get(path)
-        .set("Cookie", ["sessionId=mock_session_id"]);
+export interface RequestOptions {
+    expectRedirectTo?: string,
+    sessionId?: string,
+    filename?: string,
+    filedata?: Buffer,
+    formdata?: {[key:string]:string}
+}
 
-    if (redirectTo) {
-        req.expect(302).expect("Location", redirectTo);
+export async function requestGet(app: Express, path: string, options?: RequestOptions) : Promise<request.Response> {
+    options = options ?? {};
+
+    const req = request(app).get(path);
+
+    if (options.sessionId) {
+        req.set("Cookie", [`sessionId=${options.sessionId}`]);
+    }
+
+    if (options.expectRedirectTo) {
+        req.expect(302).expect("Location", options.expectRedirectTo);
     }
     else {
         req.expect(200);
@@ -90,14 +102,29 @@ export async function requestGet(app: Express, path: string, redirectTo?: string
     return req;
 }
 
-export async function requestPost(app: Express, path: string, filename: string, data: Buffer, redirectTo?: string) : Promise<request.Response> {
+export async function requestPost(app: Express, path: string, options?: RequestOptions): Promise<request.Response> {
     const req = request(app)
-        .post(path)
-        .set("Cookie", ["sessionId=mock_session_id"])
-        .attach("file", data, filename);
+        .post(path);
 
-    if (redirectTo) {
-        req.expect(302).expect("Location", redirectTo);
+    if (options.sessionId) {
+        req.set("Cookie", [`sessionId=${options.sessionId}`]);
+    }
+
+    if (options.filename && options.filedata) {
+        req.attach("file", options.filedata, options.filename);
+    }
+    else if (options.formdata) {
+        const body = [];
+        for (const key in options.formdata) {
+            const value = options.formdata[key];
+            if (value !== null)
+                body.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+        }
+        req.send(body.join("&"));
+    }
+
+    if (options.expectRedirectTo) {
+        req.expect(302).expect("Location", options.expectRedirectTo);
     }
     else {
         req.expect(200);

@@ -82,6 +82,7 @@ _authRouter.route("/clearAllSessions")
     }
     res.render("result", result);
 });
+
 _authRouter.route("/clearExpiredSessions")
 .get(async (_req, res) => {
     log.info("Request to clear expired sessions");

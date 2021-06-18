@@ -29,13 +29,20 @@ describe("backupRouter", () => {
     let _getDataPath: SinonStub = null;
 
     async function get(path: string) : Promise<string> {
-        const response = await requestGet(_app, path);
+        const response = await requestGet(_app, path, {
+            sessionId: "mock_session_id"
+        });
         _dom = new JSDOM(response.text);
         return response.text;
     }
 
-    async function post(path: string, filename: string, data: Buffer, redirectTo?: string) : Promise<string> {
-        const response = await requestPost(_app, path, filename, data, redirectTo);
+    async function post(path: string, filename: string, data: Buffer, expectRedirectTo?: string) : Promise<string> {
+        const response = await requestPost(_app, path, {
+            sessionId: "mock_session_id",
+            expectRedirectTo: expectRedirectTo,
+            filename: filename,
+            filedata: data
+        });
         _dom = new JSDOM(response.text);
         return response.text;
     }
