@@ -13,8 +13,11 @@ import { UpdatePage, UpdatePageConstructor } from "../pages/update";
 import { PromptButton } from "../controls/promptControl";
 import { getById, parseHtml } from "../utils/dom";
 import { AboutControl } from "./about";
+import { PATH_BACKUP } from "../../common/constants";
 
 const html = require("./systemDrawer.html").default;
+
+const NO_PROMPT = null;
 
 export class SystemDrawControl extends ControlBase {
     constructor(parent: HTMLElement) {
@@ -72,14 +75,22 @@ export class SystemDrawControl extends ControlBase {
         if (client.requireSignIn()) return;
 
         function action(caption: string, message: string, onyes:()=>void): PromptButton {
+            let onclick = onyes;
+            if (message) {
+                onclick = () => prompt.confirm(message).then((yes) => { if (yes) onyes(); });
+            }
+
             return {
                 caption: caption,
-                onclick: () => prompt.confirm(message).then((yes) => { if (yes) onyes(); })
+                onclick: onclick
             }
         }
 
         prompt.stackedPrompt(
             "Server Control", [
+                action("Manage Backups", NO_PROMPT, () => {
+                    window.open(PATH_BACKUP, "_blank");
+                }),
                 action("Shutdown", "Are you sure you want to shutdown server?", () => {
                     if (client.connection.state !== ConnectionState.Idle) return;
                     client.connection.request<LifeCycleRequest>(RequestType.LifeCycle, {

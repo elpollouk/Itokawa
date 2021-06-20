@@ -20,4 +20,4 @@ html
                     form(id="UploadForm", action="/backup", method="post", encType="multipart/form-data")
                         a.linkButton(href="/backup/create") Create Backup
                         label.linkButton(for="file") Upload Backup
-                        input(id="file", name="file", type="file", onchange="uploadFile(this.value)")
+                        input(id="file", name="file", type="file", accept=".zip", onchange="uploadFile(this.value)")
