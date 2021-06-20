@@ -236,7 +236,7 @@ describe("authRouter", () => {
             expect(clearAllStub.callCount).to.eql(1);
         }).slow(2000).timeout(3000)
 
-        it("shoulr return 404 if session doesn't have permission", async () => {
+        it("should return 404 if session doesn't have permission", async () => {
             stub(application.sessionManager, "hasPermission").resolves(false);
 
             await expect(get("/clearAllSessions", {
@@ -272,7 +272,7 @@ describe("authRouter", () => {
             expect(clearAllStub.callCount).to.eql(1);
         }).slow(2000).timeout(3000)
 
-        it("shoulr return 404 if session doesn't have permission", async () => {
+        it("should return 404 if session doesn't have permission", async () => {
             stub(application.sessionManager, "hasPermission").resolves(false);
 
             await expect(get("/clearExpiredSessions", {
