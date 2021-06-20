@@ -186,7 +186,7 @@ describe("authRouter", () => {
         it("should attempt sign out if session provided", async () => {
             const signOutStub = stub(application.sessionManager, "signOut")
                 .resolves();
-            
+
             const response = await get("/logout", {
                 sessionId: "mock_session_id",
                 expectRedirectTo: PATH_MAIN
@@ -202,6 +202,13 @@ describe("authRouter", () => {
                 expectRedirectTo: PATH_MAIN
             });
             expect(response.get("Set-Cookie")).to.eql(["sessionId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT"]);
+        }).slow(2000).timeout(3000)
+
+        it("should result in 500 if there is a session manager exception", async () => {
+            stub(application.sessionManager, "signOut").rejects(new Error());
+            await expect(get("/logout", {
+                sessionId: "foo"
+            })).to.be.eventually.rejectedWith(/500/);
         }).slow(2000).timeout(3000)
     })
 
@@ -275,5 +282,92 @@ describe("authRouter", () => {
                 sessionId: "mock_session_id"
             })).to.be.eventually.rejectedWith(/404/);
         }).slow(2000).timeout(3000)
+    })
+
+    describe("pingSession", () => {
+        beforeEach(() => {
+            _app = express();
+            _app.use(cookieParser());
+            _app.use(authRouter.pingSession());
+            _app.use("/", (_, res) => {
+                res.send("Test OK")
+            });
+        })
+
+        it("should ping a valid session", async () => {
+            const pingStub = stub();
+            _getSessionStub.withArgs("test_session_id")
+                .resolves({
+                    id: "test_session_id",
+                    isValid: true,
+                    ping: pingStub,
+                    expires: new Date(10000)
+                });
+
+            const response = await get("/", {
+                sessionId: "test_session_id"
+            });
+
+            expect(response.text).to.eql("Test OK");
+            expect(response.get("Set-Cookie")).to.eql(["sessionId=test_session_id; Path=/; Expires=Thu, 01 Jan 1970 00:00:10 GMT"]);
+            expect(pingStub.callCount).to.eql(1);
+        })
+
+        it("should clear cookies for invalid sessions", async () => {
+            _getSessionStub.withArgs("test_session_id")
+                .resolves({
+                    id: "test_session_id",
+                    isValid: false,
+                });
+
+            const response = await get("/", {
+                sessionId: "test_session_id"
+            });
+
+            expect(response.text).to.eql("Test OK");
+            expect(response.get("Set-Cookie")).to.eql(["sessionId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT"]);
+        })
+
+        it("should do nothing if there is no session id", async () => {
+            const response = await get("/");
+
+            expect(response.text).to.eql("Test OK");
+            expect(response.get("Set-Cookie")).to.be.undefined;
+            expect(_getSessionStub.callCount).to.eql(0);
+        })
+
+        it("should result in 500 if there is a session excaption", async () => {
+            const pingStub = stub().rejects(new Error());
+            _getSessionStub.withArgs("test_session_id")
+                .resolves({
+                    id: "test_session_id",
+                    isValid: true,
+                    ping: pingStub,
+                    expires: new Date(10000)
+                });
+
+            await expect(get("/", {
+                sessionId: "test_session_id"
+            })).to.be.rejectedWith(/500/);
+        })
+    })
+
+    describe("requirePermission", () => {
+        beforeEach(() => {
+            _app = express();
+            _app.use(cookieParser());
+            _app.use(authRouter.requirePermission(Permissions.SERVER_CONTROL));
+            _app.use("/", (_, res) => {
+                res.send("Test OK")
+            });
+        })
+
+        it("should result in 500 if there is a session manager exception", async () => {
+            stub(application.sessionManager, "hasPermission").throws(new Error());
+
+            await expect(get("/", {
+                sessionId: "test_session_id"
+            })).to.be.rejectedWith(/500/);
+        })
     })
 })
