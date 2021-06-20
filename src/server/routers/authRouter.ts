@@ -1,6 +1,6 @@
 import * as express from "express";
 import { application } from "../../application";
-import { COOKIE_SESSION_ID, PATH_AUTH, PATH_MAIN } from "../../common/constants";
+import { COOKIE_SESSION_ID, PATH_MAIN } from "../../common/constants";
 import { Logger } from "../../utils/logger";
 import { Permissions } from "../sessionmanager";
 
