@@ -18,10 +18,7 @@ _authRouter.route("/")
         const sessionId = req.cookies[COOKIE_SESSION_ID];
         const session = await application.sessionManager.getSession(sessionId);
         if (session && session.isValid) {
-            await session.ping();
-            res.cookie(COOKIE_SESSION_ID, session.id, {
-                expires: session.expires
-            }).redirect(PATH_MAIN);
+            res.redirect(PATH_MAIN);
         }
         else {
             res.clearCookie(COOKIE_SESSION_ID).render('auth/index');

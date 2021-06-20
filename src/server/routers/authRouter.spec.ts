@@ -102,9 +102,7 @@ describe("authRouter", () => {
         it("should redirect on an already signed in session", async () => {
             _getSessionStub.resolves({
                 id: "foo",
-                isValid: true,
-                ping: stub(),
-                expires: new Date(1234567890)
+                isValid: true
             });
             const response = await get("/", {
                 sessionId: "mock_session_id",
@@ -113,7 +111,6 @@ describe("authRouter", () => {
 
             expect(_getSessionStub.callCount).to.eql(1);
             expect(_getSessionStub.lastCall.args).to.eql(["mock_session_id"]);
-            expect(response.get("Set-Cookie")).to.eql(["sessionId=foo; Path=/; Expires=Thu, 15 Jan 1970 06:56:07 GMT"]);
         }).slow(2000).timeout(3000)
 
         it("should result in a 500 error on exception", async () => {
