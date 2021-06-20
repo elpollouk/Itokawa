@@ -16,7 +16,7 @@ _router.use(requirePermission(Permissions.SERVER_BACKUP))
 _router.use(fileUpload());
 
 _router.route("/")
-.get(async (_: express.Request, res: express.Response)=> {
+.get(async (_, res)=> {
     const backups: string[] = [];
     const backupDir = application.getDataPath("backups");
 

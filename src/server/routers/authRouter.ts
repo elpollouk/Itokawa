@@ -13,17 +13,19 @@ _authRouter.use(express.urlencoded({extended: true}));
 // User pages
 //-----------------------------------------------------------------------------------------------//
 _authRouter.route("/")
-.get(async (req, res) => {
-    const sessionId = req.cookies[COOKIE_SESSION_ID];
-    const session = await application.sessionManager.getSession(sessionId);
-    if (session && session.isValid) {
-        await session.ping();
-        res.cookie(COOKIE_SESSION_ID, session.id, {
-            expires: session.expires
-        }).redirect(PATH_MAIN);
+.get(async (req, res, next) => {
+    try {
+        const sessionId = req.cookies[COOKIE_SESSION_ID];
+        const session = await application.sessionManager.getSession(sessionId);
+        if (session && session.isValid) {
+            res.redirect(PATH_MAIN);
+        }
+        else {
+            res.clearCookie(COOKIE_SESSION_ID).render('auth/index');
+        }
     }
-    else {
-        res.clearCookie(COOKIE_SESSION_ID).render('auth/index');
+    catch (err) {
+        next(err);
     }
 })
 .post(async (req, res) => {
@@ -46,13 +48,18 @@ _authRouter.route("/")
 });
 
 _authRouter.route("/logout")
-.get(async (req, res) => {
-    const sessionId = req.cookies[COOKIE_SESSION_ID];
-    if (sessionId) {
-        await application.sessionManager.signOut(sessionId);
+.get(async (req, res, next) => {
+    try {
+        const sessionId = req.cookies[COOKIE_SESSION_ID];
+        if (sessionId) {
+            await application.sessionManager.signOut(sessionId);
+        }
+        res.clearCookie(COOKIE_SESSION_ID).redirect(PATH_MAIN);
+        log.info(() => `Successfully logged out session ${sessionId}`);
     }
-    res.clearCookie(COOKIE_SESSION_ID).redirect(PATH_MAIN);
-    log.info(() => `Successfully logged out session ${sessionId}`);
+    catch (err) {
+        next(err);
+    }
 });
 
 
@@ -63,7 +70,9 @@ _authRouter.use(requirePermission(Permissions.SESSION_MANAGE));
 _authRouter.route("/clearAllSessions")
 .get(async (_req, res) => {
     log.display("Request to clear all sessions");
-    const result = {};
+    const result = {
+        okLink: PATH_MAIN
+    };
     try {
         await application.sessionManager.clearAll();
         result["message"] = "All sessions cleared.";
@@ -73,12 +82,15 @@ _authRouter.route("/clearAllSessions")
         result["errorMessage"] = err;
         log.error(`Failed to clear all sessions: ${err}`);
     }
-    res.render("auth/result", result);
+    res.render("result", result);
 });
+
 _authRouter.route("/clearExpiredSessions")
 .get(async (_req, res) => {
     log.info("Request to clear expired sessions");
-    const result = {};
+    const result = {
+        okLink: PATH_MAIN
+    };
     try {
         await application.sessionManager.clearExpired();
         result["message"] = "Expired sessions cleared.";
@@ -88,7 +100,7 @@ _authRouter.route("/clearExpiredSessions")
         result["errorMessage"] = err;
         log.error(`Failed to clear expired sessions: ${err}`);
     }
-    res.render("auth/result", result);
+    res.render("result", result);
 });
 
 export async function getRouter(): Promise<express.Router> {
@@ -98,33 +110,45 @@ export async function getRouter(): Promise<express.Router> {
 // Updates the expiry date for the current request session if it is still valid
 export function pingSession(): express.Handler {
     return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-        const sessionId = req.cookies[COOKIE_SESSION_ID];
-        const session = await application.sessionManager.getSession(sessionId);
-        if (session && session.isValid) {
-            await session.ping();
-            log.verbose(() => `Successfully pinged session ${sessionId} for path ${req.path}`);
-            res.cookie(COOKIE_SESSION_ID, session.id, {
-                expires: session.expires
-            });
-        } else if (sessionId) {
-            delete req.cookies[COOKIE_SESSION_ID];
-            res.clearCookie(COOKIE_SESSION_ID);
+        try {
+            const sessionId = req.cookies[COOKIE_SESSION_ID];
+            if (sessionId) {
+                const session = await application.sessionManager.getSession(sessionId);
+                if (session && session.isValid) {
+                    await session.ping();
+                    log.verbose(() => `Successfully pinged session ${sessionId} for path ${req.path}`);
+                    res.cookie(COOKIE_SESSION_ID, session.id, {
+                        expires: session.expires
+                    });
+                } else {
+                    delete req.cookies[COOKIE_SESSION_ID];
+                    res.clearCookie(COOKIE_SESSION_ID);
+                }
+            }
+            next();
         }
-        next();
+        catch (err) {
+            next(err);
+        }
     }
 }
 
 // Enforces permission granted to current request session
 export function requirePermission(permission: Permissions): express.Handler {
     return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-        const sessionId = req.cookies[COOKIE_SESSION_ID];
-        if (await application.sessionManager.hasPermission(permission, sessionId)) {
-            log.verbose(() => `Passed permission '${permission} check for path ${req.path} by session ${sessionId}`);
-            next();
+        try {
+            const sessionId = req.cookies[COOKIE_SESSION_ID];
+            if (await application.sessionManager.hasPermission(permission, sessionId)) {
+                log.verbose(() => `Passed permission '${permission} check for path ${req.path} by session ${sessionId}`);
+                next();
+            }
+            else {
+                log.warning(`Rejected permission '${permission} check for path ${req.path} by session ${sessionId}`);
+                res.sendStatus(404);
+            }
         }
-        else {
-            log.warning(`Rejected permission '${permission} check for path ${req.path} by session ${sessionId}`);
-            res.sendStatus(404);
+        catch (err) {
+            next(err);
         }
     }
 }

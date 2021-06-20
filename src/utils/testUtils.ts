@@ -1,5 +1,7 @@
 import { createStubInstance, SinonStubbedInstance, StubbableType, SinonStubbedMember, stub } from "sinon"
 import * as fs from "fs";
+import * as request from "supertest";
+import { Express } from "express-serve-static-core";
 import { ICommandBatch } from "../devices/commandStations/commandStation";
 import { ConnectionContext } from "../server/handlers/handlers";
 import { Permissions } from "../server/sessionmanager";
@@ -68,4 +70,65 @@ export function rmDir(path: string) {
 export function cleanDir(path: string) {
     rmDir(path);
     fs.mkdirSync(path);
+}
+
+//-----------------------------------------------------------------------------------------------//
+// Request helpers
+//-----------------------------------------------------------------------------------------------//
+export interface RequestOptions {
+    expectRedirectTo?: string,
+    sessionId?: string,
+    filename?: string,
+    filedata?: Buffer,
+    formdata?: {[key:string]:string}
+}
+
+export async function requestGet(app: Express, path: string, options?: RequestOptions) : Promise<request.Response> {
+    options = options ?? {};
+
+    const req = request(app).get(path);
+
+    if (options.sessionId) {
+        req.set("Cookie", [`sessionId=${options.sessionId}`]);
+    }
+
+    if (options.expectRedirectTo) {
+        req.expect(302).expect("Location", options.expectRedirectTo);
+    }
+    else {
+        req.expect(200);
+    }
+
+    return req;
+}
+
+export async function requestPost(app: Express, path: string, options?: RequestOptions): Promise<request.Response> {
+    const req = request(app)
+        .post(path);
+
+    if (options.sessionId) {
+        req.set("Cookie", [`sessionId=${options.sessionId}`]);
+    }
+
+    if (options.filename && options.filedata) {
+        req.attach("file", options.filedata, options.filename);
+    }
+    else if (options.formdata) {
+        const body = [];
+        for (const key in options.formdata) {
+            const value = options.formdata[key];
+            if (value !== null)
+                body.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+        }
+        req.send(body.join("&"));
+    }
+
+    if (options.expectRedirectTo) {
+        req.expect(302).expect("Location", options.expectRedirectTo);
+    }
+    else {
+        req.expect(200);
+    }
+
+    return req;
 }
