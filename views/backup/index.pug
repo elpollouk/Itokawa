@@ -14,8 +14,8 @@ html
                         div.backupContainer
                             a.title(href="/backup/download/" + backup) #{backup}
                             div.backupControls
-                                a.linkButton.restore(href="/backup/restore/" + backup, title="Restore backup")
-                                a.linkButton.delete(href="/backup/delete/" + backup, title="Delete backup")
+                                a.linkButton.restore(href="/backup/restore/" + backup, title="Restore backup", onclick="return restoreBackup()")
+                                a.linkButton.delete(href="/backup/delete/" + backup, title="Delete backup", onclick="return deleteBackup()")
                 div.buttons
                     form(id="UploadForm", action="/backup", method="post", encType="multipart/form-data")
                         a.linkButton(href="/backup/create") Create Backup
