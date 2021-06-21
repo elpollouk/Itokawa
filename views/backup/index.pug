@@ -14,6 +14,7 @@ html
                         div.backupContainer
                             a.title(href="/backup/download/" + backup) #{backup}
                             div.backupControls
+                                a.linkButton.rename(href="#", title="Rename backup", onclick="return renameBackup('" + backup + "')")
                                 a.linkButton.restore(href="/backup/restore/" + backup, title="Restore backup", onclick="return restoreBackup()")
                                 a.linkButton.delete(href="/backup/delete/" + backup, title="Delete backup", onclick="return deleteBackup()")
                 div.buttons
@@ -21,3 +22,7 @@ html
                         a.linkButton(href="/backup/create") Create Backup
                         label.linkButton(for="file") Upload Backup
                         input(id="file", name="file", type="file", accept=".zip", onchange="uploadFile(this.value)")
+        form(id="RenameForm", action="/backup/rename", method="post", style="display: none;")
+            input(type="hidden", id="from", name="from")
+            input(type="hidden", id="to", name="to")
+
