@@ -32,6 +32,13 @@ input[type="file"] {
     padding: 0;
 }
 
+a.rename {
+    background-image: url(/icons/rename.svg);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 75%;
+}
+
 a.restore {
     background-image: url(/icons/restore.svg);
     background-repeat: no-repeat;
