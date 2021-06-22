@@ -318,7 +318,7 @@ describe("backupRouter", () => {
             });
 
             const message = querySelector(Q_CLASS_ERROR).textContent;
-            expect(message).to.equal("Error: Invalid backup");
+            expect(message).to.equal("Error: Invalid backup name");
             expect(renameStub.callCount).to.eql(0);
         })
 
@@ -331,7 +331,7 @@ describe("backupRouter", () => {
             });
 
             const message = querySelector(Q_CLASS_ERROR).textContent;
-            expect(message).to.equal("Error: Invalid backup");
+            expect(message).to.equal("Error: Invalid backup name");
             expect(renameStub.callCount).to.eql(0);
         })
 

@@ -59,9 +59,9 @@ _router.route("/rename")
         const from = req.body["from"];
         const to = req.body["to"];
         if (!from) throw new Error("No source provided");
-        if (!from.match(VALID_BACKUP)) throw new Error("Invalid backup");
+        if (!from.match(VALID_BACKUP)) throw new Error("Invalid backup name");
         if (!to) throw new Error("No destination provided");
-        if (!to.match(VALID_BACKUP)) throw new Error("Invalid backup");
+        if (!to.match(VALID_BACKUP)) throw new Error("Invalid backup name");
 
         const backupDir = application.getDataPath("backups");
         const fromFile = `${backupDir}/${from}`;
