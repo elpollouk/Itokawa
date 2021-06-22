@@ -47,6 +47,15 @@ describe("backupRouter", () => {
         return response.text;
     }
 
+    async function postForm(path: string, formData:{[key:string]:string}) : Promise<string> {
+        const response = await requestPost(_app, path, {
+            sessionId: "mock_session_id",
+            formdata: formData
+        });
+        _dom = new JSDOM(response.text);
+        return response.text;
+    }
+
     function querySelector<E extends Element = Element>(query: string): E {
         return _dom.window.document.querySelector(query);
     }
@@ -129,8 +138,9 @@ describe("backupRouter", () => {
                 expect(backupName).to.eql(expectedName);
 
                 const buttons = element.querySelectorAll<HTMLAnchorElement>(Q_CLASS_LINKBUTTON);
-                expect(buttons[0].href).to.equal(`/backup/restore/${expectedName}`);
-                expect(buttons[1].href).to.equal(`/backup/delete/${expectedName}`);
+                expect(buttons[0].href).to.match(/#/);
+                expect(buttons[1].href).to.equal(`/backup/restore/${expectedName}`);
+                expect(buttons[2].href).to.equal(`/backup/delete/${expectedName}`);
             }
 
             const backupList = querySelector(".backups");
@@ -243,6 +253,133 @@ describe("backupRouter", () => {
         it("should reject if has no permission", async () => {
             _smHasPermission.resolves(false);
             await expect(get("/create")).to.eventually.be.rejectedWith(/404/);
+        })
+    })
+
+    describe("/rename", () => {
+        const OLD_ZIP_PATH = `${TEST_DIR}/backups/old.zip`;
+        const NEW_ZIP_PATH = `${TEST_DIR}/backups/new.zip`;
+
+        it("should rename the file if possible", async () =>{ 
+            stub(fs, "existsSync")
+                .withArgs(OLD_ZIP_PATH).returns(true)
+                .withArgs(NEW_ZIP_PATH).returns(false);
+            const renameStub = stub(fs.promises, "rename").resolves();
+
+            await postForm("/rename", {
+                from: "old.zip",
+                to: "new.zip"
+            });
+
+            const message = querySelector(Q_CLASS_MESSAGE).textContent;
+            expect(message).to.equal("Backup renamed.");
+            expect(renameStub.callCount).to.eql(1);
+            expect(renameStub.lastCall.args).to.eql([OLD_ZIP_PATH, NEW_ZIP_PATH]);
+        })
+
+        it("should reject if source file doesn't exist", async () =>{ 
+            stub(fs, "existsSync")
+                .withArgs(OLD_ZIP_PATH).returns(false)
+                .withArgs(NEW_ZIP_PATH).returns(false);
+            const renameStub = stub(fs.promises, "rename").resolves();
+
+            await postForm("/rename", {
+                from: "old.zip",
+                to: "new.zip"
+            });
+
+            const message = querySelector(Q_CLASS_ERROR).textContent;
+            expect(message).to.equal("Error: Backup does not exist");
+            expect(renameStub.callCount).to.eql(0);
+        })
+
+        it("should reject if destination file exists", async () =>{ 
+            stub(fs, "existsSync")
+                .withArgs(OLD_ZIP_PATH).returns(true)
+                .withArgs(NEW_ZIP_PATH).returns(true);
+            const renameStub = stub(fs.promises, "rename").resolves();
+
+            await postForm("/rename", {
+                from: "old.zip",
+                to: "new.zip"
+            });
+
+            const message = querySelector(Q_CLASS_ERROR).textContent;
+            expect(message).to.equal("Error: Backup with that name already exists");
+            expect(renameStub.callCount).to.eql(0);
+        })
+
+        it("should reject if source file name is invalid", async () =>{ 
+            const renameStub = stub(fs.promises, "rename").rejects();
+
+            await postForm("/rename", {
+                from: "../config.xml",
+                to: "new.zip"
+            });
+
+            const message = querySelector(Q_CLASS_ERROR).textContent;
+            expect(message).to.equal("Error: Invalid backup");
+            expect(renameStub.callCount).to.eql(0);
+        })
+
+        it("should reject if destination file name is invalid", async () =>{ 
+            const renameStub = stub(fs.promises, "rename").rejects();
+
+            await postForm("/rename", {
+                from: "old.zip",
+                to: "../config.xml"
+            });
+
+            const message = querySelector(Q_CLASS_ERROR).textContent;
+            expect(message).to.equal("Error: Invalid backup");
+            expect(renameStub.callCount).to.eql(0);
+        })
+
+        it("should reject if no source is provided", async () => {
+            const renameStub = stub(fs.promises, "rename").rejects();
+
+            await postForm("/rename", {
+                to: "new.zip"
+            });
+
+            const message = querySelector(Q_CLASS_ERROR).textContent;
+            expect(message).to.equal("Error: No source provided");
+            expect(renameStub.callCount).to.eql(0);
+        })
+
+        it("should reject if no destination is provided", async () => {
+            const renameStub = stub(fs.promises, "rename").rejects();
+
+            await postForm("/rename", {
+                from: "old.zip"
+            });
+
+            const message = querySelector(Q_CLASS_ERROR).textContent;
+            expect(message).to.equal("Error: No destination provided");
+            expect(renameStub.callCount).to.eql(0);
+        })
+
+        it("should report error if rename fails", async () =>{ 
+            stub(fs, "existsSync")
+                .withArgs(OLD_ZIP_PATH).returns(true)
+                .withArgs(NEW_ZIP_PATH).returns(false);
+            stub(fs.promises, "rename").rejects(new Error("Test"));
+
+            await postForm("/rename", {
+                from: "old.zip",
+                to: "new.zip"
+            });
+
+            const message = querySelector(Q_CLASS_ERROR).textContent;
+            expect(message).to.equal("Error: Test");
+        })
+
+        it("should reject if has no permission", async () => {
+            _smHasPermission.resolves(false);
+            await expect(postForm("/rename",{
+                from: "old.zip",
+                to: "new.zip" 
+            })).to.eventually.be.rejectedWith(/404/);
         })
     })
 

@@ -14,6 +14,7 @@ let _backupDir: string = null;
 const _router = express.Router();
 _router.use(requirePermission(Permissions.SERVER_BACKUP))
 _router.use(fileUpload());
+_router.use(express.urlencoded({extended: true}));
 
 _router.route("/")
 .get(async (_, res)=> {
@@ -51,6 +52,38 @@ _router.route("/")
         });
     }
 });
+
+_router.route("/rename")
+.post(async (req, res) => {
+    try {
+        const from = req.body["from"];
+        const to = req.body["to"];
+        if (!from) throw new Error("No source provided");
+        if (!from.match(VALID_BACKUP)) throw new Error("Invalid backup");
+        if (!to) throw new Error("No destination provided");
+        if (!to.match(VALID_BACKUP)) throw new Error("Invalid backup");
+
+        const backupDir = application.getDataPath("backups");
+        const fromFile = `${backupDir}/${from}`;
+        const toFile = `${backupDir}/${to}`;
+
+        if (!fs.existsSync(fromFile)) throw new Error("Backup does not exist");
+        if (fs.existsSync(toFile)) throw new Error("Backup with that name already exists");
+
+        await fs.promises.rename(fromFile, toFile);
+
+        res.render("result", {
+            message: "Backup renamed.",
+            okLink: PATH_BACKUP
+        });
+    }
+    catch (err) {
+        res.render("result", {
+            errorMessage: err,
+            okLink: PATH_BACKUP
+        });
+    }
+})
 
 _router.route("/create")
 .get(async (_, res) => {
