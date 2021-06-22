@@ -4,7 +4,7 @@ input[type="file"] {
 
 .backupContainer {
     box-sizing: border-box;
-    padding: 8px 0px 8px 8px;
+    padding: 8px 2px 8px 8px;
     width: 100%;
 }
 
@@ -23,6 +23,27 @@ input[type="file"] {
 }
 
 .backupContainer a.linkButton {
+    box-sizing: border-box;
     min-width: unset;
-    margin-left: 0;
+    width: 33px;
+    height: 33px;
+    margin-left: 1px;
+    margin-right: 0;
+    padding: 0;
+
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 75%;
+}
+
+a.rename {
+    background-image: url(/icons/rename.svg);
+}
+
+a.restore {
+    background-image: url(/icons/restore.svg);
+}
+
+a.delete {
+    background-image: url(/icons/delete.svg);
 }
