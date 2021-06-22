@@ -6,6 +6,9 @@ import { requirePermission } from "./authRouter";
 import { Permissions } from "../sessionmanager";
 import { PATH_BACKUP } from "../../common/constants";
 import * as backup from "../../utils/backup";
+import { Logger } from "../../utils/logger";
+
+const log = new Logger("Backup");
 
 const VALID_BACKUP = /^[\w\.-]+\.zip$/;
 
@@ -21,10 +24,18 @@ _router.route("/")
     const backups: string[] = [];
     const backupDir = application.getDataPath("backups");
 
+    log.verbose(() => `Getting backups from ${backupDir}`);
+
     if (fs.existsSync(backupDir)) {
         const files = await fs.promises.readdir(backupDir);
         for (const file of files) {
-            if (file.endsWith(".zip")) backups.push(file);
+            if (file.endsWith(".zip")) {
+                log.debug(() => `Found backup: ${file}`);
+                backups.push(file);
+            }
+            else {
+                log.debug(() => `Other file: ${file}`);
+            }
         }
     }
 
@@ -43,9 +54,12 @@ _router.route("/")
         if (fs.existsSync(copyDest)) throw new Error("Backup already exists");
 
         await file.mv(copyDest);
+
+        log.info(() => `Uploaded ${copyDest}`);
         res.redirect(PATH_BACKUP);
     }
     catch (err) {
+        log.warning(() => `Error uploading file: ${err.stack}`);
         res.render("result", {
             errorMessage: err,
             okLink: PATH_BACKUP
@@ -72,12 +86,14 @@ _router.route("/rename")
 
         await fs.promises.rename(fromFile, toFile);
 
+        log.info(() => `Renamed ${fromFile} to ${toFile}`);
         res.render("result", {
             message: "Backup renamed.",
             okLink: PATH_BACKUP
         });
     }
     catch (err) {
+        log.warning(() => `Error renaming file: ${err.stack}`);
         res.render("result", {
             errorMessage: err,
             okLink: PATH_BACKUP
@@ -96,12 +112,14 @@ _router.route("/create")
 
         backupFile = backupFile.split('/').pop();
 
+        log.info(() => `Backup ${backupFile} created`);
         res.render("result", {
             message: `${backupFile} created.`,
             okLink: PATH_BACKUP
         });
     }
     catch (err) {
+        log.warning(() => `Error creating backup: ${err.stack}`);
         res.render("result", {
             errorMessage: err,
             okLink: PATH_BACKUP
@@ -119,6 +137,10 @@ _router.route("/delete/:backup")
         const backupFile = `${backupDir}/${backup}`
         if (fs.existsSync(backupFile)) {
             await fs.promises.unlink(backupFile);
+            log.info(() => `Deleted backup ${backupFile}`);
+        }
+        else {
+            log.info(() => `Backup ${backupFile} doesn't exist`);
         }
 
         res.render("result", {
@@ -127,6 +149,7 @@ _router.route("/delete/:backup")
         });
     }
     catch (err) {
+        log.warning(() => `Error deleting backup: ${err.stack}`);
         res.render("result", {
             errorMessage: err,
             okLink: PATH_BACKUP
@@ -146,12 +169,14 @@ _router.route("/restore/:backup")
 
         await fs.promises.copyFile(backupFile, targetFile);
 
+        log.info(() => `Backup ${backupFile} copied to ${targetFile}`);
         res.render("result", {
             message: "Backup staged, please restart Itokawa to apply.",
             okLink: PATH_BACKUP
         });
     }
     catch (err) {
+        log.warning(() => `Error restoring backup: ${err.stack}`);
         res.render("result", {
             errorMessage: err,
             okLink: PATH_BACKUP
@@ -164,6 +189,7 @@ export async function getRouter(): Promise<express.Router> {
 }
 
 export function setDownloadDir(path: string) {
+    log.info(() => `Backup download directory set to ${path}`);
     _backupDir = path;
     _router.use("/download", (req, res, next) => {
         if (req.path.endsWith(".zip")) {

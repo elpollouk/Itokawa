@@ -30,25 +30,20 @@ input[type="file"] {
     margin-left: 1px;
     margin-right: 0;
     padding: 0;
+
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 75%;
 }
 
 a.rename {
     background-image: url(/icons/rename.svg);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 75%;
 }
 
 a.restore {
     background-image: url(/icons/restore.svg);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 75%;
 }
 
 a.delete {
     background-image: url(/icons/delete.svg);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 75%;
 }
