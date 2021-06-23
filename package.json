@@ -18,7 +18,7 @@
   "author": "Adrian O'Grady",
   "license": "MIT",
   "devDependencies": {
-    "@serialport/list": "^8.0.7",
+    "@serialport/list": "^9.2.0",
     "@types/adm-zip": "^0.4.33",
     "@types/chai": "^4.2.19",
     "@types/chai-as-promised": "^7.1.2",
