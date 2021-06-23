@@ -116,7 +116,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
             reverse: request.reverse
         });
 
-        setImmediate(() => {
+        setTimeout(() => {
             this.state = ConnectionState.Idle;
             callback(null, {
                 lastMessage: true,
@@ -128,7 +128,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                 type: RequestType.LocoSpeed,
                 data: request
             } as TransportMessage);
-        });
+        }, 0);
     }
 
     private _handleLocoFunction(request: LocoFunctionRequest, callback: RequestCallback) {
@@ -144,7 +144,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
             functionMap.set(request.function, request.action === FunctionAction.LatchOn);
         }
 
-        setImmediate(() => {
+        setTimeout(() => {
             this.state = ConnectionState.Idle;
             callback(null, {
                 lastMessage: true,
@@ -158,7 +158,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                 type: RequestType.LocoFunction,
                 data: request
             } as TransportMessage);
-        });
+        }, 0);
     }
 
     private _handleEmergencyStop(callback: RequestCallback) {
@@ -169,7 +169,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
             loco.reverse = false;
         }
 
-        setImmediate(() => {
+        setTimeout(() => {
             this.state = ConnectionState.Idle;
 
             callback(null, {
@@ -189,13 +189,13 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                     }
                 } as TransportMessage);
             }
-        });
+        }, 0);
     }
 
     private _handleLocoSpeedRefresh(callback: RequestCallback) {
         this.state = ConnectionState.Idle;
 
-        setImmediate(() => {
+        setTimeout(() => {
             for (const loco of this._locoStates) {
                 callback(null, {
                     lastMessage: false,
@@ -211,13 +211,13 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                 lastMessage: true,
                 data: "OK"
             });
-        });
+        }, 0);
     }
 
     private _handleLocoFunctionRefresh(request: LocoSpeedRefreshRequest, callback: RequestCallback) {
         this.state = ConnectionState.Idle;
 
-        setImmediate(() => {
+        setTimeout(() => {
             const functionMap = this._functionStates.get(request.locoId);
             if (functionMap) {
                 for (const [func, state] of functionMap.entries()) {
@@ -236,7 +236,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
                 lastMessage: true,
                 data: "OK"
             });
-        });
+        }, 0);
     }
 
     private async _handleLocoCvRead(request: LocoCvReadRequest, callback: RequestCallback) {
