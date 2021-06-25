@@ -45,16 +45,19 @@ export class Client {
     readonly api: IApiClient;
     readonly featureFlags: FeatureFlags = new FeatureFlags();
     isSignedIn: boolean = false;
+    readonly isDemo: boolean;
 
     constructor() {
         if (window.location.search === "?demo") {
             this.connection = new DemoCommandConnection();
             this.api = new DemoApiClient();
             this.isSignedIn = true;
+            this.isDemo = true;
         }
         else {
             this.connection = new CommandConnection(PATH_WEBSOCKET);
             this.api = new ApiClient(PATH_API);
+            this.isDemo = false;
         }
 
         this.api.getConfig().then((config) => {
