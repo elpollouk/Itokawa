@@ -31,6 +31,7 @@ export class SystemDrawControl extends ControlBase {
         new PublicUrlQrCode(getById(container, "qrContainer"));
         getById(container, "trains").onclick = () => this._openTrainsScreen();
         getById(container, "server").onclick = () => this._openServerPopup();
+        getById(container, "popout").onclick = () => this._openPopout();
         getById(container, "about").onclick = () => this._openAbout();
         getById(container, "estop").onclick = (ev) => {
             this._emergencyStop();
@@ -118,6 +119,15 @@ export class SystemDrawControl extends ControlBase {
                 { caption: "Cancel" }
             ]
         );
+    }
+
+    private _openPopout() {
+        const url = client.isDemo ? "/?demo" : "/";
+        const params = screen.width >= 600 ? "width=600,height=300" : "";
+        const newWin = window.open(url, "_blank", params);
+        newWin.addEventListener("load", () => {
+            newWin.document.body.classList.add("popout");
+        });
     }
 
     private _openAbout() {
