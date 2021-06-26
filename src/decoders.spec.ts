@@ -25,6 +25,12 @@ function verifyCvNames(cvNames: any[]) {
 }
 
 describe("decoders.xml", () => {
+    it("should have a version", async () => {
+        const decoders = await loadDecoders();
+        const version = decoders["_attr"]["version"]
+        expect(version).to.match(/^\d+\.\d+$/);
+    })
+
     it("should contain a valid loco CVs section", async () => {
         const decoders = await loadDecoders();
         const cvNames = decoders["locoCvNames"][0]["cv"];

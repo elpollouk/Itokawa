@@ -1,4 +1,4 @@
-<decoders version="1.15">
+<decoders version="1.16">
     <!-- Data from https://www.nmra.org/sites/default/files/standards/sandrp/pdf/s-9.2.2_decoder_cvs_2012.07.pdf -->
     <locoCvNames>
         <cv n="1">Primary Address</cv>
@@ -312,6 +312,45 @@
         <!-- Hornby Decoders -->
         <profile man="48" ver="131,133,135" name="R8249/R7150/R7274">
             <cvs>1,3,4,10,17,18,29</cvs>
+        </profile>
+
+        <profile man="48" ver="14" name="TTS Decoder">
+            <locoCvNames>
+                <cv n="150">Motor Algorithm 1 &amp; 2</cv>
+                <cv n="151">P1, parameter of Motor Algorithm 1</cv>
+                <cv n="152">I1, parameter of Motor Algorithm 1</cv>
+                <cv n="153">P2, parameter of Motor Algorithm 2</cv>
+                <cv n="154">I2, parameter of Motor Algorithm 2</cv>
+                <cv n="156">Loco ID</cv>
+                <cv n="157">Motor Type</cv>
+                <cv n="158">Decoder Sound Version</cv>
+                <cv n="159">Decoder Sound ID</cv>
+                <cv n="160">Volume Loco Background Steam</cv>
+                <cv n="161">F1 Volume Running</cv>
+                <cv n="162">F2 Volume</cv>
+                <cv n="163">F3 Volume</cv>
+                <cv n="164">F4 Volume</cv>
+                <cv n="165">F5 Volume</cv>
+                <cv n="166">F6 Volume</cv>
+                <cv n="167">F7 Volume</cv>
+                <cv n="168">F8 Volume</cv>
+                <cv n="169">F9 Volume</cv>
+                <cv n="170">F10 Volume</cv>
+                <cv n="171">F11 Volume</cv>
+                <cv n="172">F12 Volume</cv>
+                <cv n="173">F13 Volume</cv>
+                <cv n="174">F14 Volume</cv>
+                <cv n="175">F15 Volume</cv>
+                <cv n="176">F16 Volume</cv>
+                <cv n="177">F1 Volume Decelerating</cv>
+                <cv n="178">F19 Volume</cv>
+                <cv n="179">F20 Volume</cv>
+                <cv n="180">F21 Volume</cv>
+                <cv n="181">F22 Volume</cv>
+                <cv n="182">Quick Set Volume Level</cv>
+                <cv n="201">Loco Start Delay</cv>
+            </locoCvNames>
+            <cvs>1,3,4,10,17,18,29,150-154,156-182,201</cvs>
         </profile>
 
         <!-- Gaugemaster -->
