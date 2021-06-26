@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 import { stub } from "sinon";
-import { CommanderStatic } from "commander";
+import { Command } from "commander";
 import { Logger, LogLevel } from "./logger";
 let pjson = require('../../package.json');
 
@@ -18,7 +18,7 @@ describe("Command Line args", () => {
                 return commander;
             });
 
-            commandLineArgs.addCommonOptions(commander as CommanderStatic);
+            commandLineArgs.addCommonOptions(commander as Command);
 
             expect(commander["version"].lastCall.args).to.eql([ pjson.version ]);
             expect(options.size).to.equal(5);
@@ -42,21 +42,21 @@ describe("Command Line args", () => {
         })
 
         it("should do nothing if option not set", () => {
-            commandLineArgs.applyLogLevel({} as CommanderStatic);
+            commandLineArgs.applyLogLevel({} as Command);
             expect(Logger.logLevel).to.be.null;
         })
 
         it("should parse valid level", () => {
             commandLineArgs.applyLogLevel({
                 logLevel: "debug"
-            } as unknown as CommanderStatic);
+            } as unknown as Command);
             expect(Logger.logLevel).to.equal(LogLevel.DEBUG);
         })
 
         it("should ignore invalid level", () => {
             commandLineArgs.applyLogLevel({
                 logLevel: "foo"
-            } as unknown as CommanderStatic);
+            } as unknown as Command);
             expect(Logger.logLevel).to.be.null;
         })
     })
