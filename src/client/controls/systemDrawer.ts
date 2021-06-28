@@ -122,7 +122,7 @@ export class SystemDrawControl extends ControlBase {
     }
 
     private _openPopout() {
-        const url = client.isDemo ? "/?demo" : "/";
+        const url = client.isDemo ? "./?demo" : "./";
         const params = screen.width >= 600 ? "width=600,height=300" : "";
         const newWin = window.open(url, "_blank", params);
         newWin.addEventListener("load", () => {
