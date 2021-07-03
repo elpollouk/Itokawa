@@ -25,6 +25,7 @@ describe("Client Smoke", () => {
         stub(application, "commandStation").value(new NullCommandStation());
         stub(application, "database").value(await Database.open(":memory:"));
         stub(application, "publicUrl").value(`http://127.0.0.1:${TEST_PORT}/`);
+        stub(application, "gitrev").value("test_revision");
 
         return new Promise<void>(async (resolve, reject) => {
             try {
@@ -92,11 +93,11 @@ describe("Client Smoke", () => {
 
     before(async function() {
         this.timeout(30000);
-        this.slow(5000);
 
         console.log("Starting server...");
         await startServer();
 
+        // This step can take a few seconds on github actions
         console.log("Launching Chrome...");
         chrome = await launcher.launch({
             chromeFlags: [
@@ -132,9 +133,19 @@ describe("Client Smoke", () => {
 
     it("should open root page as expected", async () => {
         await openPage("/");
-        const title = await evaluate("document.title");
 
+        const title: string = await evaluate("document.title");
         expect(title).to.eql("Itokawa");
+
+        // Check the websocket connection
+        while (await evaluate<number>("itokawa.connection.state") != 1) {
+            await timeout(0.1);
+        }
+
+        const device: string = await evaluate("itokawa.connection.deviceId");
+        expect(device).to.equal(NullCommandStation.deviceId + " 1.0.0");
+        const gitrev: string = await evaluate("itokawa.connection.gitRevision");
+        expect(gitrev).to.equal("test_revision");
     }).timeout(10000).slow(5000)
 
     it("should return a 'not found' response", async () => {
