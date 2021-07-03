@@ -80,7 +80,8 @@ export interface RequestOptions {
     sessionId?: string,
     filename?: string,
     filedata?: Buffer,
-    formdata?: {[key:string]:string}
+    formdata?: {[key:string]:string},
+    json?: any
 }
 
 export async function requestGet(app: Express, path: string, options?: RequestOptions) : Promise<request.Response> {
@@ -121,6 +122,27 @@ export async function requestPost(app: Express, path: string, options?: RequestO
                 body.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
         }
         req.send(body.join("&"));
+    }
+    else if (options.json) {
+        req.set("content-type", "application/json; charset=utf-8").send(JSON.stringify(options.json));
+    }
+
+    if (options.expectRedirectTo) {
+        req.expect(302).expect("Location", options.expectRedirectTo);
+    }
+    else {
+        req.expect(200);
+    }
+
+    return req;
+}
+
+export async function requestDelete(app: Express, path: string, options?: RequestOptions): Promise<request.Response> {
+    const req = request(app)
+        .delete(path);
+
+    if (options.sessionId) {
+        req.set("Cookie", [`sessionId=${options.sessionId}`]);
     }
 
     if (options.expectRedirectTo) {
