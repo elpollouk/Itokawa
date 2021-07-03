@@ -131,14 +131,19 @@ describe("Client Smoke", () => {
     // Tests
     //-------------------------------------------------------------------------------------------//
 
-    it("should open root page as expected", async () => {
+    it("should server root page", async () => {
         await openPage("/");
 
+        // This should verify the static routes are setup correctly
         const title: string = await evaluate("document.title");
         expect(title).to.eql("Itokawa");
+    }).timeout(10000).slow(5000)
 
-        // Check the websocket connection
-        while (await evaluate<number>("itokawa.connection.state") != 1) {
+    it("should establish a websocket connection", async () => {
+        await openPage("/");
+
+        // This should verify bundle.js has built correctly and the websocket route is correct
+        while (await evaluate<number>("itokawa.connection.state") !== 1) {
             await timeout(0.1);
         }
 
