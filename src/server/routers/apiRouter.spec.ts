@@ -10,7 +10,6 @@ import { getRouter } from "./apiRouter";
 import { application } from "../../application";
 import { LocoRepository } from "../../model/locoRepository";
 import { Permissions } from "../sessionmanager";
-import { execPath } from "process";
 
 describe("apiRouter", async () => {
     let _app: express.Express;
