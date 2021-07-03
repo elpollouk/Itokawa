@@ -83,6 +83,7 @@ describe("Client Smoke", () => {
             url: `http://127.0.0.1:${TEST_PORT}${path}`
         })
         expect(result.errorText).to.be.undefined;
+        // loadEventFired isn't exposed on the types definition I'm using
         expect(client.Page["loadEventFired"]).to.not.be.undefined;
         await client.Page["loadEventFired"]();
     }
@@ -114,7 +115,7 @@ describe("Client Smoke", () => {
             ]
         });
 
-        // This often fails on github actions
+        // This often fails on github actions and so needs to be retried
         console.log("Connecting remote interface...");
         client = await retry(3, 1, () => chromeRemote({
             port: chrome.port
@@ -168,7 +169,7 @@ describe("Client Smoke", () => {
         // This should verify the REST route is setup correctly
         await evaluate("itokawa.api.addLoco('foo', 123, 90, [], {})");
 
-        // We need to wait for the loco to be added to the DB
+        // We need to wait for the loco to be added to the DB as the action is asynchronous
         const repo = await application.database.openRepository(LocoRepository);
         let loco: api.Loco;
         do {
