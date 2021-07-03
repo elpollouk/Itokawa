@@ -74,7 +74,9 @@ describe("Client Smoke", () => {
     }
 
 
-    before(async () => {
+    before(async function() {
+        this.timeout(10000);
+        this.slow(5000);
         await startServer();
 
         chrome = await launcher.launch({
