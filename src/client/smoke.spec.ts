@@ -83,7 +83,7 @@ describe("Client Smoke", () => {
             url: `http://127.0.0.1:${TEST_PORT}${path}`
         })
         expect(result.errorText).to.be.undefined;
-        // loadEventFired isn't exposed on the types definition I'm using
+        // loadEventFired isn't exposed on the types definition
         expect(client.Page["loadEventFired"]).to.not.be.undefined;
         await client.Page["loadEventFired"]();
     }
