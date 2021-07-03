@@ -140,7 +140,7 @@ describe("Client Smoke", () => {
     // Tests
     //-------------------------------------------------------------------------------------------//
 
-    it("should server root page", async () => {
+    it("should serve root page", async () => {
         await openPage("/");
 
         // This should verify the static routes are setup correctly
