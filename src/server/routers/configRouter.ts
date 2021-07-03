@@ -12,9 +12,7 @@ export function registerRoutes(router: express.Router, log: Logger) {
 
             if (application.config.has("client")) config.client = application.config.get("client");
 
-            const flags = [];
-            for (const flag of application.featureFlags.getFlags())
-                flags.push(flag);
+            const flags = [...application.featureFlags.getFlags()];
             if (flags.length)
                 config.features = flags;
 

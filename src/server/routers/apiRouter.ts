@@ -1,7 +1,7 @@
 import { Logger } from "../../utils/logger";
 import * as express from "express";
 import * as api from "../../common/api";
-import * as config from "./configRoutes";
+import * as config from "./configRouter";
 import { application } from "../../application";
 import { LocoRepository } from "../../model/locoRepository";
 import { requirePermission } from "./authRouter";
