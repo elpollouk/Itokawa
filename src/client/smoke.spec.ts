@@ -11,6 +11,7 @@ import * as setup from "../server/setup";
 import { Database } from "../model/database";
 import { application } from "../application";
 import { NullCommandStation } from "../devices/commandStations/null";
+import { timeout } from "../utils/promiseUtils";
 
 const TEST_PORT = 18080;
 
@@ -45,6 +46,20 @@ describe("Client Smoke", () => {
                 else resolve();
             })
         });
+    }
+
+    async function retry<T>(attempts: number, delaySeconds: number, action: ()=>Promise<T>): Promise<T> {
+        while (true) {
+            try {
+                return await action();
+            }
+            catch (ex) {
+                if (--attempts <= 0) {
+                    throw ex;
+                }
+                await timeout(delaySeconds);
+            }
+        }
     }
 
     async function silentClose(action: ()=>Promise<any>): Promise<void> {
@@ -86,9 +101,10 @@ describe("Client Smoke", () => {
             ]
         });
 
-        client = await chromeRemote({
+        // This often fails on github actions
+        client = await retry(3, 1, () => chromeRemote({
             port: chrome.port
-        });
+        }));
 
         await Promise.all([
             client.Runtime.enable(),
