@@ -1,7 +1,7 @@
 import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
-import { stub, restore, SinonStub } from "sinon";
+import { stub, restore } from "sinon";
 
 import * as express from "express";
 import { requestGet } from "../../utils/testUtils";
@@ -15,9 +15,7 @@ describe("configRouter", () => {
     let _appConfig: ConfigNode;
 
     async function get() : Promise<any> {
-        const response = await requestGet(_app, "/config", {
-            sessionId: "mock_session_id"
-        });
+        const response = await requestGet(_app, "/config");
 
         return JSON.parse(response.text);
     }
