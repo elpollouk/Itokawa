@@ -57,6 +57,7 @@ describe("Client Smoke", () => {
                 if (--attempts <= 0) {
                     throw ex;
                 }
+                console.log("Error occurred, retrying...");
                 await timeout(delaySeconds);
             }
         }
