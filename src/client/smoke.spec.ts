@@ -91,10 +91,13 @@ describe("Client Smoke", () => {
 
 
     before(async function() {
-        this.timeout(10000);
+        this.timeout(30000);
         this.slow(5000);
+
+        console.log("Starting server...");
         await startServer();
 
+        console.log("Launching Chrome...");
         chrome = await launcher.launch({
             chromeFlags: [
                 "--disable-gpu",
@@ -103,14 +106,15 @@ describe("Client Smoke", () => {
         });
 
         // This often fails on github actions
+        console.log("Connecting remote interface...");
         client = await retry(3, 1, () => chromeRemote({
             port: chrome.port
         }));
 
+        console.log("Starting domains...");
         await Promise.all([
             client.Runtime.enable(),
-            client.Page.enable(),
-            client.DOM.enable()
+            client.Page.enable()
         ]);
     })
 
