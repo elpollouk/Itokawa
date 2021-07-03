@@ -12,6 +12,10 @@ import { Database } from "../model/database";
 import { application } from "../application";
 import { NullCommandStation } from "../devices/commandStations/null";
 import { timeout } from "../utils/promiseUtils";
+import * as api from "../common/api";
+import { LocoRepository } from "../model/locoRepository";
+//import { Logger, LogLevel } from "../utils/logger";
+//Logger.logLevel = LogLevel.DEBUG;
 
 const TEST_PORT = 18080;
 
@@ -26,6 +30,7 @@ describe("Client Smoke", () => {
         stub(application, "database").value(await Database.open(":memory:"));
         stub(application, "publicUrl").value(`http://127.0.0.1:${TEST_PORT}/`);
         stub(application, "gitrev").value("test_revision");
+        stub(application.sessionManager, "hasPermission").resolves(true);
 
         return new Promise<void>(async (resolve, reject) => {
             try {
@@ -86,7 +91,10 @@ describe("Client Smoke", () => {
         const result = await client.Runtime.evaluate({
             expression: expression
         });
-        expect(result.exceptionDetails).to.be.undefined;
+        if (result.exceptionDetails) {
+            console.error(result.exceptionDetails);
+            throw new Error(result.exceptionDetails.exception.description);
+        }
         return result.result.value;
     }
 
@@ -151,6 +159,32 @@ describe("Client Smoke", () => {
         expect(device).to.equal(NullCommandStation.deviceId + " 1.0.0");
         const gitrev: string = await evaluate("itokawa.connection.gitRevision");
         expect(gitrev).to.equal("test_revision");
+    }).timeout(10000).slow(5000)
+
+    it("should establish an api connection", async () => {
+        await openPage("/");
+
+        // Add a new loco to the DB by invoking the API client in the browser
+        // This should verify the REST route is setup correctly
+        await evaluate("itokawa.api.addLoco('foo', 123, 90, [], {})");
+
+        // We need to wait for the loco to be added to the DB
+        const repo = await application.database.openRepository(LocoRepository);
+        let loco: api.Loco;
+        do {
+            loco = await repo.get(1);
+        }
+        while (!loco);
+
+        expect(loco).to.eql({
+            address: 123,
+            cvs: {},
+            discrete: false,
+            functions: [],
+            id: 1,
+            maxSpeed: 90,
+            name: "foo"
+        });
     }).timeout(10000).slow(5000)
 
     it("should return a 'not found' response", async () => {
