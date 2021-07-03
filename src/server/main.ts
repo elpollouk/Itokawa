@@ -5,7 +5,6 @@ import { AddressInfo } from "net";
 import * as os from "os";
 import * as express from "express";
 import * as expressWs from "express-ws";
-import * as cookieParser from "cookie-parser";
 import { Command } from "commander";
 import * as ngrok from "../publishers/ngrok";
 import { application } from "../application";
@@ -13,12 +12,8 @@ import { addCommonOptions } from "../utils/commandLineArgs";
 import { parseIntStrict } from "../utils/parsers";
 import { execShutdown, execRestart, shutdownCheck, restartCheck } from "./shutdown";
 import { ConfigNode } from "../utils/config";
-import * as apiRouter from "./routers/apiRouter";
-import * as authRouter from "./routers/authRouter";
 import * as backupRouter from "./routers/backupRouter";
-
-// WebSocket Message handlers
-import { getControlWebSocketRoute } from "./handlers/handlers";
+import * as setup from "./setup";
 
 const program = new Command();
 addCommonOptions(program);
@@ -44,19 +39,7 @@ async function main()
     const ews = expressWs(express());
     const app = ews.app;
 
-    app.set("view engine", "pug");
-    app.set("views", "./views");
-
-    app.use(cookieParser());
-    app.use(authRouter.pingSession());
-    app.use(express.static("static"));
-    app.ws("/control/v1", getControlWebSocketRoute());
-    app.use("/api/v1", await apiRouter.getRouter());
-    app.use("/auth", await authRouter.getRouter());
-    app.use("/backup", await backupRouter.getRouter());
-    app.use((_, res) => {
-        res.sendStatus(404);
-    });
+    await setup.registerMiddleware(app);
 
     backupRouter.setDownloadDir(application.getDataPath("backups"));
 
