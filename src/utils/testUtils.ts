@@ -62,7 +62,9 @@ export function rmDir(path: string) {
             fs.rmSync(path, { recursive: true, force: true });
         }
         else {
-            fs.rmdirSync(path, { recursive: true });
+            const options = {}
+            options["recursive"] = true;
+            fs.rmdirSync(path, options);
         }
     }
 }

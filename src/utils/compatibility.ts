@@ -8,7 +8,7 @@ export function rmdir(path: string): Promise<void> {
             force: true
         });
     }
-    return fs.promises.rmdir(path, {
-        recursive: true
-    });
+    const options = {}
+    options["recursive"] = true;
+    return fs.promises.rmdir(path, options);
 }
