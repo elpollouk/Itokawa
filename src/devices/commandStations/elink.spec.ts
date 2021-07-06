@@ -74,7 +74,7 @@ describe("eLink", () => {
         serialPortOpenStub = stub(AsyncSerialPort, "open")
             .returns(Promise.resolve(serialPortStub));
 
-        setTimeoutStub = stub(global, "setTimeout").returns(MOCK_TIMEOUT_TOKEN);
+        setTimeoutStub = stub(global, "setTimeout").returns(MOCK_TIMEOUT_TOKEN as any);
         clearTimeoutStub = stub(global, "clearTimeout");
         promiseTimeoutStub = stub(promiseUtils, "timeout").resolves();
     })
