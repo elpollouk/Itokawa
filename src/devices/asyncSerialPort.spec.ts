@@ -219,8 +219,12 @@ describe("AsyncSerialPort", () => {
             let promise = port.read(1, 0.5);
 
             expect(setTimeoutStub.callCount).to.equal(1);
-            expect(setTimeoutStub.lastCall.args[0]).to.be.instanceOf(Function);
-            expect(setTimeoutStub.lastCall.args[1]).to.equal(500);
+            // @types/node 16.3.0 introduced a definition for setTimeout that's missing the ms argument.
+            // This cast through unknown is required to add that argument back to the definition picked
+            // up by Sinon.
+            const args = setTimeoutStub.lastCall.args as unknown as [()=>void, number];
+            expect(args[0]).to.be.instanceOf(Function);
+            expect(args[1]).to.equal(500);
 
             const cb = (setTimeoutStub.lastCall.args[0] as Function);
             cb();
