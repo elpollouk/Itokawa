@@ -60,7 +60,7 @@
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "express-ws": "^5.0.2",
-    "ngrok": "^4.0.1",
+    "ngrok": "^4.2.2",
     "pug": "^3.0.2",
     "qrcode": "^1.4.4",
     "read": "^1.0.7",
