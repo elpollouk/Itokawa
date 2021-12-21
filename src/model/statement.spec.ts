@@ -1,7 +1,7 @@
 import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
-import * as sqlite3 from "sqlite3";
+import * as sqlite3 from "@vscode/sqlite3";
 import { Database } from "./database";
 import { Statement } from "./statement";
 

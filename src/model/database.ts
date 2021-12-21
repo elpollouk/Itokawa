@@ -1,5 +1,5 @@
 import { Logger } from "../utils/logger";
-import * as sqlite3 from "sqlite3";
+import * as sqlite3 from "@vscode/sqlite3";
 import * as fs from "fs";
 import { Repository } from "./repository";
 import { Statement } from "./statement";

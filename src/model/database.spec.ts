@@ -3,7 +3,7 @@ use(require("chai-as-promised"));
 import "mocha";
 import { stub } from "sinon";
 import { Database } from "./database";
-import * as sqlite3 from "sqlite3";
+import * as sqlite3 from "@vscode/sqlite3";
 import * as fs from "fs";
 import { rmDir, rmFile } from "../utils/testUtils";
 
