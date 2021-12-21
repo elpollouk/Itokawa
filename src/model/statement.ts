@@ -1,4 +1,4 @@
-import * as sqlite3 from "sqlite3";
+import * as sqlite3 from "@vscode/sqlite3";
 
 export class Statement<ResultType=any> {
     constructor(private _statement: sqlite3.Statement) {
