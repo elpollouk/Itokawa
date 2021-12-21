@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.9",
-    "commander": "^8.1.0",
+    "commander": "^8.3.0",
     "cookie-parser": "^1.4.5",
     "express": "^4.17.2",
     "express-fileupload": "^1.2.1",
