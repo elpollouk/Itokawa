@@ -55,14 +55,14 @@ export class WebSocketCommandStation extends CommandStationBase {
             this._onOpen();
         });
         this._ws.on("close", (_, reason) => {
-            this._onClose(reason);
+            this._onClose(reason.toString());
         });
         this._ws.on("error", (err) => {
             this._onError(err);
         });
         this._ws.on("message", (data) => {
             try {
-                const message = JSON.parse(data as string);
+                const message = JSON.parse(data.toString());
                 this._onMessage(message);
             }
             catch (err) {
