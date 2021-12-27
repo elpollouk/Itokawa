@@ -13,7 +13,7 @@ import { UpdatePage, UpdatePageConstructor } from "../pages/update";
 import { PromptButton } from "../controls/promptControl";
 import { getById, parseHtml } from "../utils/dom";
 import { AboutControl } from "./about";
-import { PATH_BACKUP } from "../../common/constants";
+import { PATH_BACKUP, PATH_BACKUP_DEMO } from "../../common/constants";
 
 const html = require("./systemDrawer.html").default;
 
@@ -90,7 +90,8 @@ export class SystemDrawControl extends ControlBase {
         prompt.stackedPrompt(
             "Server Control", [
                 action("Manage Backups", NO_PROMPT, () => {
-                    window.open(PATH_BACKUP, "_blank");
+                   const path = client.isDemo ? PATH_BACKUP_DEMO : PATH_BACKUP;
+                    window.open(path, "_blank");
                 }),
                 action("Shutdown", "Are you sure you want to shutdown server?", () => {
                     if (client.connection.state !== ConnectionState.Idle) return;
