@@ -194,4 +194,17 @@ describe("Client Smoke", () => {
 
         expect(content).to.eql("Not Found");
     }).timeout(10000).slow(5000)
+
+    it("should have correctly packed HTML pages", async () => {
+        await openPage("/");
+        await evaluate("openTestPage('Hello World')");
+
+        while (true) {
+            const title = await evaluate("document.getElementsByClassName('title')[0].innerText");
+            if (title == "Test Page") break;
+        }
+
+        const content = await evaluate("document.getElementsByClassName('pageContent')[0].innerText");
+        expect(content).to.eql("Hello World");
+    }).timeout(10000).slow(5000)
 })

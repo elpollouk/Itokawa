@@ -9,9 +9,15 @@ import { AttributionsConstructor } from "./pages/attributions";
 import { CvEditorConstructor } from "./pages/cvEditor";
 import { LocoPanelConstructor } from "./pages/locoPanel";
 import { FunctionSetupConstructor } from "./pages/functionSetup";
+import { TestPageConstructor } from "./pages/test";
+
+function openTestPage(message: string) {
+    Navigator.open(TestPageConstructor.path, message);
+}
 
 window["main"] = function () {
     window["itokawa"] = client;
+    window["openTestPage"] = openTestPage;
 
     //---------------------------------------------------------------------------------------//
     // System Drawer
@@ -31,6 +37,7 @@ window["main"] = function () {
     Navigator.registerPage(CvEditorConstructor);
     Navigator.registerPage(FunctionSetupConstructor);
     Navigator.registerPage(LocoPanelConstructor);
+    Navigator.registerPage(TestPageConstructor);
 
     Navigator.initalOpen();
 }
