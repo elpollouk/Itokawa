@@ -4,7 +4,9 @@ import { timestamp } from "../common/time";
 import { CommandStationState } from "../devices/commandStations/commandStation";
 import { RequestCallback, ConnectionState, ICommandConnection, client } from "./client";
 
-const HEARTBEAT_TIME = 15; // In seconds
+// Time are in milliseconds
+const HEARTBEAT_TIME = 15000;
+const INITIAL_HEARTBEAT_DELAY = 50;
 
 export class CommandConnection extends Bindable implements ICommandConnection {
 
@@ -122,7 +124,10 @@ export class CommandConnection extends Bindable implements ICommandConnection {
     private _onOpen(ev: Event) {
         console.log("WebSocket opened");
         this.state = ConnectionState.Idle;
-        if (this.isIdle) this._requestHeartbeat();
+        // After an error, the first WebSocket message after establishing a connection is often
+        // not delivered if sent too quickly after the open event firing in Chromium browsers.
+        // Adding a small delayseems to resolve this issue
+        setTimeout(() => this._requestHeartbeat(), INITIAL_HEARTBEAT_DELAY);
     }
 
     private _onClose(ev: CloseEvent) {
@@ -198,7 +203,7 @@ export class CommandConnection extends Bindable implements ICommandConnection {
 
             this._requestHeartbeat();
 
-        }, HEARTBEAT_TIME * 1000);
+        }, HEARTBEAT_TIME);
     }
 
     private _cancelHeartbeat() {
