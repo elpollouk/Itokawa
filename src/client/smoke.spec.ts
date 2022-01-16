@@ -152,7 +152,7 @@ describe("Client Smoke", () => {
         await openPage("/");
 
         // This should verify bundle.js has built correctly and the websocket route is correct
-        while (await evaluate<number>("itokawa.connection.state") !== 1) {
+        while (await evaluate<number>("itokawa.connection.deviceState") !== 2) {
             await timeout(0.1);
         }
 
