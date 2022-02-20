@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import { SerialPort, SerialPortOpenOptions } from "serialport";
+import { SerialPortStream } from "@serialport/stream";
 import { Logger } from "../utils/logger";
 import { toHumanHex } from "../utils/hex";
 import { DebugSnapshot } from "../utils/debugSnapshot";
@@ -14,6 +15,11 @@ function _snapshotAdd(...data: any[]) {
     if (_debugSnapshot) _debugSnapshot.add(...data);
 }
 
+// This allows us to pass in the SerialPortMock class for desting
+interface SerialPortConstructable {
+    new (options: SerialPortOpenOptions<any>, cb:(err:Error)=>void): SerialPortStream;
+}
+
 export class AsyncSerialPort extends EventEmitter {
     
     // This is for clearing out the log during testing
@@ -21,11 +27,12 @@ export class AsyncSerialPort extends EventEmitter {
         _debugSnapshot = null;
     }
 
-    static open(options: SerialPortOpenOptions<any>): Promise<AsyncSerialPort> {
+    static open(options: SerialPortOpenOptions<any>, portType?: SerialPortConstructable): Promise<AsyncSerialPort> {
         log.debug(() => `Opening ${options.path} with options ${JSON.stringify(options)}`);
+        portType = portType ?? SerialPort;
 
         return new Promise<AsyncSerialPort>((resolve, reject) => {
-            let port = new SerialPort(options, (err) => {
+            let port = new portType(options, (err) => {
                 if (err) reject(err);
                 else resolve(new AsyncSerialPort(port));
             });
@@ -41,7 +48,7 @@ export class AsyncSerialPort extends EventEmitter {
         return this._buffer.length;
     }
 
-    private constructor(private _port: SerialPort) {
+    private constructor(private _port: SerialPortStream) {
         super();
 
         if (application.config.has("debug.serialport") && !_debugSnapshot) {

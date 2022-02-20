@@ -38,14 +38,13 @@ describe("Raw Command Station", () => {
             const cs = await RawCommandStation.open(CONNECTION_STRING);
             expect(cs.state).to.equal(CommandStationState.IDLE);
             expect(serialPortOpenStub.callCount).to.equal(1);
-            expect(serialPortOpenStub.lastCall.args).to.eql([
-                "COM2", {
-                    baudRate: 115200,
-                    dataBits: 8,
-                    stopBits: 1,
-                    parity: "none"
-                }
-            ]);
+            expect(serialPortOpenStub.lastCall.args).to.eql([{
+                path: "COM2",
+                baudRate: 115200,
+                dataBits: 8,
+                stopBits: 1,
+                parity: "none"
+            }]);
             expect(serialPortStub.on.callCount).to.equal(2);
             expect(serialPortStub.on.getCall(EventIndex.ERROR).args[0]).to.equal("error");
             expect(serialPortStub.on.getCall(EventIndex.DATA).args[0]).to.equal("data");
@@ -54,14 +53,13 @@ describe("Raw Command Station", () => {
         it("should open serial port with configured parameters", async () => {
             await RawCommandStation.open("port=COM2;baud=9600;dataBits=7;stopBits=2;parity=even");
             expect(serialPortOpenStub.callCount).to.equal(1);
-            expect(serialPortOpenStub.lastCall.args).to.eql([
-                "COM2", {
-                    baudRate: 9600,
-                    dataBits: 7,
-                    stopBits: 2,
-                    parity: "even"
-                }
-            ]);
+            expect(serialPortOpenStub.lastCall.args).to.eql([{
+                path: "COM2",
+                baudRate: 9600,
+                dataBits: 7,
+                stopBits: 2,
+                parity: "even"
+            }]);
         })
 
         it("should fail if no port specified", async () => {

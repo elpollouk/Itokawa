@@ -10,8 +10,8 @@ import { application } from "../application";
 
 import { AsyncSerialPort } from "./asyncSerialPort";
 import { ConfigNode } from "../utils/config";
-const SerialPort = require('@serialport/stream');
-const MockBinding = require('@serialport/binding-mock');
+import { MockBinding, MockPortBinding } from "@serialport/binding-mock"
+import { SerialPortMock } from "serialport";
 
 const TEST_PORT = "/dev/ttyTest";
 
@@ -27,22 +27,29 @@ describe("AsyncSerialPort", () => {
     let closeSpy: SinonSpy;
     let writeSpy: SinonSpy;
     let drainSpy: SinonSpy;
+    let portBinding: MockPortBinding;
+
+    function spyOnBinding(binding: MockPortBinding) {
+        closeSpy = spy(binding, "close");
+        writeSpy = spy(binding, "write");
+        drainSpy = spy(binding, "drain");
+        portBinding = binding;
+    }
 
     beforeEach(() => {
-        SerialPort.Binding = MockBinding;
         MockBinding.createPort(TEST_PORT);
-        openSpy = spy(MockBinding.prototype, "open");
-        closeSpy = spy(MockBinding.prototype, "close");
-        writeSpy = spy(MockBinding.prototype, "write");
-        drainSpy = spy(MockBinding.prototype, "drain");
+        openSpy = spy(SerialPortMock.binding, "open");
     });
 
     afterEach(() => {
         restore();
     });
 
-    function open(): Promise<AsyncSerialPort> {
-        return AsyncSerialPort.open(TEST_PORT, { baudRate: 28800 });
+    async function open(): Promise<AsyncSerialPort> {
+        const port = await AsyncSerialPort.open({path: TEST_PORT, baudRate: 28800 }, SerialPortMock);
+        const binding = await openSpy.lastCall.returnValue;
+        spyOnBinding(binding);
+        return port;
     }
 
     function lastWrite(): Buffer {
@@ -51,25 +58,21 @@ describe("AsyncSerialPort", () => {
     }
 
     function emitData(data: number[] | Buffer) {
-        let binding = openSpy.lastCall.thisValue;
-        binding.emitData(data);
+        portBinding.emitData(Buffer.from(data));
     }
 
     describe("open", () => {
         it("should pass through correct options", async () => {
             let port = await open();
 
-            expect(openSpy.getCall(0).args[0]).to.equal(TEST_PORT);
-            expect(openSpy.getCall(0).args[1].baudRate).to.equal(28800);
-            expect(openSpy.getCall(0).args[1].dataBits).to.equal(8);
-            expect(openSpy.getCall(0).args[1].stopBits).to.equal(1);
-            expect(openSpy.getCall(0).args[1].parity).to.equal("none");
+            expect(openSpy.getCall(0).args[0].path).to.equal(TEST_PORT);
+            expect(openSpy.getCall(0).args[0].baudRate).to.equal(28800);
 
             expect(port.bytesAvailable).to.equal(0);
         });
 
         it("should raise error for invalid port", async () => {
-            let promise = AsyncSerialPort.open("COM_INVALID", {baudRate:115200});
+            let promise = AsyncSerialPort.open({path: "COM_INVALID", baudRate:115200});
             await expect(promise).to.be.rejected;
         });
     });
@@ -96,20 +99,14 @@ describe("AsyncSerialPort", () => {
         })
 
         it("should reject promise on error", async () => {
+            let port = await open();
             closeSpy.restore();
-            let closeMock = stub(MockBinding.prototype, "close");
+            let closeMock = stub(portBinding, "close");
             closeMock.returns(Promise.reject(new Error("Close Error")));
 
-            try {
-                let port = await open();
+            let promise = port.close();
 
-                let promise = port.close();
-
-                await expect(promise).to.eventually.be.rejectedWith("Close Error");
-            }
-            finally {
-                closeMock.restore();
-            }
+            await expect(promise).to.eventually.be.rejectedWith("Close Error");
         });
     });
 
@@ -123,38 +120,26 @@ describe("AsyncSerialPort", () => {
         });
 
         it("should reject promise on write error", async () => {
+            let port = await open();
             writeSpy.restore();
-            let writeMock = stub(MockBinding.prototype, "write");
+            let writeMock = stub(portBinding, "write");
             writeMock.returns(Promise.reject(new Error("Write Error")));
+            port.on("error", stub());
 
-            try {
-                let port = await open();
-                port.on("error", stub());
+            let promise = port.write([0, 0]);
 
-                let promise = port.write([0, 0]);
-
-                await expect(promise).to.eventually.be.rejectedWith("Write Error");
-            }
-            finally {
-                writeMock.restore();
-            }
+            await expect(promise).to.eventually.be.rejectedWith("Write Error");
         });
 
         it("should reject promise on drain error", async () => {
+            let port = await open();
             drainSpy.restore();
-            let drainMock = stub(MockBinding.prototype, "drain");
+            let drainMock = stub(portBinding, "drain");
             drainMock.returns(Promise.reject(new Error("Drain Error")));
 
-            try {
-                let port = await open();
+            let promise = port.write([0, 0]);
 
-                let promise = port.write([0, 0]);
-
-                await expect(promise).to.eventually.be.rejectedWith("Drain Error");
-            }
-            finally {
-                drainMock.restore();
-            }
+            await expect(promise).to.eventually.be.rejectedWith("Drain Error");
         });
     });
 
