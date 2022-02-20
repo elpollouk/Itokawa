@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import * as SerialPort from "serialport";
+import { SerialPort, SerialPortOpenOptions } from "serialport";
 import { Logger } from "../utils/logger";
 import { toHumanHex } from "../utils/hex";
 import { DebugSnapshot } from "../utils/debugSnapshot";
@@ -21,10 +21,11 @@ export class AsyncSerialPort extends EventEmitter {
         _debugSnapshot = null;
     }
 
-    static open(path: string, options: SerialPort.OpenOptions): Promise<AsyncSerialPort> {
-        log.debug(() => `Opening ${path} with options ${JSON.stringify(options)}`);
+    static open(options: SerialPortOpenOptions<any>): Promise<AsyncSerialPort> {
+        log.debug(() => `Opening ${options.path} with options ${JSON.stringify(options)}`);
+
         return new Promise<AsyncSerialPort>((resolve, reject) => {
-            let port = new SerialPort(path, options, (err) => {
+            let port = new SerialPort(options, (err) => {
                 if (err) reject(err);
                 else resolve(new AsyncSerialPort(port));
             });
@@ -87,7 +88,7 @@ export class AsyncSerialPort extends EventEmitter {
         log.debug(() => `Writing: ${toHumanHex(data)}`);
 
         return new Promise((resolve, reject) => {
-            let writeCallback = (err: Error, bytesWritten: number) => {
+            let writeCallback = (err: Error) => {
                 if (err) reject(err);
                 else this._port.drain((err) => {
                     if (err) reject(err);

@@ -35,7 +35,8 @@ export class RawCommandStation extends CommandStationBase {
 
         this._setState(CommandStationState.INITIALISING);
         log.info(`Opening port ${config.port}...`);
-        this._port = await AsyncSerialPort.open(config.port, {
+        this._port = await AsyncSerialPort.open({
+            path: config.port, 
             baudRate: config.baud || 115200,
             dataBits: config.dataBits || 8,
             stopBits: config.stopBits || 1,

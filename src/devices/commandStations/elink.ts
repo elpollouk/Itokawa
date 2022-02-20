@@ -172,7 +172,8 @@ export class ELinkCommandStation extends CommandStationBase {
 
             this._setState(CommandStationState.INITIALISING);
             log.info(`Opening port ${config.port}...`);
-            this._port = await AsyncSerialPort.open(config.port, {
+            this._port = await AsyncSerialPort.open({
+                path: config.port,
                 baudRate: 115200
             });
             this._port.on("error", (err) => this._onError(err));
