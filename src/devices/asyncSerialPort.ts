@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
-import * as SerialPort from "serialport";
+import { SerialPort, SerialPortOpenOptions } from "serialport";
+import { SerialPortStream } from "@serialport/stream";
 import { Logger } from "../utils/logger";
 import { toHumanHex } from "../utils/hex";
 import { DebugSnapshot } from "../utils/debugSnapshot";
@@ -14,6 +15,11 @@ function _snapshotAdd(...data: any[]) {
     if (_debugSnapshot) _debugSnapshot.add(...data);
 }
 
+// This allows us to pass in the SerialPortMock class for desting
+interface SerialPortConstructable {
+    new (options: SerialPortOpenOptions<any>, cb:(err:Error)=>void): SerialPortStream;
+}
+
 export class AsyncSerialPort extends EventEmitter {
     
     // This is for clearing out the log during testing
@@ -21,10 +27,12 @@ export class AsyncSerialPort extends EventEmitter {
         _debugSnapshot = null;
     }
 
-    static open(path: string, options: SerialPort.OpenOptions): Promise<AsyncSerialPort> {
-        log.debug(() => `Opening ${path} with options ${JSON.stringify(options)}`);
+    static open(options: SerialPortOpenOptions<any>, portType?: SerialPortConstructable): Promise<AsyncSerialPort> {
+        log.debug(() => `Opening ${options.path} with options ${JSON.stringify(options)}`);
+        portType = portType ?? SerialPort;
+
         return new Promise<AsyncSerialPort>((resolve, reject) => {
-            let port = new SerialPort(path, options, (err) => {
+            let port = new portType(options, (err) => {
                 if (err) reject(err);
                 else resolve(new AsyncSerialPort(port));
             });
@@ -40,7 +48,7 @@ export class AsyncSerialPort extends EventEmitter {
         return this._buffer.length;
     }
 
-    private constructor(private _port: SerialPort) {
+    private constructor(private _port: SerialPortStream) {
         super();
 
         if (application.config.has("debug.serialport") && !_debugSnapshot) {
@@ -87,7 +95,7 @@ export class AsyncSerialPort extends EventEmitter {
         log.debug(() => `Writing: ${toHumanHex(data)}`);
 
         return new Promise((resolve, reject) => {
-            let writeCallback = (err: Error, bytesWritten: number) => {
+            let writeCallback = (err: Error) => {
                 if (err) reject(err);
                 else this._port.drain((err) => {
                     if (err) reject(err);

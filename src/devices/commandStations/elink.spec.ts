@@ -89,12 +89,10 @@ describe("eLink", () => {
 
             expect(cs.state).to.eql(CommandStationState.IDLE);
             expect(serialPortOpenStub.callCount).to.equal(1);
-            expect(serialPortOpenStub.lastCall.args).to.eql([
-                "/dev/ttyACM0",
-                {
-                    baudRate: 115200
-                }
-            ]);
+            expect(serialPortOpenStub.lastCall.args).to.eql([{
+                path: "/dev/ttyACM0",
+                baudRate: 115200
+            }]);
             expect(serialPortStub.on.callCount).to.equal(1);
             expect(serialPortStub.close.callCount).to.equal(0);
             expect(setTimeoutStub.callCount).to.equal(1);

@@ -4,7 +4,8 @@ import { SinonStub, stub, restore } from "sinon";
 
 import { DeviceEnumerator } from "./deviceEnumerator";
 import { registerCommandStations } from "./commandStations/commandStationDirectory";
-import * as SerialPort from "serialport";
+import { SerialPort } from "serialport";
+import { PortInfo } from "@serialport/bindings-cpp";
 import { NullCommandStation } from "./commandStations/null";
 import { ICommandStationConstructable } from "./commandStations/commandStation";
 import { application } from "../application";
@@ -18,14 +19,18 @@ registerCommandStations();
 describe("Device Enumerator", () => {
 
     let stubSerialPort_list: SinonStub;
-    let mockPorts: SerialPort.PortInfo[];
+    let mockPorts: PortInfo[];
     let args: any;
 
     function addPort(path: string, manufacturer: string, pnpId?: string) {
         mockPorts.push({
             path: path,
             manufacturer: manufacturer,
-            pnpId: pnpId
+            pnpId: pnpId,
+            locationId: undefined,
+            productId: undefined,
+            vendorId: undefined,
+            serialNumber: undefined
         });
     }
 

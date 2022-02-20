@@ -1,5 +1,6 @@
 import { Logger } from "../utils/logger";
-import * as SerialPort from "serialport";
+import { SerialPort } from "serialport";
+import { PortInfo } from "@serialport/bindings-cpp";
 import { ICommandStation, ICommandStationConstructable } from "./commandStations/commandStation";
 import { OptionValues } from "commander";
 import { application } from "../application";
@@ -11,7 +12,7 @@ const DEVICE_RETRY_TIME = 5000;
 const deviceManufacturerMap = new Map<string, ICommandStationConstructable[]>();
 const deviceIdMap = new Map<string, ICommandStationConstructable>();
 
-function detectCommandStation(port: SerialPort.PortInfo): ICommandStationConstructable[] {
+function detectCommandStation(port: PortInfo): ICommandStationConstructable[] {
     return deviceManufacturerMap.get(port.manufacturer) || [];
 }
 
