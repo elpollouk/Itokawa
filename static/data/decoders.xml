@@ -461,7 +461,7 @@
         </profile>
 
         <!-- Zimo Decoders -->
-        <profile man="145" ver="37" name="MX645">
+        <profile man="145" ver="37,40" name="MX600 Family">
             <locoCvNames>
                 <cv n="33">Function map F0 forward</cv>
                 <cv n="34">Function map F0 reverse</cv>
