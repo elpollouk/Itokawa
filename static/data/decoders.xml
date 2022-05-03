@@ -248,7 +248,7 @@
         </profile>
 
         <!-- DCCconcepts / RAILS-->
-        <profile man="36" ver="9" name="RAILS CONNECT">
+        <profile man="36" ver="9,21" name="RAILS CONNECT">
             <locoCvNames>
                 <cv n="25">Pre-sets for locomotive type</cv>
                 <cv n="33">Forward Light Map</cv>
