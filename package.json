@@ -27,7 +27,7 @@
     "@types/express-serve-static-core": "^4.17.31",
     "@types/express-ws": "^3.0.1",
     "@types/jsdom": "^20.0.0",
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.23",
     "@types/qrcode": "^1.5.0",
     "@types/read": "0.0.29",
