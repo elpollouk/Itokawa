@@ -42,7 +42,7 @@
     "chrome-remote-interface": "^0.31.3",
     "html-loader": "^4.2.0",
     "jsdom": "^20.0.1",
-    "mocha": "^10.0.0",
+    "mocha": "^10.1.0",
     "nyc": "^15.0.1",
     "sinon": "^14.0.1",
     "supertest": "^6.3.0",
