@@ -85,7 +85,9 @@ describe("Client Smoke", () => {
         expect(result.errorText).to.be.undefined;
         // loadEventFired isn't exposed on the types definition
         expect(client.Page["loadEventFired"]).to.not.be.undefined;
-        await client.Page["loadEventFired"](null);
+        await client.Page["loadEventFired"]({
+            timestamp: Date.now()
+        });
     }
 
     async function evaluate<T>(expression: string): Promise<T> {
