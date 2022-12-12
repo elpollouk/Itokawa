@@ -53,7 +53,7 @@
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
-    "@vscode/sqlite3": "^5.0.8",
+    "@vscode/sqlite3": "^5.1.2",
     "adm-zip": "^0.5.9",
     "commander": "^9.4.1",
     "cookie-parser": "^1.4.6",
