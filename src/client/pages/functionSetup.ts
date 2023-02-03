@@ -8,16 +8,7 @@ const controlHtml = require("../controls/functionConfigControl.html").default;
 
 function _getMode(content: HTMLElement): FunctionMode {
     const value = getById<HTMLSelectElement>(content, "mode").value;
-    switch (value) {
-        case "1":
-            return FunctionMode.Trigger;
-        case "2":
-            return FunctionMode.Latched;
-        case "3":
-            return FunctionMode.Monetary;
-        default:
-            return FunctionMode.NotSet;
-    }
+    return FunctionMode[value];
 }
 
 export class FunctionSetupPage extends Page {
@@ -55,8 +46,8 @@ export class FunctionSetupPage extends Page {
     private _createFunctionUi(data: FunctionConfig) {
         const content = parseHtml(controlHtml);
         getById<HTMLInputElement>(content, "name").value = data.name;
-        getById<HTMLSelectElement>(content, "mode").value = `${data.mode}`;
-        getById<HTMLSelectElement>(content, "function").value = `${data.exec}`;
+        getById<HTMLSelectElement>(content, "mode").value = FunctionMode[data.mode];
+        getById<HTMLSelectElement>(content, "function").value = data.exec;
         return content;
     }
 
