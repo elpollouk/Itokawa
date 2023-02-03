@@ -33,7 +33,23 @@ export class FunctionControl extends ControlBase {
         button.classList.add("function");
         if (this._latchedOn) button.classList.add(LATCHED_CLASS);
         button.innerText = this._function.name;
-        button.onclick = () => this._onExecute();
+
+        if (this._function.mode == FunctionMode.Monetary) {
+            button.onmousedown = () => this._onButtonDown();
+            button.onmouseup = () => this._onButtonUp();
+            button.addEventListener("touchstart", (ev) => {
+                this._onButtonDown();
+                ev.preventDefault();
+            });
+            button.addEventListener("touchend", (ev) => {
+                this._onButtonUp();
+                ev.preventDefault();
+            });
+        }
+        else {
+            button.onclick = () => this._onExecute();
+        }
+
         return button;
     }
 
@@ -47,8 +63,22 @@ export class FunctionControl extends ControlBase {
                 this._sendRequest(FunctionAction.LatchOff);
             }
         }
-        else {
+        else if (this._function.mode == FunctionMode.Trigger) {
             this._sendRequest(FunctionAction.Trigger);
+        }
+    }
+
+    private _onButtonDown() {
+        if (this._function.mode == FunctionMode.Monetary && !this.latchedOn) {
+            this.latchedOn = true;
+            this._sendRequest(FunctionAction.LatchOn);
+        }
+    }
+
+    private _onButtonUp() {
+        if (this._function.mode == FunctionMode.Monetary) {
+            this.latchedOn = false;
+            this._sendRequest(FunctionAction.LatchOff);
         }
     }
 

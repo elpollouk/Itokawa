@@ -13,6 +13,8 @@ function _getMode(content: HTMLElement): FunctionMode {
             return FunctionMode.Trigger;
         case "2":
             return FunctionMode.Latched;
+        case "3":
+            return FunctionMode.Monetary;
         default:
             return FunctionMode.NotSet;
     }
