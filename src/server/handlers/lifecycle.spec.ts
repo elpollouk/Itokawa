@@ -38,7 +38,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
+            await expect(handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 action: -1
             } as unknown as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Unrecognised life cycle action: -1");
         })
@@ -59,7 +59,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)(mockContext, {
+            await handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 action: LifeCycleAction.shutdown
             } as LifeCycleRequest, sendStub);
 
@@ -76,7 +76,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
+            await expect(handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 action: LifeCycleAction.shutdown
             } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
@@ -97,7 +97,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)(mockContext, {
+            await handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 action: LifeCycleAction.restart
             } as LifeCycleRequest, sendStub);
 
@@ -114,7 +114,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
+            await expect(handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 action: LifeCycleAction.restart
             } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
@@ -142,7 +142,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)(mockContext, {
+            await handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 action: LifeCycleAction.update
             } as LifeCycleRequest, sendStub);
 
@@ -159,7 +159,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
+            await expect(handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 action: LifeCycleAction.update
             } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
@@ -187,7 +187,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)(mockContext, {
+            await handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 action: LifeCycleAction.updateOS
             } as LifeCycleRequest, sendStub);
 
@@ -204,7 +204,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await expect(handlers.get(RequestType.LifeCycle)(mockContext, {
+            await expect(handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 action: LifeCycleAction.updateOS
             } as LifeCycleRequest, sendStub)).to.be.eventually.rejectedWith("Access Denied");
         })
@@ -216,6 +216,7 @@ describe("Life Cycle Handler", () => {
         beforeEach(() => {
             commandStationStub = stub(application, "commandStation").value(null);
             stub(application, "gitrev").value("gitrev");
+            stub(application, "nodeVersion").value("node version");
             stub(application, "publicUrl").value("public_url");
         })
 
@@ -227,7 +228,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)(mockContext, {
+            await handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 type: RequestType.LifeCycle,
                 action: LifeCycleAction.ping
             } as LifeCycleRequest, sendStub);
@@ -238,6 +239,7 @@ describe("Life Cycle Handler", () => {
                 commandStation: "",
                 commandStationState: -1,
                 gitrev: "gitrev",
+                nodeVersion: "node version",
                 publicUrl: "public_url",
                 isSignedIn: true,
                 data: "OK",
@@ -254,7 +256,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)(mockContext, {
+            await handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 type: RequestType.LifeCycle,
                 action: LifeCycleAction.ping
             } as LifeCycleRequest, sendStub);
@@ -265,6 +267,7 @@ describe("Life Cycle Handler", () => {
                 commandStation: "TestCommandStation 1.2.3",
                 commandStationState: 2,
                 gitrev: "gitrev",
+                nodeVersion: "node version",
                 publicUrl: "public_url",
                 isSignedIn: true,
                 data: "OK",
@@ -277,7 +280,7 @@ describe("Life Cycle Handler", () => {
             const handlers = createHandlerMap();
             registerHandlers(handlers);
 
-            await handlers.get(RequestType.LifeCycle)(mockContext, {
+            await handlers.get(RequestType.LifeCycle)?.(mockContext, {
                 type: RequestType.LifeCycle,
                 action: LifeCycleAction.ping
             } as LifeCycleRequest, sendStub);
@@ -288,6 +291,7 @@ describe("Life Cycle Handler", () => {
                 commandStation: "",
                 commandStationState: -1,
                 gitrev: "gitrev",
+                nodeVersion: "node version",
                 publicUrl: "public_url",
                 isSignedIn: false,
                 data: "OK",

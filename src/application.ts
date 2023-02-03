@@ -75,6 +75,10 @@ export class Application {
         return this._gitrev;
     }
 
+    get nodeVersion() {
+        return process.version;
+    }
+
     get database() {
         return this._db;
     }
