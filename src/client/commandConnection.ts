@@ -54,6 +54,11 @@ export class CommandConnection extends Bindable implements ICommandConnection {
         return info ? info.gitrev : "";
     }
 
+    get nodeVersion(): string {
+        const info = this._lastHeatbeatResponse;
+        return info ? info.nodeVersion : "";
+    }
+
     constructor(readonly url: string) {
         super();
         this.makeBindableProperty(

@@ -30,7 +30,8 @@ export class AboutControl extends ControlBase {
         const revision = connection.gitRevision || "";
         getById(control, "appVersion").innerText = connection.packageVersion;
         getById(control, "commandStation").innerText = connection.deviceId;
-        getById(control, "gitRev").innerText = revision.substr(0, 8);
+        getById(control, "gitRev").innerText = revision.substring(0, 8);
+        getById(control, "nodeVersion").innerText = connection.nodeVersion;
         getById<HTMLAnchorElement>(control, "gitRev").href = REVISION_URL + revision;
 
         getById(control, "attributions").onclick = () => this._openAttributions();

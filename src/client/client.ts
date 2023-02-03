@@ -32,6 +32,7 @@ export interface ICommandConnection extends IBindable{
     packageVersion: string;
     deviceId: string;
     gitRevision: string;
+    nodeVersion: string;
     state: ConnectionState;
     deviceState: CommandStationState;
     publicUrl: string;

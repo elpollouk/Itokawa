@@ -21,6 +21,7 @@ export class DemoCommandConnection extends Bindable implements ICommandConnectio
     packageVersion = config.packageVersion;
     deviceId = config.deviceId;
     gitRevision = config.gitRevision;
+    nodeVersion = "v18.12.1";
     state = ConnectionState.Idle;
     deviceState = CommandStationState.IDLE;
     publicUrl: string;
