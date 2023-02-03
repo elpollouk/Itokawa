@@ -51,7 +51,7 @@ let _dbDeleteAll: Statement<void> = null;
 
 type QueryFunc = (params?:any)=>Promise<void>;
 
-function debouceQuery(query: QueryFunc, minTime: number): QueryFunc {
+function debounceQuery(query: QueryFunc, minTime: number): QueryFunc {
     let lastCall = 0;
     return (_params) => {
         const now = new Date().getTime();
@@ -89,7 +89,7 @@ export class Session {
     }
 
     constructor(userId: number, sessionId?: string) {
-        this._ping = debouceQuery((params) => _dbPing.run(params), MIN_QUERY_TIME);
+        this._ping = debounceQuery((params) => _dbPing.run(params), MIN_QUERY_TIME);
 
         this.id = sessionId ?? randomHex(SESSION_ID_LENGTH);
         this.userId = userId;
