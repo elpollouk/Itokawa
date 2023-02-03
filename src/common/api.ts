@@ -2,7 +2,8 @@ export enum FunctionMode {
     NotSet = 0,
     Trigger = 1,
     Latched = 2,
-    Macro = 3
+    Monetary = 3,
+    Macro = 4
 }
 
 export interface FunctionConfig {

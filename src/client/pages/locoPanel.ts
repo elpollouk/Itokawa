@@ -66,9 +66,7 @@ export class LocoPanelPage extends Page {
             for (const config of this._loco.functions || []) {
                 if (config.mode === FunctionMode.NotSet) continue;
                 const control = new FunctionControl(functionsContainer, this._loco.address, config);
-                if (config.mode === FunctionMode.Latched) {
-                    this._functionControls.set(parseInt(config.exec), control);
-                }
+                this._functionControls.set(parseInt(config.exec), control);
             }
 
             client.connection.request(RequestType.LocoFunctionRefresh, {
