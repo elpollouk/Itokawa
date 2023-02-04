@@ -14,10 +14,6 @@ interface RepositoryConstructable<ItemType, RepositoryType extends Repository<It
     new(db: Database): RepositoryType;
 }
 
-interface LocoViewConstructable<LocoViewType extends LocoView> {
-    new(): LocoViewType;
-}
-
 function _open(path: string): Promise<sqlite3.Database> {
     return new Promise<sqlite3.Database>((resolve, reject) => {
         log.debug(() => `Opening database ${path}...`);
@@ -43,7 +39,7 @@ export class Database {
 
     private _db: sqlite3.Database;
     private _repositories: Map<RepositoryConstructable<unknown, Repository<unknown>>, Repository<unknown>>;
-    private _locoViews: Map<LocoViewConstructable<LocoView>, LocoView>;
+    private _locoViews: Map<string, LocoView>;
     private _schemaVersion: number;
 
     get schemaVersion() {
@@ -242,12 +238,12 @@ export class Database {
         return repo;
     }
 
-    async openLocoView<LocoViewType extends LocoView>(viewType: LocoViewConstructable<LocoViewType>): Promise<LocoViewType> {
-        let view = this._locoViews.get(viewType) as LocoViewType;
+    async openLocoView(viewName: string): Promise<LocoView> {
+        let view = this._locoViews.get(viewName);
         if (view) return view;
 
-        view = new viewType();
-        this._locoViews.set(viewType, view);
+        view = new LocoView(viewName);
+        this._locoViews.set(viewName, view);
         return Promise.resolve(view);
     }
 }

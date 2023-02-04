@@ -1,7 +1,7 @@
 export class LocoView {
     private _locoIds = new Set<number>();
 
-    protected constructor(public viewKey: string) {
+    public constructor(public readonly viewName: string) {
 
     }
 

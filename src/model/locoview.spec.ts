@@ -4,7 +4,6 @@ import "mocha";
 import { Database } from "./database";
 
 import { LocoView } from "./locoview";
-import { OnTrackView } from "./ontrackview";
 
 class TestView extends LocoView {
     public constructor() {
@@ -17,7 +16,7 @@ describe("LocoView", () => {
         it("should create and empty view and preserve view name", async () => {
             const view = new TestView();
 
-            expect(view.viewKey).to.equal("Test View");
+            expect(view.viewName).to.equal("Test View");
             expect([...await view.locoIds]).to.be.empty;
         })
     })
@@ -128,16 +127,8 @@ describe("LocoView", () => {
         })
     })
 
-    describe("OnTrackView", () => {
-        it('should used "On Track" as the view key', () => {
-            const view = new OnTrackView();
-
-            expect(view.viewKey).to.equal("On Track");
-        })
-    })
-
     describe("Database.openLocoView", async () => {
-        let _db: Database;
+        let _db: Database | null = null;
 
         beforeEach(async () => {
             _db = await Database.open(":memory:");
@@ -145,27 +136,37 @@ describe("LocoView", () => {
 
         afterEach(async () => {
             try {
-                await _db.close();
+                await _db?.close();
             }
             catch (err) {
                 const message: string = err.message;
                 if (!message.includes("Database is closed")) throw err;
             }
+            _db = null;
         })
 
         it("should create view on first call", async () => {
-            const view = await _db.openLocoView(OnTrackView);
+            const view = await _db?.openLocoView("Test View") as LocoView;
 
-            expect(view.viewKey).to.equal(OnTrackView.VIEW_KEY);
+            expect(view.viewName).to.equal("Test View");
         })
 
-        it("should reuse existing view instance on subsequent calls", async () => {
-            const viewInital = await _db.openLocoView(OnTrackView);
-            const viewSecond = await _db.openLocoView(OnTrackView);
-            const viewThird = await _db.openLocoView(OnTrackView);
+        it("should reuse existing view instance on subsequent calls with same view name", async () => {
+            const db = _db as Database;
+            const viewInital = await db.openLocoView("Test View");
+            const viewSecond = await db.openLocoView("Test View");
+            const viewThird = await db.openLocoView("Test View");
 
-            expect(viewSecond === viewInital).to.be.true;
-            expect(viewThird === viewInital).to.be.true;
+            expect(viewSecond).to.equal(viewInital);
+            expect(viewThird).to.equal(viewInital);
+        })
+
+        it("should not reuse existing view instance for different view names", async () => {
+            const db = _db as Database;
+            const view1 = await db.openLocoView("Test 1");
+            const view2 = await db.openLocoView("Test 2");
+
+            expect(view1).to.not.equal(view2);
         })
     })
 })
