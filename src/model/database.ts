@@ -3,6 +3,7 @@ import * as sqlite3 from "sqlite3";
 import * as fs from "fs";
 import { Repository } from "./repository";
 import { Statement } from "./statement";
+import { LocoView } from "./locoview";
 
 const log = new Logger("Database");
 
@@ -11,6 +12,10 @@ const SCHEMA_VERSION = 2;
 
 interface RepositoryConstructable<ItemType, RepositoryType extends Repository<ItemType>> {
     new(db: Database): RepositoryType;
+}
+
+interface LocoViewConstructable<LocoViewType extends LocoView> {
+    new(): LocoViewType;
 }
 
 function _open(path: string): Promise<sqlite3.Database> {
@@ -37,7 +42,8 @@ export class Database {
     }
 
     private _db: sqlite3.Database;
-    private _repositories: Map<RepositoryConstructable<unknown, Repository<unknown>>, Repository<unknown>>
+    private _repositories: Map<RepositoryConstructable<unknown, Repository<unknown>>, Repository<unknown>>;
+    private _locoViews: Map<LocoViewConstructable<LocoView>, LocoView>;
     private _schemaVersion: number;
 
     get schemaVersion() {
@@ -49,7 +55,8 @@ export class Database {
     }
 
     private constructor() {
-        this._repositories = new Map<RepositoryConstructable<any, Repository<any>>, Repository<any>>();
+        this._repositories = new Map();
+        this._locoViews = new Map();
     }
 
     private async _init(filename: string) {
@@ -110,6 +117,9 @@ export class Database {
     async close(): Promise<void> {
         for (const repo of this._repositories.values())
             await repo.release();
+        this._repositories.clear();
+
+        this._locoViews.clear();
 
         await this._close();
     }
@@ -222,13 +232,22 @@ export class Database {
     }
 
     async openRepository<ItemType, RepositoryType extends Repository<ItemType> = Repository<ItemType>>(repoType: RepositoryConstructable<ItemType, RepositoryType>): Promise<RepositoryType> {
-        if (this._repositories.has(repoType))
-            return this._repositories.get(repoType) as RepositoryType;
+        let repo = this._repositories.get(repoType) as RepositoryType;
+        if (repo) return repo;
 
-        const repo = new repoType(this);
+        repo = new repoType(this);
         await repo.init();
         this._repositories.set(repoType, repo);
 
         return repo;
+    }
+
+    async openLocoView<LocoViewType extends LocoView>(viewType: LocoViewConstructable<LocoViewType>): Promise<LocoViewType> {
+        let view = this._locoViews.get(viewType) as LocoViewType;
+        if (view) return view;
+
+        view = new viewType();
+        this._locoViews.set(viewType, view);
+        return Promise.resolve(view);
     }
 }

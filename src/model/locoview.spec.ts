@@ -1,8 +1,10 @@
 import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
+import { Database } from "./database";
 
 import { LocoView } from "./locoview";
+import { OnTrackView } from "./ontrackview";
 
 class TestView extends LocoView {
     public constructor() {
@@ -123,6 +125,47 @@ describe("LocoView", () => {
             await view.addLoco(13);
 
             expect(await view.hasLoco(11)).to.be.true;
+        })
+    })
+
+    describe("OnTrackView", () => {
+        it('should used "On Track" as the view key', () => {
+            const view = new OnTrackView();
+
+            expect(view.viewKey).to.equal("On Track");
+        })
+    })
+
+    describe("Database.openLocoView", async () => {
+        let _db: Database;
+
+        beforeEach(async () => {
+            _db = await Database.open(":memory:");
+        })
+
+        afterEach(async () => {
+            try {
+                await _db.close();
+            }
+            catch (err) {
+                const message: string = err.message;
+                if (!message.includes("Database is closed")) throw err;
+            }
+        })
+
+        it("should create view on first call", async () => {
+            const view = await _db.openLocoView(OnTrackView);
+
+            expect(view.viewKey).to.equal(OnTrackView.VIEW_KEY);
+        })
+
+        it("should reuse existing view instance on subsequent calls", async () => {
+            const viewInital = await _db.openLocoView(OnTrackView);
+            const viewSecond = await _db.openLocoView(OnTrackView);
+            const viewThird = await _db.openLocoView(OnTrackView);
+
+            expect(viewSecond === viewInital).to.be.true;
+            expect(viewThird === viewInital).to.be.true;
         })
     })
 })
