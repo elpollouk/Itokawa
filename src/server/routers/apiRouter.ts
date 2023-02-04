@@ -96,6 +96,53 @@ _apiRouter.route("/locos/:id")
     }
 });
 
+_apiRouter.route("/locoview/:name/:id")
+.all(requirePermission(Permissions.TRAIN_SELECT))
+.put(async (req, res, next) => {
+    try {
+        const viewName = req.params.name;
+        const locoId = parseInt(req.params.id);
+
+        if (viewName == api.VIEW_ONTRACK) {
+            const view = await application.database.openLocoView(viewName);
+            await view.addLoco(locoId);
+        }
+        else {
+            res.statusCode = 400;
+        }
+
+        res.send();
+    }
+    catch (err) {
+        log.error(`PUT /locos/${req.params.name}/${req.params.id} failed`)
+        log.error(err.stack);
+
+        next(err);
+    }
+})
+.delete(async (req, res, next) => {
+    try {
+        const viewName = req.params.name;
+        const locoId = parseInt(req.params.id);
+
+        if (viewName == api.VIEW_ONTRACK) {
+            const view = await application.database.openLocoView(viewName);
+            await view.removeLoco(locoId);
+        }
+        else {
+            res.statusCode = 400;
+        }
+
+        res.send();
+    }
+    catch (err) {
+        log.error(`PUT /locos/${req.params.name}/${req.params.id} failed`)
+        log.error(err.stack);
+
+        next(err);
+    }
+})
+
 config.registerRoutes(_apiRouter, log);
 
 export async function getRouter(): Promise<express.Router> {

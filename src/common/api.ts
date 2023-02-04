@@ -1,3 +1,5 @@
+export const VIEW_ONTRACK = "On Track";
+
 export enum FunctionMode {
     NotSet = 0,
     Trigger = 1,
