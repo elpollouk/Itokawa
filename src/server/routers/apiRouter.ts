@@ -142,6 +142,8 @@ _apiRouter.route("/locoview/:name/:id")
         const viewName = req.params.name;
         const locoId = parseInt(req.params.id);
 
+        log.info(() => `Adding loco ${locoId} to view "${viewName}"`);
+
         if (viewName == api.VIEW_ONTRACK) {
             const view = await application.database.openLocoView(viewName);
             await view.addLoco(locoId);
@@ -153,7 +155,7 @@ _apiRouter.route("/locoview/:name/:id")
         res.send();
     }
     catch (err) {
-        log.error(`PUT /locos/${req.params.name}/${req.params.id} failed`)
+        log.error(`PUT /locoview/${req.params.name}/${req.params.id} failed`)
         log.error(err.stack);
 
         next(err);
@@ -163,6 +165,8 @@ _apiRouter.route("/locoview/:name/:id")
     try {
         const viewName = req.params.name;
         const locoId = parseInt(req.params.id);
+
+        log.info(() => `Removing loco ${locoId} from view "${viewName}"`);
 
         if (viewName == api.VIEW_ONTRACK) {
             const view = await application.database.openLocoView(viewName);
@@ -175,7 +179,7 @@ _apiRouter.route("/locoview/:name/:id")
         res.send();
     }
     catch (err) {
-        log.error(`PUT /locos/${req.params.name}/${req.params.id} failed`)
+        log.error(`PUT /locoview/${req.params.name}/${req.params.id} failed`)
         log.error(err.stack);
 
         next(err);

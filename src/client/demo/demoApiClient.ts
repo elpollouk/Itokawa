@@ -101,4 +101,12 @@ export class DemoApiClient implements IApiClient {
 
         return Promise.reject(new Error("Loco not found"));
     }
+
+    addToTrack(id: number): Promise<void> {
+        return Promise.resolve();
+    }
+
+    removeFromTrack(id: number): Promise<void> {
+        return Promise.resolve();
+    }
 }

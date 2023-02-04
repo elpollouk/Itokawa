@@ -168,4 +168,12 @@ export class ApiClient implements IApiClient {
 
         return this.request("POST", `/locos/${id}`, request);
     }
+
+    addToTrack(id: number): Promise<void> {
+        return this.request("PUT", `/locoview/${api.VIEW_ONTRACK}/${id}`);
+    }
+
+    removeFromTrack(id: number): Promise<void> {
+        return this.request("DELETE", `/locoview/${api.VIEW_ONTRACK}/${id}`);
+    }
 }
