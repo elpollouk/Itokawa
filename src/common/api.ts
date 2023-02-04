@@ -16,6 +16,10 @@ export interface FunctionConfig {
 
 export type CvMap = {[key: string]: number};
 
+export interface EphemeralData {
+    onTrack: boolean;
+}
+
 export interface Loco {
     id?: number;
     address: number;
@@ -23,8 +27,10 @@ export interface Loco {
     discrete: boolean;
     speeds?: number[];
     maxSpeed?: number;
-    functions?: FunctionConfig[],
+    functions?: FunctionConfig[];
     cvs?: CvMap;
+
+    _emphemeral?: EphemeralData;
 }
 
 export interface Config {

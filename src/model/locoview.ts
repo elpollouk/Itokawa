@@ -5,14 +5,8 @@ export class LocoView {
 
     }
 
-    private *_locoIdsGenerator(): IterableIterator<number> {
-        for (const id of this._locoIds) {
-            yield id;
-        }
-    }
-
-    public get locoIds(): Promise<IterableIterator<number>> {
-        return Promise.resolve(this._locoIdsGenerator());
+    public get locoIds(): Promise<Set<number>> {
+        return Promise.resolve(new Set(this._locoIds));
     }
 
     public hasLoco(id: number): Promise<boolean> {

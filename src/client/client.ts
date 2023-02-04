@@ -12,6 +12,7 @@ import { PATH_API, PATH_AUTH, PATH_LOGOUT, PATH_WEBSOCKET } from "../common/cons
 export interface IApiClient {
     getConfig(): Promise<api.Config>;
     getLocos(): Promise<api.Loco[]>;
+    getLocosOnTrack(): Promise<api.Loco[]>;
     addLoco(name: string, address: number, speed: number[] | number, functions: api.FunctionConfig[], cvs: api.CvMap): Promise<api.Loco>;
     getLoco(id: number): Promise<api.Loco>;
     deleteLoco(id: number): Promise<void>;

@@ -30,6 +30,10 @@ export class DemoApiClient implements IApiClient {
         return Promise.resolve(this._locos);
     }
 
+    getLocosOnTrack(): Promise<api.Loco[]> {
+        return this.getLocos();
+    }
+
     addLoco(name: string, address: number, speed: number | number[], functions: api.FunctionConfig[], cvs: api.CvMap): Promise<api.Loco> {
         const loco: api.Loco = {
             id: this._nextLocoId++,

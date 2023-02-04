@@ -118,6 +118,10 @@ export class ApiClient implements IApiClient {
         return this.request("GET", "/locos");
     }
 
+    getLocosOnTrack(): Promise<api.Loco[]> {
+        return this.request("GET", "/track_locos");
+    }
+
     addLoco(name: string, address: number, speed: number[] | number, functions: api.FunctionConfig[], cvs: api.CvMap): Promise<api.Loco> {
         const request: api.Loco = {
             name: name,
