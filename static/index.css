@@ -665,6 +665,9 @@ a:visited {
     padding-top: 0.5em;
     padding-bottom: 0.5em;
     cursor: pointer;
+
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    -webkit-tap-highlight-color: transparent;
 }
 
 .trainRoster .train.onTrack::after {
