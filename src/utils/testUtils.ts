@@ -139,6 +139,28 @@ export async function requestPost(app: Express, path: string, options?: RequestO
     return req;
 }
 
+export async function requestPut(app: Express, path: string, options?: RequestOptions): Promise<request.Response> {
+    const req = request(app)
+        .put(path);
+
+    if (options.sessionId) {
+        req.set("Cookie", [`sessionId=${options.sessionId}`]);
+    }
+
+    if (options.json) {
+        req.set("content-type", "application/json; charset=utf-8").send(JSON.stringify(options.json));
+    }
+
+    if (options.expectRedirectTo) {
+        req.expect(302).expect("Location", options.expectRedirectTo);
+    }
+    else {
+        req.expect(200);
+    }
+
+    return req;
+}
+
 export async function requestDelete(app: Express, path: string, options?: RequestOptions): Promise<request.Response> {
     const req = request(app)
         .delete(path);

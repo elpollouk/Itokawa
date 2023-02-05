@@ -226,7 +226,7 @@ describe("WebSocket Handlers", () => {
 
     describe("per socket command responder function", () => {
         it("should wrap handler message in transport message", async () => {
-            let sent:boolean;
+            let sent = false;
             locoHandlerStub.callsFake(async (ctx: ConnectionContext, msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
                 sent = await send("Test Data" as any);
             });
@@ -245,7 +245,7 @@ describe("WebSocket Handlers", () => {
         })
 
         it("should not send to unopen sockets", async () => {
-            let sent:boolean;
+            let sent = false;
             locoHandlerStub.callsFake(async (ctx: ConnectionContext, msg: any, send: (data: CommandResponse) => Promise<boolean>): Promise<void> => {
                 sent = await send("Test Data" as any);
             });

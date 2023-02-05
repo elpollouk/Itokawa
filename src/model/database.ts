@@ -3,11 +3,12 @@ import * as sqlite3 from "sqlite3";
 import * as fs from "fs";
 import { Repository } from "./repository";
 import { Statement } from "./statement";
+import { LocoView } from "./locoview";
 
 const log = new Logger("Database");
 
 const SCHEMA_VERSION_KEY = "schemaVersion";
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 interface RepositoryConstructable<ItemType, RepositoryType extends Repository<ItemType>> {
     new(db: Database): RepositoryType;
@@ -37,7 +38,8 @@ export class Database {
     }
 
     private _db: sqlite3.Database;
-    private _repositories: Map<RepositoryConstructable<unknown, Repository<unknown>>, Repository<unknown>>
+    private _repositories: Map<RepositoryConstructable<unknown, Repository<unknown>>, Repository<unknown>>;
+    private _locoViews: Map<string, LocoView>;
     private _schemaVersion: number;
 
     get schemaVersion() {
@@ -49,13 +51,17 @@ export class Database {
     }
 
     private constructor() {
-        this._repositories = new Map<RepositoryConstructable<any, Repository<any>>, Repository<any>>();
+        this._repositories = new Map();
+        this._locoViews = new Map();
     }
 
     private async _init(filename: string) {
         this._db = await _open(filename);
 
         try {
+            // Foreign keys aren't enabled by default, but we do want to enforce their contraints, so turn them on
+            await this.run("PRAGMA foreign_keys = ON;");
+
             // We want to explicitly create this table so that we have the store available before running
             // any schema scripts.
             await this.run(`
@@ -64,6 +70,9 @@ export class Database {
 
             const schemaVersion = await this.getValue(SCHEMA_VERSION_KEY, 0) as number;
             log.debug(() => `Opening DB with schema ${schemaVersion}`);
+
+            if (SCHEMA_VERSION < schemaVersion) throw new Error("Database schema version higher than supported");
+
             if (schemaVersion < SCHEMA_VERSION) {
                 // The database needs the latest schema scripts applied
                 await this._runSchemaScripts(schemaVersion);
@@ -71,6 +80,8 @@ export class Database {
             else {
                 this._schemaVersion = schemaVersion;
             }
+
+            await LocoView.init(this);
         }
         catch (ex)
         {
@@ -110,6 +121,10 @@ export class Database {
     async close(): Promise<void> {
         for (const repo of this._repositories.values())
             await repo.release();
+        this._repositories.clear();
+
+        this._locoViews.clear();
+        await LocoView.release();
 
         await this._close();
     }
@@ -196,6 +211,22 @@ export class Database {
         });
     }
 
+    all(sql: string, params?: any): Promise<any[]> {
+        return new Promise<any[]>((resolve, reject) => {
+            log.debug(() => `Directly executing: ${sql}`);
+            this._db.all(sql, params, (err, rows) => {
+                if (err) {
+                    log.error(`Execution failed: ${err.message}`);
+                    log.error(`Statement: ${sql}`);
+                    reject(err);
+                }
+                else {
+                    resolve(rows);
+                }
+            });
+        });
+    }
+
     prepare<T=any>(sql: string): Promise<Statement<T>> {
         return new Promise<Statement>((resolve, reject) => {
             this._db.prepare(sql, function (err) {
@@ -222,13 +253,22 @@ export class Database {
     }
 
     async openRepository<ItemType, RepositoryType extends Repository<ItemType> = Repository<ItemType>>(repoType: RepositoryConstructable<ItemType, RepositoryType>): Promise<RepositoryType> {
-        if (this._repositories.has(repoType))
-            return this._repositories.get(repoType) as RepositoryType;
+        let repo = this._repositories.get(repoType) as RepositoryType;
+        if (repo) return repo;
 
-        const repo = new repoType(this);
+        repo = new repoType(this);
         await repo.init();
         this._repositories.set(repoType, repo);
 
         return repo;
+    }
+
+    async openLocoView(viewName: string): Promise<LocoView> {
+        let view = this._locoViews.get(viewName);
+        if (view) return view;
+
+        view = await LocoView.getView(viewName);
+        this._locoViews.set(viewName, view);
+        return Promise.resolve(view);
     }
 }
