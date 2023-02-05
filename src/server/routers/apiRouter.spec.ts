@@ -74,13 +74,84 @@ describe("apiRouter", async () => {
         restore();
     })
 
+    describe("GET /track_locos", () => {
+        let _repoStub: SinonStub;
+
+        beforeEach(() => {
+            _repoStub = stub(_repo, "list").resolves([
+                { id: 3,  address: 4,  name: "Test 1", discrete: false },
+                { id: 7,  address: 8,  name: "Test 2", discrete: false, maxSpeed: 90 },
+                { id: 11, address: 12, name: "Test 3", discrete: true, speeds: [4, 5, 6] }
+            ]);
+        })
+
+        it("should return no results if no locos are on track", async () => {
+            const locos = await get("/track_locos");
+
+            expect(locos).to.eql([]);
+        })
+
+        it("should return only the locos that have been added to the track", async () => {
+            await _locoViews.get(VIEW_ONTRACK)?.addLoco(3);
+            await _locoViews.get(VIEW_ONTRACK)?.addLoco(11);
+
+            const locos = await get("/track_locos");
+
+            expect(locos).to.eql([
+                { id: 3,  address: 4,  name: "Test 1", discrete: false },
+                { id: 11, address: 12, name: "Test 3", discrete: true, speeds: [4, 5, 6] }
+            ]);
+        })
+
+        it("should return a 500 error on DB exception", async () => {
+            _repoStub.rejects(new Error());
+
+            await expect(get("/track_locos")).to.be.eventually.rejectedWith(/500/);
+        })
+    })
+
     describe("GET /locos", () => {
-        it("should return the results from the database", async () => {
+        it("should return the results from an empty database", async () => {
             stub(_repo, "list").resolves([]);
 
             const locos = await get("/locos");
 
             expect(locos).to.eql([]);
+        })
+
+        it("should return the results from a populated database", async () => {
+            stub(_repo, "list").resolves([
+                { id: 3,  address: 4,  name: "Test 1", discrete: false },
+                { id: 7,  address: 8,  name: "Test 2", discrete: false, maxSpeed: 90 },
+                { id: 11, address: 12, name: "Test 3", discrete: true, speeds: [4, 5, 6] }
+            ]);
+
+            const locos = await get("/locos");
+
+            expect(locos).to.eql([
+                { id: 3,  address: 4,  name: "Test 1", discrete: false },
+                { id: 7,  address: 8,  name: "Test 2", discrete: false, maxSpeed: 90 },
+                { id: 11, address: 12, name: "Test 3", discrete: true, speeds: [4, 5, 6] }
+            ]);
+        })
+
+        it("should set ephemeral data if loco is on track", async () => {
+            await _locoViews.get(VIEW_ONTRACK)?.addLoco(7);
+            stub(_repo, "list").resolves([
+                { id: 3, address: 4, name: "Test 1", discrete: false },
+                { id: 7, address: 8, name: "Test 2", discrete: false }
+            ]);
+
+            const locos = await get("/locos");
+
+            expect(locos[0]._emphemeral).to.be.undefined;
+            expect(locos[1]._emphemeral.onTrack).to.be.true;
+        })
+
+        it("should return 404 if user doesn't have permission", async () => {
+            _hasPermission.resolves(false);
+
+            await expect(get("/locos")).to.be.eventually.rejectedWith(/404/);
         })
 
         it("should return a 500 error on DB exception", async () => {

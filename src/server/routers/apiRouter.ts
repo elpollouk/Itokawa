@@ -31,7 +31,7 @@ _apiRouter.route("/track_locos")
         res.json(onTrack);
     }
     catch (err) {
-        log.error("GET /locos failed")
+        log.error("GET /track_locos failed")
         log.error(err.stack);
 
         next(err);
@@ -39,6 +39,7 @@ _apiRouter.route("/track_locos")
 })
 
 _apiRouter.route("/locos")
+.all(requirePermission(Permissions.TRAIN_EDIT))
 .get(async (_req, res, next) => {
     try {
         const locos = await _locoRepo.list();
@@ -63,7 +64,6 @@ _apiRouter.route("/locos")
         next(err);
     }
 })
-.all(requirePermission(Permissions.TRAIN_EDIT))
 .post(async (req, res, next) => {
     try {
         const loco: api.Loco = req.body;
