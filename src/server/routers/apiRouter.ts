@@ -106,6 +106,8 @@ _apiRouter.route("/locos/:id")
 .post(async (req, res, next) => {
     try {
         const data: api.Loco = req.body;
+        // Strip out any ephemeral data that might be returned to us
+        delete data._emphemeral;
         data.id = parseInt(req.params.id);
 
         await _locoRepo.update(data);
