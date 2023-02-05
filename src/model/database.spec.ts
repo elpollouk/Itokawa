@@ -35,7 +35,7 @@ describe("Database", () => {
 
     afterEach(async () => {
         try {
-            await _db.close();
+            await _db?.close();
         }
         catch (err) {
             const message: string = err.message;
@@ -54,6 +54,9 @@ describe("Database", () => {
         })
 
         it("should reopen existing databases", async () => {
+            await _db.close();
+            _db = null as any;
+
             const db1 = await Database.open(TEST_DB_FILE);
             await db1.setValue("Test", "Foo Bar Baz");
             await db1.close();
@@ -69,16 +72,9 @@ describe("Database", () => {
             }
         })
 
-        it("should not update schema if number version is higher than application", async () => {
-
+        it("should not load DB schema if number version is higher than application", async () => {
             copyForTest("./testdata/schema_99999.sqlite3");
-            const db2 = await Database.open(TEST_DB_FILE);
-            try {
-                expect(db2.schemaVersion).to.equal(99999);
-            }
-            finally {
-                await db2.close();
-            }
+            await expect(Database.open(TEST_DB_FILE)).to.be.eventually.rejectedWith("Database schema version higher than supported");
         })
 
         it("should fail if path is invalid", async () => {

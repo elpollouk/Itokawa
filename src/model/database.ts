@@ -70,6 +70,9 @@ export class Database {
 
             const schemaVersion = await this.getValue(SCHEMA_VERSION_KEY, 0) as number;
             log.debug(() => `Opening DB with schema ${schemaVersion}`);
+
+            if (SCHEMA_VERSION < schemaVersion) throw new Error("Database schema version higher than supported");
+
             if (schemaVersion < SCHEMA_VERSION) {
                 // The database needs the latest schema scripts applied
                 await this._runSchemaScripts(schemaVersion);
@@ -77,6 +80,8 @@ export class Database {
             else {
                 this._schemaVersion = schemaVersion;
             }
+
+            await LocoView.init(this);
         }
         catch (ex)
         {
@@ -119,6 +124,7 @@ export class Database {
         this._repositories.clear();
 
         this._locoViews.clear();
+        await LocoView.release();
 
         await this._close();
     }
@@ -261,7 +267,7 @@ export class Database {
         let view = this._locoViews.get(viewName);
         if (view) return view;
 
-        view = new LocoView(viewName);
+        view = await LocoView.getView(viewName);
         this._locoViews.set(viewName, view);
         return Promise.resolve(view);
     }

@@ -53,8 +53,15 @@ describe("apiRouter", async () => {
 
     beforeEach(async () => {
         _repo = new LocoRepository(null as any);
+
+        const locoIds = new Set<number>();
+        const view = {
+            locoIds: Promise.resolve(locoIds),
+            addLoco: (id) => { locoIds.add(id); return Promise.resolve(); },
+            removeLoco: (id) => { locoIds.delete(id); return Promise.resolve(); }
+        } as LocoView;
         _locoViews = new Map([
-            [VIEW_ONTRACK,  new LocoView(VIEW_ONTRACK)]
+            [VIEW_ONTRACK,  view]
         ]);
 
         const db = {
