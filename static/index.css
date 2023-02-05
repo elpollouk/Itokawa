@@ -667,13 +667,24 @@ a:visited {
     cursor: pointer;
 }
 
-.trainRoster .train::after {
-    color: gray;
-    font-family: monospace;
-    font-size: x-large;
-    /* vertical-align: middle; */
-    content: ">";
-    margin-left: 1.0em;
+.trainRoster .train.onTrack::after {
+    font-size: large;
+    vertical-align: middle;
+    content: " ";
+
+    box-sizing: border-box;
+
+    position: relative;
+    display: inline-block;
+    width: 1.0em;
+    height: 1.0em;
+    margin-top: -3px;
+    margin-left: 0.5em;
+
+    background-image: url("icons/ontrack.svg");
+    background-size: cover;
+
+    filter: invert(25%) saturate(1115%) hue-rotate(163deg) brightness(91%) contrast(91%);
 }
 
 .trainRoster .train:hover, .trainRoster .train:active {

@@ -1,0 +1,60 @@
+<!--
+  Rail by Angelo Troiano from Noun Project
+  Source: https://thenounproject.com/icon/rail-3124490/
+-->
+
+<svg width="600pt" height="600pt" version="1.1" viewBox="50 0 600 550" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <g>
+  <path d="m189.84 23.895h42.934v45.359h-42.934z"/>
+  <path d="m461.81 25.012h42.934v44.238h-42.934z"/>
+  <path d="m139.62 80.453h420v76.16h-420z" fill-rule="evenodd"/>
+  <path d="m189.84 167.81h42.934v56.934h-42.934z"/>
+  <path d="m461.81 167.81h42.934v56.934h-42.934z"/>
+  <path d="m189.84 323.31h42.934v58.055h-42.934z"/>
+  <path d="m189.84 479.92h42.934v55.066h-42.934z"/>
+  <path d="m461.81 323.31h42.934v58.055h-42.934z"/>
+  <path d="m461.81 479.92h42.934v56.188h-42.934z"/>
+  <path d="m140.56 235.95h420v76.16h-420z" fill-rule="evenodd"/>
+  <path d="m140.56 392.56h420v76.16h-420z" fill-rule="evenodd"/>
+  <use x="70" y="588" xlink:href="#w"/>
+  <use x="76.851562" y="588" xlink:href="#c"/>
+  <use x="81.453125" y="588" xlink:href="#b"/>
+  <use x="87.78125" y="588" xlink:href="#f"/>
+  <use x="94.082031" y="588" xlink:href="#d"/>
+  <use x="98.542969" y="588" xlink:href="#b"/>
+  <use x="104.871094" y="588" xlink:href="#j"/>
+  <use x="114.804688" y="588" xlink:href="#i"/>
+  <use x="121.484375" y="588" xlink:href="#h"/>
+  <use x="130.816406" y="588" xlink:href="#g"/>
+  <use x="138.039062" y="588" xlink:href="#e"/>
+  <use x="144.683594" y="588" xlink:href="#v"/>
+  <use x="151.367188" y="588" xlink:href="#b"/>
+  <use x="157.695312" y="588" xlink:href="#u"/>
+  <use x="160.894531" y="588" xlink:href="#a"/>
+  <use x="170.554688" y="588" xlink:href="#t"/>
+  <use x="176.921875" y="588" xlink:href="#c"/>
+  <use x="181.527344" y="588" xlink:href="#a"/>
+  <use x="187.9375" y="588" xlink:href="#s"/>
+  <use x="191.136719" y="588" xlink:href="#f"/>
+  <use x="197.4375" y="588" xlink:href="#e"/>
+  <use x="204.078125" y="588" xlink:href="#a"/>
+  <use x="70" y="597.332031" xlink:href="#r"/>
+  <use x="74.0625" y="597.332031" xlink:href="#c"/>
+  <use x="78.664062" y="597.332031" xlink:href="#a"/>
+  <use x="85.074219" y="597.332031" xlink:href="#q"/>
+  <use x="98.050781" y="597.332031" xlink:href="#d"/>
+  <use x="102.511719" y="597.332031" xlink:href="#p"/>
+  <use x="109.15625" y="597.332031" xlink:href="#b"/>
+  <use x="118.734375" y="597.332031" xlink:href="#o"/>
+  <use x="126.546875" y="597.332031" xlink:href="#a"/>
+  <use x="132.960938" y="597.332031" xlink:href="#n"/>
+  <use x="139.601562" y="597.332031" xlink:href="#e"/>
+  <use x="149.496094" y="597.332031" xlink:href="#m"/>
+  <use x="156.335938" y="597.332031" xlink:href="#c"/>
+  <use x="160.941406" y="597.332031" xlink:href="#a"/>
+  <use x="167.351562" y="597.332031" xlink:href="#l"/>
+  <use x="170.550781" y="597.332031" xlink:href="#b"/>
+  <use x="176.882812" y="597.332031" xlink:href="#k"/>
+  <use x="182.414062" y="597.332031" xlink:href="#d"/>
+ </g>
+</svg>

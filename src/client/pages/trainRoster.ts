@@ -6,9 +6,11 @@ import { createElement, parseHtml, getById } from "../utils/dom";
 import { TrainEditConstructor } from "./trainEditor";
 const html = require("./trainRoster.html").default;
 
+const CLASS_ONTRACK = "onTrack";
+
 function pad(address: number) {
     const addr = `${address}`;
-    return "0000".substr(addr.length) + addr;
+    return "0000".substring(addr.length) + addr;
 }
 
 export class TrainRosterPage extends Page {
@@ -45,6 +47,8 @@ export class TrainRosterPage extends Page {
             const addTrain = (loco: Loco) => {
                 const title = createElement(this._trains, "div", "train");
                 title.innerText = `${pad(loco.address)} - ${loco.name}`;
+                if (loco?._emphemeral?.onTrack) title.classList.add(CLASS_ONTRACK);
+
                 title.onclick = () => {
                     prompt.stackedPrompt(title.innerText, [
                         { caption: "Edit", onclick: () => {
@@ -62,7 +66,14 @@ export class TrainRosterPage extends Page {
                                 promise = this._api.addToTrack(loco.id);
                             }
 
-                            promise.catch((err) => {
+                            promise.then(() => {
+                                if (loco?._emphemeral?.onTrack) {
+                                    title.classList.add(CLASS_ONTRACK);
+                                }
+                                else {
+                                    title.classList.remove(CLASS_ONTRACK);
+                                }
+                            }).catch((err) => {
                                 console.error(err);
                                 prompt.error("Failed to update track");
                             });
