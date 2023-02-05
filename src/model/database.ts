@@ -8,7 +8,7 @@ import { LocoView } from "./locoview";
 const log = new Logger("Database");
 
 const SCHEMA_VERSION_KEY = "schemaVersion";
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 interface RepositoryConstructable<ItemType, RepositoryType extends Repository<ItemType>> {
     new(db: Database): RepositoryType;
@@ -59,6 +59,9 @@ export class Database {
         this._db = await _open(filename);
 
         try {
+            // Foreign keys aren't enabled by default, but we do want to enforce their contraints, so turn them on
+            await this.run("PRAGMA foreign_keys = ON;");
+
             // We want to explicitly create this table so that we have the store available before running
             // any schema scripts.
             await this.run(`
@@ -197,6 +200,22 @@ export class Database {
                 }
                 else {
                     resolve(row);
+                }
+            });
+        });
+    }
+
+    all(sql: string, params?: any): Promise<any[]> {
+        return new Promise<any[]>((resolve, reject) => {
+            log.debug(() => `Directly executing: ${sql}`);
+            this._db.all(sql, params, (err, rows) => {
+                if (err) {
+                    log.error(`Execution failed: ${err.message}`);
+                    log.error(`Statement: ${sql}`);
+                    reject(err);
+                }
+                else {
+                    resolve(rows);
                 }
             });
         });

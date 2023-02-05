@@ -7,7 +7,7 @@ import * as sqlite3 from "sqlite3";
 import * as fs from "fs";
 import { rmDir, rmFile } from "../utils/testUtils";
 
-const SCHEMA_VERSION = 2;
+const EXPECTED_SCHEMA_VERSION = 3;
 const TEST_DB_FILE = ".test.sqlite3";
 
 function cleanupTestDb() {
@@ -26,7 +26,7 @@ async function createTestTable(db: Database) {
 }
 
 describe("Database", () => {
-    let _db: Database = null;
+    let _db: Database = null as any;
 
     beforeEach(async () => {
         _db = await Database.open(":memory:");
@@ -41,7 +41,7 @@ describe("Database", () => {
             const message: string = err.message;
             if (!message.includes("Database is closed")) throw err;
         }
-        _db = null;
+        _db = null as any;
 
         cleanupTestDb();
     })
@@ -50,7 +50,7 @@ describe("Database", () => {
         it("should open if path is valid", async () => {
             expect(_db).to.not.be.null;
             expect(_db.sqlite3).to.be.instanceOf(sqlite3.Database);
-            expect(_db.schemaVersion).to.equal(SCHEMA_VERSION);
+            expect(_db.schemaVersion).to.equal(EXPECTED_SCHEMA_VERSION);
         })
 
         it("should reopen existing databases", async () => {
@@ -60,7 +60,7 @@ describe("Database", () => {
 
             const db2 = await Database.open(TEST_DB_FILE);
             try {
-                expect(db2.schemaVersion).to.equal(SCHEMA_VERSION);
+                expect(db2.schemaVersion).to.equal(EXPECTED_SCHEMA_VERSION);
                 const value = await db2.getValue("Test");
                 expect(value).to.equal("Foo Bar Baz");
             }
@@ -93,6 +93,11 @@ describe("Database", () => {
             finally {
                 readdirStub.restore();
             }
+        })
+
+        it("should support foreign keys", async () => {
+            const result = await _db.get("PRAGMA foreign_keys;");
+            expect(result.foreign_keys).to.equal(1);
         })
     })
 
@@ -183,6 +188,47 @@ describe("Database", () => {
 
         it ("should fail for invalid statements", async () => {
             await expect(_db.get('SELECT * FROM test WHERE key = "foo";')).to.be.eventually.rejected;
+        })
+    })
+
+    describe("all", () => {
+        it("should execute valid SQL statements", async () => {
+            await createTestTable(_db);
+            await _db.run('INSERT INTO test (key, value) VALUES ("foo", "bar");');
+            await _db.run('INSERT INTO test (key, value) VALUES ("baz", "bob");');
+
+            const rows = await _db.all('SELECT * FROM test;');
+
+            expect(rows).to.eql([
+                { key: "foo", value: "bar" },
+                { key: "baz", value: "bob" }
+            ]);
+        })
+
+        it("should execute valid SQL statements with params", async () => {
+            await createTestTable(_db);
+            await _db.run('INSERT INTO test (key, value) VALUES ("foo", "bar");');
+            await _db.run('INSERT INTO test (key, value) VALUES ("baz", "bob");');
+            await _db.run('INSERT INTO test (key, value) VALUES ("cat", "bob");');
+
+            const rows = await _db.all('SELECT * FROM test WHERE value = $value;', {
+                $value: "bob"
+            });
+
+            expect(rows).to.eql([
+                { key: "baz", value: "bob" },
+                { key: "cat", value: "bob" }
+            ]);
+        })
+
+        it("should return empty array for not found values", async () => {
+            await createTestTable(_db);
+            const rows = await _db.all('SELECT * FROM test WHERE key = "foo";');
+            expect(rows).to.eql([]);
+        });
+
+        it ("should fail for invalid statements", async () => {
+            await expect(_db.all('SELECT * FROM test WHERE key = "foo";')).to.be.eventually.rejected;
         })
     })
 
