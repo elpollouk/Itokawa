@@ -26,7 +26,7 @@
     "@types/express-fileupload": "^1.4.1",
     "@types/express-serve-static-core": "^4.17.33",
     "@types/express-ws": "^3.0.1",
-    "@types/jsdom": "^20.0.1",
+    "@types/jsdom": "^21.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.11.18",
     "@types/qrcode": "^1.5.0",
