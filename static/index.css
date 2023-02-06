@@ -687,8 +687,6 @@ a:visited {
     background-image: url("icons/ontrack.svg");
     background-size: cover;
 
-    /*filter: invert(25%) saturate(1115%) hue-rotate(163deg) brightness(91%) contrast(91%);*/
-
     background-color: greenyellow;
     border-color: rgb(24, 24, 24);
     border-width: 2px;
