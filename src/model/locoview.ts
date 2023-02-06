@@ -18,9 +18,9 @@ async function _getLocoIds(viewId: number): Promise<Set<number>> {
 export class LocoView {
     static async init(db: Database) {
         _getViewIdQuery = await db.prepare("SELECT id FROM loco_views WHERE name = $name;");
-        _hasQuery = await db.prepare("SELECT locoId FROM loco_view_mapping WHERE viewId = $viewId AND locoId = $locoId;");
+        _hasQuery = await db.prepare("SELECT 1 FROM loco_view_mapping WHERE viewId = $viewId AND locoId = $locoId;");
         _allLocosQuery = await db.prepare("SELECT locoId FROM loco_view_mapping WHERE viewId = $viewId;");
-        _addLocoQuery = await db.prepare("INSERT INTO loco_view_mapping(viewId, locoId) VALUES ($viewId, $locoId);");
+        _addLocoQuery = await db.prepare("INSERT OR IGNORE INTO loco_view_mapping(viewId, locoId) VALUES ($viewId, $locoId);");
         _removeLocoQuery = await db.prepare("DELETE FROM loco_view_mapping WHERE viewId = $viewId AND locoId = $locoId;");
     }
 
@@ -73,12 +73,8 @@ export class LocoView {
         return !!result;
     }
 
-    public async addLoco(id: number): Promise<void> {
-        if (await this.hasLoco(id)) {
-            return;
-        }
-
-        await _addLocoQuery.run({
+    public addLoco(id: number): Promise<void> {
+        return _addLocoQuery.run({
             $viewId: this._viewId,
             $locoId: id
         });

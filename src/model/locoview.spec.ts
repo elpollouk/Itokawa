@@ -82,6 +82,12 @@ describe("LocoView", () => {
 
             expect([...await view.locoIds]).to.eql([7]);
         })
+
+        it("should reject invalid locoIds", async () => {
+            const view = await LocoView.getView(TEST_VIEW);
+
+            await expect(view.addLoco(1000)).to.be.eventually.rejectedWith("SQLITE_CONSTRAINT: FOREIGN KEY constraint failed");
+        })
     })
 
     describe("removeLoco", () => {

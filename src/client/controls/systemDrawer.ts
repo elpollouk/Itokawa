@@ -109,7 +109,7 @@ export class SystemDrawControl extends ControlBase {
                         if (err) prompt.error(err.message);
                     });
                 }),
-                action("Update", "Are you sure you want to update server?", () => {
+                action("Update Itokawa", "Are you sure you want to update server?", () => {
                     if (!(nav.currentPage instanceof UpdatePage))
                         nav.open(UpdatePageConstructor.path, LifeCycleAction.update);
                 }),
