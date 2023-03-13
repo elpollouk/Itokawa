@@ -41,7 +41,7 @@
     "chrome-launcher": "^0.15.1",
     "chrome-remote-interface": "^0.32.1",
     "html-loader": "^4.2.0",
-    "jsdom": "^21.1.0",
+    "jsdom": "^21.1.1",
     "mocha": "^10.2.0",
     "nyc": "^15.0.1",
     "sinon": "^15.0.1",
