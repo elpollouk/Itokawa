@@ -666,8 +666,8 @@ describe("WebSocket Command Station", () => {
             it("should raise exception if action is invalid", () => {
                 const batch = new WebSocketCommandBatch(() => Promise.resolve());
 
-                expect(() => batch.setLocomotiveFunction(3, 0, -1)).to.throw("Invalid action -1");
-                expect(() => batch.setLocomotiveFunction(3, 0, 4)).to.throw("Invalid action 4");
+                expect(() => batch.setLocomotiveFunction(3, 0, -1 as FunctionAction)).to.throw("Invalid action -1");
+                expect(() => batch.setLocomotiveFunction(3, 0, 4 as FunctionAction)).to.throw("Invalid action 4");
             })
         })
 
