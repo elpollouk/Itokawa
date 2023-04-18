@@ -38,7 +38,7 @@
     "@types/xml2js": "^0.4.11",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
-    "chrome-launcher": "^0.15.1",
+    "chrome-launcher": "^0.15.2",
     "chrome-remote-interface": "^0.32.2",
     "html-loader": "^4.2.0",
     "jsdom": "^21.1.1",
