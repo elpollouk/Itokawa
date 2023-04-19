@@ -130,7 +130,7 @@ describe("Client Smoke", () => {
 
     after(async () => {
         await silentClose(() => client.close());
-        await silentClose(() => chrome.kill());
+        await silentClose(async () => chrome.kill());
         await stopServer();
         restore();
     })
