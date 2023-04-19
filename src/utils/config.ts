@@ -132,7 +132,7 @@ function _parseNode(data: any, baseNode?: ConfigNode): ConfigNode {
         const children = data[key] as any[];
         const value = children[0];
 
-        if (value instanceof Object) {
+        if (typeof value == "object") {
             if ("_" in value) {
                 const type = value._attr["type"];
                 if (type in _PARSERS) {
