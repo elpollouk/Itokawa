@@ -91,7 +91,7 @@ export async function loadConfig(path: string, target?:ConfigNode): Promise<Conf
 }
 
 const _PARSERS = {
-    "bool": (value: any) => `${value}`.toLowerCase() === "true",
+    "bool": (value: any) => ["true", "yes", "on"].indexOf(`${value}`.toLowerCase()) != -1,
     "number": (value: any) => parseFloat(value),
     "float": (value: any) => parseFloat(value),
     "int": (value: any) => parseInt(value),
@@ -106,7 +106,7 @@ interface TypeDetector {
 const _TYPE_DETECTORS: TypeDetector[] = [
     { regex: /^-?\d+\.\d*$/, typeName: "float" },
     { regex: /^-?\d+$/, typeName: "int" },
-    { regex: /^[tT][rR][uU][eE]$|^[fF][aA][lL][sS][eE]$/, typeName: "bool" }
+    { regex: /^(true|false|yes|no|on|off)$/i, typeName: "bool" }
 ];
 
 function _autoParseValue(value: string): number | boolean | string {
