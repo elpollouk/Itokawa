@@ -346,8 +346,26 @@ describe("Config", () => {
             expect(config.get("test")).to.equal(123.45);
         })
 
-        it("should parse explicit bools as true/false", async () => {
+        it("should parse explicit bools (true/false)", async () => {
             readFsStub.returns('<config><test1 type="bool">false</test1><test2 type="bool">TrUe</test2><test3 type="bool">adsfasd</test3></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test1")).to.be.false;
+            expect(config.get("test2")).to.be.true;
+            expect(config.get("test3")).to.be.false;
+        })
+
+        it("should parse explicit bools (yes/no)", async () => {
+            readFsStub.returns('<config><test1 type="bool">no</test1><test2 type="bool">yEs</test2><test3 type="bool">adsfasd</test3></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test1")).to.be.false;
+            expect(config.get("test2")).to.be.true;
+            expect(config.get("test3")).to.be.false;
+        })
+
+        it("should parse explicit bools (on/off)", async () => {
+            readFsStub.returns('<config><test1 type="bool">off</test1><test2 type="bool">oN</test2><test3 type="bool">adsfasd</test3></config>');
             const config = await loadConfig("test/path/config.xml");
 
             expect(config.get("test1")).to.be.false;
@@ -386,13 +404,31 @@ describe("Config", () => {
             expect(config.get("test")).to.equal("192.168.1.77");
         })
 
-        it("should auto detect booleans", async () => {
+        it("should auto detect booleans (true/false)", async () => {
             readFsStub.returns('<config><test1>trUE</test1><test2>faLse</test2><test3>truefalse</test3></config>');
             const config = await loadConfig("test/path/config.xml");
 
             expect(config.get("test1")).to.be.true
             expect(config.get("test2")).to.be.false;
             expect(config.get("test3")).to.equal("truefalse");
+        })
+
+        it("should auto detect booleans (yes/no)", async () => {
+            readFsStub.returns('<config><test1>yES</test1><test2>nO</test2><test3>noyes</test3></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test1")).to.be.true
+            expect(config.get("test2")).to.be.false;
+            expect(config.get("test3")).to.equal("noyes");
+        })
+
+        it("should auto detect booleans (on/off)", async () => {
+            readFsStub.returns('<config><test1>On</test1><test2>oFf</test2><test3>OnoFf</test3></config>');
+            const config = await loadConfig("test/path/config.xml");
+
+            expect(config.get("test1")).to.be.true
+            expect(config.get("test2")).to.be.false;
+            expect(config.get("test3")).to.equal("OnoFf");
         })
 
         it("should ignore non-type attributes", async () => {
