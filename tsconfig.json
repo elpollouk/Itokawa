@@ -11,5 +11,9 @@
     "exclude": [
       "node_modules",
       "src/**/*.spec.ts"
-    ]
-  }
+    ],
+    "ts-node":
+    {
+       "esm": true
+    }
+}
