@@ -2,7 +2,7 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
 import { stub, restore } from "sinon";
-import * as launcher from "chrome-launcher.js";
+import * as launcher from "chrome-launcher";
 import * as chromeRemote from "chrome-remote-interface";
 import * as express from "express";
 import * as expressWs from "express-ws";
