@@ -8,7 +8,7 @@
     "build": "npm run tsc && npm run bundle",
     "tsc": "tsc",
     "bundle": "webpack",
-    "test": "nyc mocha --trace-deprecation -r ts-node/register --esm \"src/**/*.spec.ts\"",
+    "test": "nyc mocha --trace-deprecation -r ts-node/register -r ts-node/esm \"src/**/*.spec.ts\"",
     "watch": "mocha -r ts-node/register \"src/**/*.spec.ts\" --watch --watch-files src",
     "cli": "node dist/cli/main.js",
     "password": "node dist/cli/password-main.js",
