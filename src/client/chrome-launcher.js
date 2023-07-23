@@ -1,7 +1,7 @@
 /*
     This is a dirty hack.
     chrome-launcher 1.0.0 was release as an ESM module, but the rest of this code can't be built
-    as an ESM module itself due to the way the clients import json/html files and handles TS
+    as an ESM module itself due to the way the client imports json/html files and handles TS
     source code maps as a result of webpacking.
 
     Using a specific JS file to import chrome-launcher dynamically allows the TS loader to ignore
