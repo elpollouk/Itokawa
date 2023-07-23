@@ -2,7 +2,7 @@ import { expect, use } from "chai";
 use(require("chai-as-promised"));
 import "mocha";
 import { stub, restore } from "sinon";
-import * as launcher from "chrome-launcher";
+import { importLauncher } from "./chrome-launcher.js";
 import * as chromeRemote from "chrome-remote-interface";
 import * as express from "express";
 import * as expressWs from "express-ws";
@@ -19,8 +19,15 @@ import { LocoRepository } from "../model/locoRepository";
 
 const TEST_PORT = 18080;
 
-describe("Client Smoke", () => {
-    let chrome: launcher.LaunchedChrome;
+// Interface for the minimum details we use from chrome-launch that are no longer available as expected
+interface LaunchedChrome {
+    port: number;
+    kill: () => void;
+};
+
+
+describe("Client Smoke", async () => {
+    let chrome: LaunchedChrome;
     let client: chromeRemote.Client;
     let server: Server;
 
@@ -108,6 +115,7 @@ describe("Client Smoke", () => {
 
         // This step can take a few seconds on github actions
         console.log("Launching Chrome...");
+        const launcher = await importLauncher();
         chrome = await launcher.launch({
             chromeFlags: [
                 "--disable-gpu",
