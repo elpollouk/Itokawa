@@ -35,7 +35,7 @@
     "@types/supertest": "^2.0.12",
     "@types/ws": "^8.5.5",
     "@types/xml2js": "^0.4.11",
-    "chai": "^4.3.7",
+    "chai": "^4.3.8",
     "chai-as-promised": "^7.1.1",
     "chrome-launcher": "^1.0.0",
     "chrome-remote-interface": "^0.33.0",
