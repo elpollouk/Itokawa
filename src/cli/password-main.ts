@@ -1,5 +1,5 @@
 import * as path from "path";
-import * as read from "read";
+import { read } from "read";
 import { initDataDirectory } from "../application";
 import { ADMIN_PASSWORD_KEY } from "../server/sessionmanager";
 import { loadConfig, saveConfig } from "../utils/config";
