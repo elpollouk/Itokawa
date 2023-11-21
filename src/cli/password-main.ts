@@ -1,5 +1,5 @@
 import * as path from "path";
-import * as read from "read";
+import { read } from "read";
 import { initDataDirectory } from "../application";
 import { ADMIN_PASSWORD_KEY } from "../server/sessionmanager";
 import { loadConfig, saveConfig } from "../utils/config";
@@ -9,13 +9,8 @@ Logger.logLevel = LogLevel.DISPLAY;
 
 const CONFIG_XML = "config.xml";
 
-async function readPassword(prompt: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        read({ prompt: prompt, silent: true, replace: "*" }, function(err, password) {
-            if (err) reject(err);
-            else resolve(password);
-        });
-    });
+function readPassword(prompt: string): Promise<string> {
+    return read({ prompt: prompt, silent: true, replace: "*" });
 }
 
 async function main() {
