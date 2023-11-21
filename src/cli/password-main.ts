@@ -9,13 +9,8 @@ Logger.logLevel = LogLevel.DISPLAY;
 
 const CONFIG_XML = "config.xml";
 
-async function readPassword(prompt: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        read({ prompt: prompt, silent: true, replace: "*" }, function(err, password) {
-            if (err) reject(err);
-            else resolve(password);
-        });
-    });
+function readPassword(prompt: string): Promise<string> {
+    return read({ prompt: prompt, silent: true, replace: "*" });
 }
 
 async function main() {
