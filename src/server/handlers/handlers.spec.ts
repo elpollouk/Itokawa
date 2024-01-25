@@ -16,7 +16,8 @@ class MockWebSocket extends ws {
     eventHandlers = new Map<string, Function>();
 
     constructor(readyState: number = 1) {
-        super(null as any, null as any, { autoPong: false } as any);
+        // Hack to work around differences in type definition and underlying library
+        super(null as any, null as any, { autoPong: false} as any);
         Object.defineProperties(this, {
             on: {
                 value: (event: string, cb: Function) => this.eventHandlers[event] = cb
