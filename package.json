@@ -8,7 +8,6 @@
     "build": "npm run tsc && npm run bundle",
     "tsc": "tsc",
     "bundle": "webpack",
-    "test-old": "mocha -r ts-node/register \"src/**/*.spec.ts\"",
     "test": "nyc mocha --trace-deprecation -r ts-node/register \"src/**/*.spec.ts\"",
     "cli": "node dist/cli/main.js",
     "password": "node dist/cli/password-main.js",
