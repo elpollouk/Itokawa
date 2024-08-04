@@ -83,6 +83,7 @@ describe("Application", () => {
             expect(app.database).to.equal(db);
             expect(app.featureFlags.getFlags()).to.be.empty;
             expect(app.gitrev).to.equal("GITREV");
+            expect(app.nodeVersion).to.not.be.null.and.not.be.undefined;
             expect(app.packageVersion).to.equal(packagejson.version);
 
             // External calls that got us there
