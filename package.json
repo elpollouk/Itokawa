@@ -36,7 +36,7 @@
     "@types/ws": "^8.5.12",
     "@types/xml2js": "^0.4.14",
     "chai": "^4.5.0",
-    "chai-as-promised": "^7.1.1",
+    "chai-as-promised": "^8.0.0",
     "chrome-launcher": "^1.1.2",
     "chrome-remote-interface": "^0.33.2",
     "html-loader": "^5.1.0",
